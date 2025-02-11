@@ -1,0 +1,231 @@
+local UEHelpers = require("UEHelpers")
+local func = require("func")
+
+local log = Log
+local vec3 = Vec3
+local sqrt, rad = math.sqrt, math.rad
+
+-- load PARAMS global table
+local paramsFile = func.getParamsFile()
+local params = func.loadParamsFile(paramsFile)
+
+local DeformType = {
+    Subtract = 0,
+    Add = 1,
+    Flatten = 2,
+    ColorPick = 3,
+    ColorPaint = 4,
+    CountCreative = 5,
+    Crater = 6,
+    FlattenSubtractOnly = 7,
+    FlattenAddOnly = 8,
+    TrueFlatStamp = 9,
+    PlatformSurface = 10,
+    RevertModifications = 11,
+    Count = 12,
+}
+
+local RootComponent -- 0x160
+local SlopeDirection = { X = math.huge, Y = math.huge, Z = math.huge } ---@type FVector
+local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
+
+---https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/Kismet/UKismetMathLibrary/FindLookAtRotation
+---@param start vec3
+---@param target vec3
+---@return FRotator
+function vec3.findLookAtRotation(start, target)
+    local d = target - start ---@type vec3 direction vector
+    local yaw = math.atan(d.y, d.x)
+
+    local d_norm_xOy = math.sqrt(d.x * d.x + d.y * d.y)
+    local pitch = math.atan(d.z, d_norm_xOy)
+
+    return { Pitch = math.deg(pitch), Yaw = math.deg(yaw), Roll = 0 }
+end
+
+local function setSlopeDirectionFromCamera(reversed)
+    log.debug("Set slope direction from camera. Reversed: " .. tostring(reversed) .. ".")
+    local pc = UEHelpers.GetPlayerController()
+    local cam = pc:GetViewTarget()
+    local right = cam:GetActorRightVector()
+    local v = vec3.normalize(vec3.new(right.X, right.Y, right.Z))
+    right = { X = v.x, Y = v.y, Z = v.z }
+    if reversed then
+        SlopeDirection = { X = -right.X, Y = -right.Y, Z = -right.Z }
+    else
+        SlopeDirection = right
+    end
+end
+
+---@param hitResult FHitResult
+local function setSlopeDirectionFromSlope(hitResult)
+    log.debug("Set slope direction from slope.")
+    local location = vec3.new(hitResult.Location.X, hitResult.Location.Y, hitResult.Location.Z)
+    local normal = vec3.new(hitResult.Normal.X, hitResult.Normal.Y, hitResult.Normal.Z)
+    local direction = vec3.cross(location, normal)
+
+    SlopeDirection = { X = direction.x, Y = direction.y, Z = direction.z }
+end
+
+local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
+                                      isUsingTool, justActivated, canUse)
+    if canUse:get() == false then
+        return
+    end
+
+    local deformTool = self:get() ---@diagnostic disable-line: undefined-field
+    ---@cast deformTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
+
+    -- check if a flatten operation is selected
+    local operation = deformTool.Operation
+    if operation ~= DeformType.Flatten and operation ~= DeformType.FlattenAddOnly and operation ~= DeformType.FlattenSubtractOnly then
+        return
+    end
+
+    startedInteraction = startedInteraction:get()
+
+    -- ignored
+    if startedInteraction == false and SlopeDirection == inf then return end
+
+    toolHit = toolHit:get()
+
+    ---@cast controller APlayController
+    ---@cast toolHit FHitResult
+    ---@cast clickResult FClickResult
+    ---@cast startedInteraction boolean
+    ---@cast endedInteraction boolean
+    ---@cast isUsingTool boolean
+    ---@cast justActivated boolean
+    ---@cast canUse boolean
+
+    local location = toolHit.Location
+
+    if startedInteraction then
+        local playerController = UEHelpers:GetPlayerController() ---@cast playerController APlayControllerInstance_C
+        if not playerController:IsValid() then
+            log.warn("PlayerController invalid.")
+        end
+
+        local homeBody = playerController.HomeBody -- 0xC98
+        RootComponent = homeBody.RootComponent     -- 0x160
+
+        -- Planet center is (0, 0, 0) for SYLVA.
+        PlanetCenter = RootComponent.RelativeLocation
+
+        -- check if the hit actor is a SolarBody (planet)
+        local actor = toolHit.Actor:Get() ---@diagnostic disable-line: undefined-field
+        if not actor:IsA("/Script/Astro.SolarBody") then
+            log.debug("Hit actor is not a SolarBody. Try to get a SolarBody.")
+
+            toolHit = {}
+
+            --[[ Why 6? It's (maybe) the ObjectType for the terrain. You can do tests with this code:
+                local hitResult = {}
+                local playerController = UEHelpers:GetPlayerController()
+                for i = 1, 33, 1 do
+                    playerController:GetHitResultUnderCursorForObjects({ i }, false, hitResult)
+                    local hitActor = GetActorFromHitResult(hitResult)
+                    print(i, hitActor:GetFullName())
+                end --]]
+            local result = playerController:GetHitResultUnderCursorForObjects({ 6 }, false, toolHit)
+            if result then
+                local hitActor = func.getActorFromHitResult(toolHit)
+                if not hitActor:IsValid() or not hitActor:IsA("/Script/Astro.SolarBody") then
+                    log.debug("[!!] New hit actor is not a SolarBody.")
+                    return
+                end
+            end
+
+            location = toolHit.Location
+        end
+
+        local keyName_fromCamera = OPTIONS.set_slope_direction_from_camera_KeyName
+        local keyName_fromCamera_reversed = OPTIONS.set_slope_direction_from_camera_reversed_KeyName
+        local keyName_fromSlope = OPTIONS.set_slope_direction_from_slope_KeyName
+
+        if keyName_fromCamera and playerController:IsInputKeyDown({ KeyName = FName(keyName_fromCamera) }) then
+            setSlopeDirectionFromCamera(false)
+        elseif keyName_fromCamera_reversed and playerController:IsInputKeyDown({ KeyName = FName(keyName_fromCamera_reversed) }) then
+            setSlopeDirectionFromCamera(true)
+        elseif keyName_fromSlope and playerController:IsInputKeyDown({ KeyName = FName(keyName_fromSlope) }) then
+            setSlopeDirectionFromSlope(toolHit)
+        else
+            if keyName_fromCamera or keyName_fromCamera_reversed or keyName_fromSlope then
+                SlopeDirection = { X = inf, Y = inf, Z = inf }
+                log.debug("Slope is not modified.")
+                return
+            end
+        end
+    end
+
+    ---@type FVector
+    local u = {
+        X = location.X - PlanetCenter.X,
+        Y = location.Y - PlanetCenter.Y,
+        Z = location.Z - PlanetCenter.Z
+    }
+
+    local altitude = sqrt(u.X * u.X + u.Y * u.Y + u.Z * u.Z)
+
+    -- normalize the vector
+    local u_unit = {
+        X = u.X / altitude,
+        Y = u.Y / altitude,
+        Z = u.Z / altitude
+    }
+
+    -- add planet center location to the vector
+    local u_unit_absolute = {
+        X = u_unit.X + PlanetCenter.X,
+        Y = u_unit.Y + PlanetCenter.Y,
+        Z = u_unit.Z + PlanetCenter.Z
+    }
+
+    local v = vec3.rotate(vec3.new(u_unit.X, u_unit.Y, u_unit.Z), rad(params.SLOPE_ANGLE),
+        vec3.new(SlopeDirection.X, SlopeDirection.Y, SlopeDirection.Z))
+
+    u_unit = { X = v.x, Y = v.y, Z = v.z }
+
+    -- RepBrushState (0x804)
+    deformTool.RepBrushState.CurrentDeformNormal = u_unit
+
+    ---@diagnostic disable: inject-field
+
+    -- LocalBrushState (0x838)
+    deformTool.LocalBrushStateNormalX = u_unit.X
+    deformTool.LocalBrushStateNormalY = u_unit.Y
+    deformTool.LocalBrushStateNormalZ = u_unit.Z
+
+    -- DeformActionStartNormal (0x8CC)
+    deformTool.DeformActionStartNormalX = u_unit.X
+    deformTool.DeformActionStartNormalY = u_unit.Y
+    deformTool.DeformActionStartNormalZ = u_unit.Z
+
+    deformTool.HitNormal = u_unit
+
+    ---@diagnostic enable: inject-field
+end
+
+local function writeParamsFile()
+    local file = io.open(paramsFile, "w+")
+
+    assert(file, string.format("\nUnable to open the params file %q.", paramsFile))
+
+    -- defaults
+    if params.SLOPE_ANGLE == nil then params.SLOPE_ANGLE = 45 end
+
+    file:write(string.format(
+        [[return {
+SLOPE_ANGLE=%.16g
+}]],
+        params.SLOPE_ANGLE))
+
+    file:close()
+end
+
+---@type Method__slop
+return {
+    params = params,
+    handleTerrainTool_hook = handleTerrainTool_hook,
+    writeParamsFile = writeParamsFile,
+}

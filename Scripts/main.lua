@@ -1,7 +1,7 @@
 ---@class FOutputDevice
 ---@field Log function
 
-local DeformType = {
+local EDeformType = {
     Subtract = 0,
     Add = 1,
     Flatten = 2,
@@ -18,15 +18,49 @@ local DeformType = {
     EDeformType_MAX = 13,
 }
 
+local EDeformTypeName = {
+    "Subtract",
+    "Add",
+    "Flatten",
+    "ColorPick",
+    "ColorPaint",
+    "CountCreative",
+    "Crater",
+    "FlattenSubtractOnly",
+    "FlattenAddOnly",
+    "TrueFlatStamp",
+    "PlatformSurface",
+    "RevertModifications",
+    "Count",
+    "EDeformType_MAX",
+}
+
+inf = math.huge ---@diagnostic disable-line: lowercase-global
+
+-- functions implemented in the method file
+---@type Method[]
+local Methods = {}
+
+local CachedTerrainTool = CreateInvalidObject() ---@cast CachedTerrainTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
+
+local MethodNamesList = {}
+
+local Method = "" -- current method
+
 local HandleTerrainToolStatus = false
-local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
-local CustomAltitude = nil ---@type number?
 local PreId_handleTerrainTool, PostId_handleTerrainTool
 
 local UEHelpers = require("UEHelpers")
 local logging = require("lib.lua-mods-libs.logging")
+local utils = require("lib.lua-mods-libs.utils")
+local func = require("func")
+
 modules = "lib.LEEF-math.modules." ---@diagnostic disable-line: lowercase-global
-local floor, sqrt = math.floor, math.sqrt
+Vec3 = require("lib.LEEF-math.modules.vec3")
+local vec3 = Vec3
+
+local sqrt = math.sqrt
+local format = string.format
 
 local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
 
@@ -42,23 +76,11 @@ local function isFileExists(filename)
     end
 end
 
----@param HitResult FHitResult
----@return AActor
-local function GetActorFromHitResult(HitResult)
-    if UnrealVersion:IsBelow(5, 0) then
-        return HitResult.Actor:Get() ---@diagnostic disable-line: undefined-field
-    elseif UnrealVersion:IsBelow(5, 4) then
-        return HitResult.HitObjectHandle.Actor:Get() ---@diagnostic disable-line: undefined-field
-    else
-        return HitResult.HitObjectHandle.ReferenceObject:Get() ---@diagnostic disable-line: undefined-field
-    end
-end
-
 local function loadOptions()
-    local file = string.format([[%s\options.lua]], currentModDirectory)
+    local file = format([[%s\options.lua]], currentModDirectory)
 
     if not isFileExists(file) then
-        local cmd = string.format([[copy "%s\options.example.lua" "%s\options.lua"]],
+        local cmd = format([[copy "%s\options.example.lua" "%s\options.lua"]],
             currentModDirectory,
             currentModDirectory)
 
@@ -68,6 +90,101 @@ local function loadOptions()
     end
 
     return dofile(file)
+end
+
+--------------------------------------------------------------------------------
+
+-- Default logging levels. They can be overwritten in the options file.
+LOG_LEVEL = "INFO" ---@type _LogLevel
+MIN_LEVEL_OF_FATAL_ERROR = "ERROR" ---@type _LogLevel
+
+local options = loadOptions()
+OPTIONS = options
+
+Log = logging.new(LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR)
+local log = Log
+LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR = nil, nil
+
+--------------------------------------------------------------------------------
+
+--#region hooks
+---@param callback function
+local function registerHookFor_handleTerrainTool(callback)
+    PreId_handleTerrainTool, PostId_handleTerrainTool = RegisterHook("/Script/Astro.DeformTool:HandleTerrainTool",
+        callback)
+end
+local function unregisterHookFor_handleTerrainTool()
+    if type(PreId_handleTerrainTool) == "number" and type(PostId_handleTerrainTool) == "number" then
+        UnregisterHook("/Script/Astro.DeformTool:HandleTerrainTool", PreId_handleTerrainTool,
+            PostId_handleTerrainTool)
+    end
+end
+--#endregion hooks
+
+---Retrieve functions from method files.
+local function loadAllMethods()
+    ---@type string[]
+    local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\", "main.lua")
+    local methods = {}
+    local methodNamesList = {}
+
+    for index, file in ipairs(fileList) do
+        local methodName = file:match("([^\\]+)\\main.lua")
+        table.insert(methodNamesList, methodName)
+
+        local methodTable = {
+            index = index
+        }
+
+        local method = dofile(file)
+
+        for key, value in pairs(method) do
+            methodTable[key] = value
+        end
+
+        methods[methodName] = methodTable
+    end
+
+    return methods, methodNamesList
+end
+
+---Set current method.
+---@param method string|integer
+local function setMethod(method)
+    local newMethod
+
+    if type(tonumber(method)) == "number" then
+        newMethod = MethodNamesList[tonumber(method)]
+    elseif type(method) == "string" then
+        newMethod = method
+    else
+        error("Incorrect method type.")
+    end
+
+    -- set default method if nil or incorrect
+    if newMethod == nil or Methods[newMethod] == nil then
+        newMethod = MethodNamesList[0]
+    end
+
+    -- if same method; no change
+    if newMethod == Method then
+        return method
+    end
+
+    unregisterHookFor_handleTerrainTool()
+
+    if type(Methods[newMethod].handleTerrainTool_hook) == "function" then
+        if HandleTerrainToolStatus == true then
+            -- register the hook with the new method
+            registerHookFor_handleTerrainTool(Methods[newMethod].handleTerrainTool_hook)
+        end
+    end
+
+    log.info(format("Set method: %q.", newMethod))
+
+    Method = newMethod
+
+    return newMethod
 end
 
 --#region Custom properties
@@ -168,29 +285,12 @@ RegisterCustomProperty({
 --#endregion
 
 --#region Initialization
-LOG_LEVEL = "INFO" ---@type _LogLevel
-MIN_LEVEL_OF_FATAL_ERROR = "ERROR" ---@type _LogLevel
 
-local options = loadOptions()
+Methods, MethodNamesList = loadAllMethods()
+MethodNamesList[0] = options.method -- default method
+log.info("Current method: " .. setMethod(options.method) .. ".")
 
-local AltitudeStep = options.altitudeStep ~= nil and options.altitudeStep or 50.0
-
-local log = logging.new(LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR)
-LOG_LEVEL = nil
-MIN_LEVEL_OF_FATAL_ERROR = nil
-ALTITUDE_STEP = nil
-
-local RootComponent -- 0x160
-local RoundedAltitude = 0
 --#endregion
-
----Get nearest multiple of base.
----@param a number
----@param base number
----@return number
-local function roundToBase(a, base)
-    return floor(a / base + 0.5) * base
-end
 
 --- Get the length of a vector.
 ---@param u FVector
@@ -199,175 +299,40 @@ local function getVectorLen(u)
     return sqrt(u.X * u.X + u.Y * u.Y + u.Z * u.Z)
 end
 
-local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
-                                      isUsingTool, justActivated, canUse)
-    if canUse:get() == false then
-        return
+local function getTerrainTool()
+    if CachedTerrainTool:IsValid() and CachedTerrainTool.bHidden == false and CachedTerrainTool.bReplicateHidden == false then
+        return CachedTerrainTool
     end
 
-    local deformTool = self:get() ---@diagnostic disable-line: undefined-field
-    ---@cast deformTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
-
-    -- check if a flatten operation is selected
-    local operation = deformTool.Operation
-    if operation ~= DeformType.Flatten and operation ~= DeformType.FlattenAddOnly and operation ~= DeformType.FlattenSubtractOnly then
-        return
-    end
-
-    startedInteraction = startedInteraction:get()
-    toolHit = toolHit:get()
-    clickResult = clickResult:get()
-
-    ---@cast controller APlayController
-    ---@cast toolHit FHitResult
-    ---@cast clickResult FClickResult
-    ---@cast startedInteraction boolean
-    ---@cast endedInteraction boolean
-    ---@cast isUsingTool boolean
-    ---@cast justActivated boolean
-    ---@cast canUse boolean
-
-    local location = toolHit.Location
-
-    if startedInteraction then
-        local playerController = UEHelpers:GetPlayerController() ---@cast playerController APlayControllerInstance_C
-        if not playerController:IsValid() then
-            log.warn("PlayerController invalid.")
-        end
-
-        local homeBody = playerController.HomeBody -- 0xC98
-        RootComponent = homeBody.RootComponent     -- 0x160
-
-        -- Planet center is (0, 0, 0) for SYLVA.
-        PlanetCenter = RootComponent.RelativeLocation
-
-        -- check if the hit actor is a SolarBody (planet)
-        local actor = toolHit.Actor:Get() ---@diagnostic disable-line: undefined-field
-        if not actor:IsA("/Script/Astro.SolarBody") then
-            log.debug("Hit actor is not a SolarBody. Try to get a SolarBody.")
-
-            ---@diagnostic disable-next-line: missing-fields
-            local hitResult = {} ---@type FHitResult
-
-            --[[ Why 6? It's (maybe) the ObjectType for the terrain. You can do tests with this code:
-                local hitResult = {}
-                local playerController = UEHelpers:GetPlayerController()
-                for i = 1, 33, 1 do
-                    playerController:GetHitResultUnderCursorForObjects({ i }, false, hitResult)
-                    local hitActor = GetActorFromHitResult(hitResult)
-                    print(i, hitActor:GetFullName())
-                end --]]
-            local result = playerController:GetHitResultUnderCursorForObjects({ 6 }, false, hitResult)
-            if result then
-                local hitActor = GetActorFromHitResult(hitResult)
-                if not hitActor:IsValid() or not hitActor:IsA("/Script/Astro.SolarBody") then
-                    log.debug("[!!] New hit actor is not a SolarBody.")
-                    return
-                end
+    local objects = FindAllOf("SmallDeform_TERRAIN_EXPERIMENTAL_C") ---@type ASmallDeform_TERRAIN_EXPERIMENTAL_C[]?
+    if objects then
+        for index, terrainTool in ipairs(objects) do
+            if terrainTool.bHidden == false and terrainTool.bReplicateHidden == false then
+                CachedTerrainTool = terrainTool
+                return terrainTool
             end
-
-            location = hitResult.Location
-        end
-
-        if type(CustomAltitude) == "number" then
-            RoundedAltitude = CustomAltitude
-            log.info("Altitude is defined to %.16g.", CustomAltitude)
-        else
-            RoundedAltitude = roundToBase(getVectorLen(location), AltitudeStep)
-            log.info("Rounded altitude is %.16g.", RoundedAltitude)
         end
     end
 
-    ---@type FVector
-    local u = {
-        X = location.X - PlanetCenter.X,
-        Y = location.Y - PlanetCenter.Y,
-        Z = location.Z - PlanetCenter.Z
-    }
-
-    local pointLocationAltitude = getVectorLen(u)
-
-    -- resize vector to the rounded altitude
-    u = {
-        X = (u.X / pointLocationAltitude) * RoundedAltitude,
-        Y = (u.Y / pointLocationAltitude) * RoundedAltitude,
-        Z = (u.Z / pointLocationAltitude) * RoundedAltitude
-    }
-
-    -- get cosines of the angle between the vector and the normal
-    local angle = {
-        X = u.X / RoundedAltitude,
-        Y = u.Y / RoundedAltitude,
-        Z = u.Z / RoundedAltitude
-    }
-
-    -- add planet center location to the vector
-    u = {
-        X = u.X + PlanetCenter.X,
-        Y = u.Y + PlanetCenter.Y,
-        Z = u.Z + PlanetCenter.Z
-    }
-
-    -- RepBrushState (0x804)
-    -- deformTool.RepBrushState.CurrentDeformNormal = newAngle
-    deformTool.RepBrushState.CurrentDeformNormal.X = angle.X
-    deformTool.RepBrushState.CurrentDeformNormal.Y = angle.Y
-    deformTool.RepBrushState.CurrentDeformNormal.Z = angle.Z
-    deformTool.RepBrushState.CurrentDeformLocation.X = u.X
-    deformTool.RepBrushState.CurrentDeformLocation.Y = u.Y
-    deformTool.RepBrushState.CurrentDeformLocation.Z = u.Z
-
-    ---@diagnostic disable: inject-field
-
-    -- LocalBrushState (0x838)
-    deformTool.LocalBrushStateNormalX = angle.X
-    deformTool.LocalBrushStateNormalY = angle.Y
-    deformTool.LocalBrushStateNormalZ = angle.Z
-    deformTool.LocalBrushStateLocationX = u.X
-    deformTool.LocalBrushStateLocationY = u.Y
-    deformTool.LocalBrushStateLocationZ = u.Z
-
-    -- DeformActionStartLocation (0x8C0)
-    deformTool.DeformActionStartLocationX = u.X
-    deformTool.DeformActionStartLocationY = u.Y
-    deformTool.DeformActionStartLocationZ = u.Z
-
-    -- DeformActionStartNormal (0x8CC)
-    deformTool.DeformActionStartNormalX = angle.X
-    deformTool.DeformActionStartNormalY = angle.Y
-    deformTool.DeformActionStartNormalZ = angle.Z
-
-    -- DeformLaggedLocation (0x8D8)
-    deformTool.DeformLaggedLocationX = u.X
-    deformTool.DeformLaggedLocationY = u.Y
-    deformTool.DeformLaggedLocationZ = u.Z
-
-    deformTool.HitLocation.X = u.X
-    deformTool.HitLocation.Y = u.Y
-    deformTool.HitLocation.Z = u.Z
-    deformTool.HitNormal.X = angle.X
-    deformTool.HitNormal.Y = angle.Y
-    deformTool.HitNormal.Z = angle.Z
-
-    ---@diagnostic enable: inject-field
+    return CreateInvalidObject()
 end
 
-local function enable_handleTerrainTool()
+local function enable_handleTerrainTool(silent)
     if HandleTerrainToolStatus == false then
-        PreId_handleTerrainTool, PostId_handleTerrainTool = RegisterHook("/Script/Astro.DeformTool:HandleTerrainTool",
-            handleTerrainTool_hook)
+        if type(Methods[Method].handleTerrainTool_hook) ~= "function" then
+            log.info("handleTerrainTool_hook is not implemented in the current method.")
+            return
+        end
+        registerHookFor_handleTerrainTool(Methods[Method].handleTerrainTool_hook)
         HandleTerrainToolStatus = true
     end
 
-    log.info("HandleTerrainTool is ENABLED.")
+    if not silent then log.info(format("HandleTerrainTool is ENABLED. Method: %q.", Method)) end
 end
 
 local function disable_handleTerrainTool()
     if HandleTerrainToolStatus == true then
-        if type(PreId_handleTerrainTool) == "number" and type(PostId_handleTerrainTool) == "number" then
-            UnregisterHook("/Script/Astro.DeformTool:HandleTerrainTool", PreId_handleTerrainTool,
-                PostId_handleTerrainTool)
-        end
+        unregisterHookFor_handleTerrainTool()
         HandleTerrainToolStatus = false
     end
 
@@ -384,19 +349,40 @@ local function toggle_handleTerrainTool()
     log.info("HandleTerrainTool is %s.", HandleTerrainToolStatus and "ENABLED" or "DISABLED")
 end
 
----@param deformTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
-local function setDeformTypeTo(deformTool)
+---@param deformType? EDeformType
+---@param deformTool? ASmallDeform_TERRAIN_EXPERIMENTAL_C|UObject
+local function setDeformTypeTo(deformType, deformTool)
     if deformTool == nil then
-        deformTool = FindFirstOf("SmallDeform_TERRAIN_EXPERIMENTAL_C") ---@diagnostic disable-line: cast-local-type
+        deformTool = getTerrainTool()
     end
 
     if not deformTool:IsValid() then
         log.warn("DeformTool is invalid.")
-        return
     end
 
-    deformTool.Operation = options.deformType
-    log.info("DeformType is set to %d.", options.deformType)
+    deformType = deformType or options.deformType
+    deformType = math.min(EDeformType.EDeformType_MAX, deformType)
+    deformType = math.max(0, deformType)
+
+    deformTool.Operation = deformType
+    log.info("DeformType is set to %s (%d).", EDeformTypeName[deformType + 1], deformType)
+end
+
+---@param property string
+---@param outputDevice FOutputDevice
+---@return boolean
+local function checkIfPropertyExists(property, outputDevice)
+    if Methods[Method].params[property] == nil then
+        if outputDevice then
+            outputDevice:Log(format(
+                "This property does not exist for the method %q. Use the \"method\" command to change the method.",
+                Method))
+        end
+
+        return false
+    end
+
+    return true
 end
 
 local function registerKeyBind(key, modifierKeys, callback)
@@ -430,6 +416,22 @@ local function registerKeyBind(key, modifierKeys, callback)
     end
 end
 
+registerKeyBind(Key.MIDDLE_MOUSE_BUTTON, { ModifierKey.SHIFT }, function()
+    local terrainTool = getTerrainTool()
+
+    terrainTool.BaseBrushDeformationScale = math.min(
+        terrainTool.BaseBrushDeformationScale + options.BaseBrushDeformationScale_step,
+        options.BaseBrushDeformationScale_max)
+end)
+
+registerKeyBind(Key.MIDDLE_MOUSE_BUTTON, { ModifierKey.CONTROL }, function()
+    local terrainTool = getTerrainTool()
+
+    terrainTool.BaseBrushDeformationScale = math.max(
+        terrainTool.BaseBrushDeformationScale - options.BaseBrushDeformationScale_step,
+        options.BaseBrushDeformationScale_min)
+end)
+
 registerKeyBind(options.enable_handleTerrainTool_Key,
     options.enable_handleTerrainTool_ModifierKeys,
     enable_handleTerrainTool)
@@ -446,19 +448,91 @@ registerKeyBind(options.set_deformType_Key,
     options.set_deformType_ModifierKeys,
     setDeformTypeTo)
 
+registerKeyBind(options.set_tangent_method_Key,
+    options.set_tangent_method_ModifierKeys,
+    function() setMethod("tangent") end)
+
+registerKeyBind(options.set_slope_method_Key,
+    options.set_slope_method_ModifierKeys,
+    function() setMethod("slope") end)
+
+registerKeyBind(options.set_Flatten_mode_Key,
+    options.set_Flatten_mode_ModifierKeys,
+    function() setDeformTypeTo(EDeformType.Flatten) end)
+
+registerKeyBind(options.set_FlattenSubtractOnly_mode_Key,
+    options.set_FlattenSubtractOnly_mode_ModifierKeys,
+    function() setDeformTypeTo(EDeformType.FlattenSubtractOnly) end)
+
+registerKeyBind(options.increase_BaseBrushDeformationScale_Key,
+    options.increase_BaseBrushDeformationScale_ModifierKeys,
+    function()
+        local terrainTool = getTerrainTool()
+        terrainTool.BaseBrushDeformationScale = math.min(
+            terrainTool.BaseBrushDeformationScale + options.BaseBrushDeformationScale_step,
+            options.BaseBrushDeformationScale_max)
+    end)
+
+registerKeyBind(options.decrease_BaseBrushDeformationScale_Key,
+    options.decrease_BaseBrushDeformationScale_ModifierKeys,
+    function()
+        local terrainTool = getTerrainTool()
+        terrainTool.BaseBrushDeformationScale = math.max(
+            terrainTool.BaseBrushDeformationScale - options.BaseBrushDeformationScale_step,
+            options.BaseBrushDeformationScale_min)
+    end)
+
+---@param fullCommand string
+---@param parameters table
+---@param outputDevice FOutputDevice
+---@return boolean
+RegisterConsoleCommandHandler("slope_angle", function(fullCommand, parameters, outputDevice)
+    if not checkIfPropertyExists("SLOPE_ANGLE", outputDevice) then
+        return true
+    end
+
+    local helpMsg =
+        "Usage: slope_angle <angle in degrees (-360 to 360)>\n" ..
+        "Examples: slope_angle 45"
+
+    if #parameters < 1 then
+        outputDevice:Log(helpMsg)
+        return true
+    end
+
+    local angle = tonumber(parameters[1])
+    if angle == nil then
+        outputDevice:Log(helpMsg)
+        return true
+    end
+    Methods[Method].params.SLOPE_ANGLE = angle
+
+    local msg = format("Set slope angle: %d°.", Methods[Method].params.SLOPE_ANGLE)
+    log.info(msg)
+    outputDevice:Log(msg)
+
+    Methods[Method].writeParamsFile()
+
+    return true
+end)
+
 ---@param fullCommand string
 ---@param parameters table
 ---@param outputDevice FOutputDevice
 ---@return boolean
 RegisterConsoleCommandHandler("altitude", function(fullCommand, parameters, outputDevice)
+    if not checkIfPropertyExists("CUSTOM_ALTITUDE", outputDevice) then
+        return true
+    end
+
     local helpMsg =
         "Usage: altitude <altitude (number)>\n" ..
         "Examples: altitude 121000"
 
     if #parameters < 1 then
         outputDevice:Log(helpMsg)
-        CustomAltitude = nil
-        local msg = string.format("Unfreeze altitude.")
+        Methods[Method].params.CUSTOM_ALTITUDE = inf
+        local msg = format("Unfreeze altitude.")
         log.info(msg)
         outputDevice:Log(msg)
         return true
@@ -469,11 +543,13 @@ RegisterConsoleCommandHandler("altitude", function(fullCommand, parameters, outp
         outputDevice:Log(helpMsg)
         return true
     end
-    CustomAltitude = altitude
+    Methods[Method].params.CUSTOM_ALTITUDE = altitude
 
-    local msg = string.format("Set altitude: %s.", CustomAltitude)
+    local msg = format("Set altitude: %s.", Methods[Method].params.CUSTOM_ALTITUDE)
     log.info(msg)
     outputDevice:Log(msg)
+
+    Methods[Method].writeParamsFile()
 
     return true
 end)
@@ -483,6 +559,10 @@ end)
 ---@param outputDevice FOutputDevice
 ---@return boolean
 RegisterConsoleCommandHandler("alt", function(fullCommand, parameters, outputDevice)
+    if not checkIfPropertyExists("CUSTOM_ALTITUDE", outputDevice) then
+        return true
+    end
+
     local helpMsg =
         "Set altitude to a predefined value in options.lua file.\n" ..
         "Usage: alt <name>\n" ..
@@ -490,8 +570,8 @@ RegisterConsoleCommandHandler("alt", function(fullCommand, parameters, outputDev
 
     if #parameters < 1 then
         outputDevice:Log(helpMsg)
-        CustomAltitude = nil
-        local msg = string.format("Unfreeze altitude.")
+        Methods[Method].params.CUSTOM_ALTITUDE = inf
+        local msg = format("Unfreeze altitude.")
         log.info(msg)
         outputDevice:Log(msg)
         return true
@@ -500,15 +580,17 @@ RegisterConsoleCommandHandler("alt", function(fullCommand, parameters, outputDev
     local name = table.concat(parameters, " ")
     local altitude = tonumber(options.altitudes_userList[name])
     if type(altitude) ~= "number" then
-        outputDevice:Log(string.format("Predefined altitude %q not found or not valid."), name)
+        outputDevice:Log(format("Predefined altitude %q not found or not valid."), name)
         return true
     end
 
-    CustomAltitude = altitude
+    Methods[Method].params.CUSTOM_ALTITUDE = altitude
 
-    local msg = string.format("Set altitude %q: %s.", name, CustomAltitude)
+    local msg = format("Set altitude %q: %s.", name, Methods[Method].params.CUSTOM_ALTITUDE)
     log.info(msg)
     outputDevice:Log(msg)
+
+    Methods[Method].writeParamsFile()
 
     return true
 end)
@@ -527,13 +609,13 @@ RegisterConsoleCommandHandler("get_altitude", function(fullCommand, parameters, 
     end
     local result = playerController:GetHitResultUnderCursorForObjects({ 6 }, false, hitResult)
 
-    local hitActor = GetActorFromHitResult(hitResult)
+    local hitActor = func.getActorFromHitResult(hitResult)
     if not result or not hitActor:IsA("/Script/Astro.SolarBody") then
         outputDevice:Log("Cannot get altitude.")
         return true
     end
 
-    local msg = string.format("Altitude: %.16g", getVectorLen(hitResult.Location))
+    local msg = format("Altitude: %.16g", getVectorLen(hitResult.Location))
     outputDevice:Log(msg)
     log.info(msg)
 
@@ -545,10 +627,15 @@ end)
 ---@param outputDevice FOutputDevice
 ---@return boolean
 RegisterConsoleCommandHandler("altitude_step", function(fullCommand, parameters, outputDevice)
+    if not checkIfPropertyExists("ALTITUDE_STEP", outputDevice) then
+        return true
+    end
+
+    Methods[Method].writeParamsFile()
     local helpMsg =
         "Usage: altitude_step <step>\n" ..
         "Example: altitude_step 100\n" ..
-        string.format("Current altitude step: %.16g", AltitudeStep)
+        format("Current altitude step: %.16g", Methods[Method].params.ALTITUDE_STEP)
 
     if #parameters < 1 then
         outputDevice:Log(helpMsg)
@@ -560,12 +647,13 @@ RegisterConsoleCommandHandler("altitude_step", function(fullCommand, parameters,
         outputDevice:Log(helpMsg)
         return true
     end
-    AltitudeStep = step
+    Methods[Method].params.ALTITUDE_STEP = step
 
-
-    local msg = string.format("Set altitude step: %.16g", AltitudeStep)
+    local msg = format("Set altitude step: %.16g", Methods[Method].params.ALTITUDE_STEP)
     log.info(msg)
     outputDevice:Log(msg)
+
+    Methods[Method].writeParamsFile()
 
     return true
 end)
@@ -583,7 +671,7 @@ RegisterConsoleCommandHandler("ttmod", function(fullCommand, parameters, outputD
 
     if #parameters < 1 then
         toggle_handleTerrainTool()
-        outputDevice:Log(string.format(fmt, getStatus()))
+        outputDevice:Log(format(fmt, getStatus()))
         return true
     end
 
@@ -600,7 +688,7 @@ RegisterConsoleCommandHandler("ttmod", function(fullCommand, parameters, outputD
     end
 
     -- show status
-    local msg = string.format(fmt, getStatus())
+    local msg = format(fmt, getStatus())
     log.info(msg)
     outputDevice:Log(msg)
 
@@ -612,9 +700,6 @@ end)
 ---@param outputDevice FOutputDevice
 ---@return boolean
 RegisterConsoleCommandHandler("deform_type", function(fullCommand, parameters, outputDevice)
-    local deformTool = FindFirstOf("SmallDeform_TERRAIN_EXPERIMENTAL_C")
-    ---@cast deformTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
-
     local values = [[
     Subtract = 0
     Add = 1
@@ -648,8 +733,70 @@ RegisterConsoleCommandHandler("deform_type", function(fullCommand, parameters, o
         return true
     end
 
-    deformTool.Operation = deformType
-    outputDevice:Log(string.format("DeformType is set to %d.", deformType))
+    outputDevice:Log(format("DeformType is set to %d.", deformType))
+    setDeformTypeTo(deformType)
+
+    return true
+end)
+
+---@param fullCommand string
+---@param parameters table
+---@param outputDevice FOutputDevice
+---@return boolean
+RegisterConsoleCommandHandler("method", function(fullCommand, parameters, outputDevice)
+    local helpMsg =
+        "You can choose a method by this index or name.\n" ..
+        "Index 0 corresponds to the method in defined in options.lua.\n" ..
+        "Available methods:\n"
+
+    helpMsg = helpMsg .. format("index: 0 name: %s\n", options.method)
+
+    for index, name in ipairs(MethodNamesList) do
+        helpMsg = helpMsg .. format("index: %d name: %s\n", index, name)
+    end
+
+    if #parameters < 1 then
+        outputDevice:Log(helpMsg)
+        return true
+    end
+
+    setMethod(parameters[1])
+
+    outputDevice:Log(format("Current method is set to %s.", Method))
+
+    return true
+end)
+
+---@param fullCommand string
+---@param parameters table
+---@param outputDevice FOutputDevice
+---@return boolean
+RegisterConsoleCommandHandler("look", function(fullCommand, parameters, outputDevice)
+    local helpMsg =
+        "Look in the north or east direction." ..
+        "Usage: look {n | e}\n" ..
+        "Example: look n"
+
+    if #parameters < 1 then
+        outputDevice:Log(helpMsg)
+        return true
+    end
+
+    local player = UEHelpers:GetPlayer()
+    local uePlayerLoc = player:K2_GetActorLocation()
+    local playerLoc = vec3.new(uePlayerLoc.X, uePlayerLoc.Y, uePlayerLoc.Z)
+
+    local direction = vec3.cross(vec3.new(1, 0, 0), playerLoc) -- East
+
+    if parameters[1] ~= "e" then
+        direction = vec3.cross(playerLoc, direction) -- North
+    end
+
+    local rot = vec3.findLookAtRotation(playerLoc, direction)
+
+    player:K2_SetActorRotation(rot, false)
+
+    outputDevice:Log(format("Current method is set to %s.", Method))
 
     return true
 end)
