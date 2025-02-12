@@ -26,7 +26,6 @@ local DeformType = {
     Count = 12,
 }
 
-local RootComponent -- 0x160
 local SlopeDirection = { X = math.huge, Y = math.huge, Z = math.huge } ---@type FVector
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
 
@@ -58,11 +57,10 @@ local function setSlopeDirectionFromCamera(reversed)
     end
 end
 
----@param hitResult FHitResult
-local function setSlopeDirectionFromSlope(hitResult)
+---@param location vec3
+---@param normal vec3
+local function setSlopeDirectionFromSlope(location, normal)
     log.debug("Set slope direction from slope.")
-    local location = vec3.new(hitResult.Location.X, hitResult.Location.Y, hitResult.Location.Z)
-    local normal = vec3.new(hitResult.Normal.X, hitResult.Normal.Y, hitResult.Normal.Z)
     local direction = vec3.cross(location, normal)
 
     SlopeDirection = { X = direction.x, Y = direction.y, Z = direction.z }
@@ -86,7 +84,7 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     startedInteraction = startedInteraction:get()
 
     -- ignored
-    if startedInteraction == false and SlopeDirection == inf then return end
+    if startedInteraction == false and SlopeDirection.X == inf then return end
 
     toolHit = toolHit:get()
 
@@ -107,11 +105,8 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
             log.warn("PlayerController invalid.")
         end
 
-        local homeBody = playerController.HomeBody -- 0xC98
-        RootComponent = homeBody.RootComponent     -- 0x160
-
         -- Planet center is (0, 0, 0) for SYLVA.
-        PlanetCenter = RootComponent.RelativeLocation
+        PlanetCenter = playerController:GetLocalSolarBody():GetCenter()
 
         -- check if the hit actor is a SolarBody (planet)
         local actor = toolHit.Actor:Get() ---@diagnostic disable-line: undefined-field
@@ -149,7 +144,16 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         elseif keyName_fromCamera_reversed and playerController:IsInputKeyDown({ KeyName = FName(keyName_fromCamera_reversed) }) then
             setSlopeDirectionFromCamera(true)
         elseif keyName_fromSlope and playerController:IsInputKeyDown({ KeyName = FName(keyName_fromSlope) }) then
-            setSlopeDirectionFromSlope(toolHit)
+            setSlopeDirectionFromSlope(
+                vec3.new(
+                    toolHit.Location.X - PlanetCenter.X,
+                    toolHit.Location.Y - PlanetCenter.Y,
+                    toolHit.Location.Z - PlanetCenter.Z),
+                vec3.new(
+                    toolHit.Normal.X,
+                    toolHit.Normal.Y,
+                    toolHit.Normal.Z)
+            )
         else
             if keyName_fromCamera or keyName_fromCamera_reversed or keyName_fromSlope then
                 SlopeDirection = { X = inf, Y = inf, Z = inf }
@@ -173,13 +177,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         X = u.X / altitude,
         Y = u.Y / altitude,
         Z = u.Z / altitude
-    }
-
-    -- add planet center location to the vector
-    local u_unit_absolute = {
-        X = u_unit.X + PlanetCenter.X,
-        Y = u_unit.Y + PlanetCenter.Y,
-        Z = u_unit.Z + PlanetCenter.Z
     }
 
     local v = vec3.rotate(vec3.new(u_unit.X, u_unit.Y, u_unit.Z), rad(params.SLOPE_ANGLE),

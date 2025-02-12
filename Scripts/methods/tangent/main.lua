@@ -29,8 +29,6 @@ local DeformType = {
 }
 
 local RoundedAltitude = 0
-local RootComponent -- 0x160
-
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
 
 local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
@@ -68,11 +66,8 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
             log.warn("PlayerController invalid.")
         end
 
-        local homeBody = playerController.HomeBody -- 0xC98
-        RootComponent = homeBody.RootComponent     -- 0x160
-
         -- Planet center is (0, 0, 0) for SYLVA.
-        PlanetCenter = RootComponent.RelativeLocation
+        PlanetCenter = playerController:GetLocalSolarBody():GetCenter()
 
         -- check if the hit actor is a SolarBody (planet)
         local actor = toolHit.Actor:Get() ---@diagnostic disable-line: undefined-field
@@ -108,8 +103,14 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         else
             assert(type(params.ALTITUDE_STEP) == "number", "ALTITUDE_STEP is not a number.")
             assert(params.ALTITUDE_STEP ~= huge, "ALTITUDE_STEP is not defined.")
-            RoundedAltitude = func.roundToBase(func.getVectorLen(location), params.ALTITUDE_STEP)
-            log.info("Rounded altitude is %.16g.", RoundedAltitude)
+
+            RoundedAltitude = func.roundToBase(func.getVectorLen({
+                X = location.X - PlanetCenter.X,
+                Y = location.Y - PlanetCenter.Y,
+                Z = location.Z - PlanetCenter.Z
+            }), params.ALTITUDE_STEP)
+
+            log.debug("Rounded altitude is %.16g.", RoundedAltitude)
         end
     end
 
