@@ -26,7 +26,8 @@ local DeformType = {
     Count = 12,
 }
 
-local SlopeDirection = { X = math.huge, Y = math.huge, Z = math.huge } ---@type FVector
+local huge = math.huge
+local SlopeDirection = vec3(huge, huge, huge)
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
 
 ---https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/Kismet/UKismetMathLibrary/FindLookAtRotation
@@ -48,12 +49,12 @@ local function setSlopeDirectionFromCamera(reversed)
     local pc = UEHelpers.GetPlayerController()
     local cam = pc:GetViewTarget()
     local right = cam:GetActorRightVector()
-    local v = vec3.normalize(vec3.new(right.X, right.Y, right.Z))
-    right = { X = v.x, Y = v.y, Z = v.z }
+    local right_unit = vec3.normalize(vec3.new(right.X, right.Y, right.Z))
+
     if reversed then
-        SlopeDirection = { X = -right.X, Y = -right.Y, Z = -right.Z }
+        SlopeDirection = -right_unit
     else
-        SlopeDirection = right
+        SlopeDirection = right_unit
     end
 end
 
@@ -61,9 +62,7 @@ end
 ---@param normal vec3
 local function setSlopeDirectionFromSlope(location, normal)
     log.debug("Set slope direction from slope.")
-    local direction = vec3.cross(location, normal)
-
-    SlopeDirection = { X = direction.x, Y = direction.y, Z = direction.z }
+    SlopeDirection = vec3.cross(location, normal)
 end
 
 local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
@@ -84,7 +83,7 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     startedInteraction = startedInteraction:get()
 
     -- ignored
-    if startedInteraction == false and SlopeDirection.X == inf then return end
+    if startedInteraction == false and SlopeDirection.x == huge then return end
 
     toolHit = toolHit:get()
 
@@ -99,7 +98,7 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
 
     local location = toolHit.Location
 
-    if startedInteraction then
+    if startedInteraction == true then
         local playerController = UEHelpers:GetPlayerController() ---@cast playerController APlayControllerInstance_C
         if not playerController:IsValid() then
             log.warn("PlayerController invalid.")
@@ -156,7 +155,7 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
             )
         else
             if keyName_fromCamera or keyName_fromCamera_reversed or keyName_fromSlope then
-                SlopeDirection = { X = inf, Y = inf, Z = inf }
+                SlopeDirection = vec3.new(huge, huge, huge)
                 log.debug("Slope is not modified.")
                 return
             end
@@ -179,8 +178,7 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         Z = u.Z / altitude
     }
 
-    local v = vec3.rotate(vec3.new(u_unit.X, u_unit.Y, u_unit.Z), rad(params.SLOPE_ANGLE),
-        vec3.new(SlopeDirection.X, SlopeDirection.Y, SlopeDirection.Z))
+    local v = vec3.rotate(vec3.new(u_unit.X, u_unit.Y, u_unit.Z), rad(params.SLOPE_ANGLE), SlopeDirection)
 
     u_unit = { X = v.x, Y = v.y, Z = v.z }
 
