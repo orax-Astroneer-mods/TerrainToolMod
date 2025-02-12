@@ -3,6 +3,7 @@ local func = require("func")
 
 local log = Log
 local sqrt = math.sqrt
+local format = string.format
 
 local huge = math.huge -- inf
 
@@ -180,13 +181,13 @@ end
 local function writeParamsFile()
     local file = io.open(paramsFile, "w+")
 
-    assert(file, string.format("\nUnable to open the params file %q.", paramsFile))
+    assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
     -- defaults
     if params.ALTITUDE_STEP == nil then params.ALTITUDE_STEP = 50 end
     if params.CUSTOM_ALTITUDE == nil then params.CUSTOM_ALTITUDE = huge end
 
-    file:write(string.format(
+    file:write(format(
         [[return {
 ALTITUDE_STEP=%.16g,
 CUSTOM_ALTITUDE=%.16g
@@ -197,9 +198,14 @@ CUSTOM_ALTITUDE=%.16g
     file:close()
 end
 
+local function getInfo()
+    return format("Altitude step: %.16g. Custom altitude: %.16g.", params.ALTITUDE_STEP, params.CUSTOM_ALTITUDE)
+end
+
 ---@type Method__tangent
 return {
     params = params,
     handleTerrainTool_hook = handleTerrainTool_hook,
-    writeParamsFile = writeParamsFile
+    writeParamsFile = writeParamsFile,
+    getInfo = getInfo
 }

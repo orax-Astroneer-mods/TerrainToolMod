@@ -122,6 +122,7 @@ end
 --#endregion hooks
 
 ---Retrieve functions from method files.
+---@return Method[], table
 local function loadAllMethods()
     ---@type string[]
     local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\", "main.lua")
@@ -180,7 +181,7 @@ local function setMethod(method)
         end
     end
 
-    log.info(format("Set method: %q.", newMethod))
+    log.info(format("Set method: %q. %s", newMethod, Methods[newMethod].getInfo()))
 
     Method = newMethod
 
@@ -327,7 +328,9 @@ local function enable_handleTerrainTool(silent)
         HandleTerrainToolStatus = true
     end
 
-    if not silent then log.info(format("HandleTerrainTool is ENABLED. Method: %q.", Method)) end
+    if not silent then
+        log.info(format("HandleTerrainTool is ENABLED. Method: %q. %s", Method, Methods[Method].getInfo()))
+    end
 end
 
 local function disable_handleTerrainTool()
@@ -796,7 +799,7 @@ RegisterConsoleCommandHandler("look", function(fullCommand, parameters, outputDe
 
     player:K2_SetActorRotation(rot, false)
 
-    outputDevice:Log(format("Current method is set to %s.", Method))
-
     return true
 end)
+
+enable_handleTerrainTool()

@@ -4,6 +4,7 @@ local func = require("func")
 local log = Log
 local vec3 = Vec3
 local sqrt, rad = math.sqrt, math.rad
+local format = string.format
 
 -- load PARAMS global table
 local paramsFile = func.getParamsFile()
@@ -209,12 +210,12 @@ end
 local function writeParamsFile()
     local file = io.open(paramsFile, "w+")
 
-    assert(file, string.format("\nUnable to open the params file %q.", paramsFile))
+    assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
     -- defaults
     if params.SLOPE_ANGLE == nil then params.SLOPE_ANGLE = 45 end
 
-    file:write(string.format(
+    file:write(format(
         [[return {
 SLOPE_ANGLE=%.16g
 }]],
@@ -223,9 +224,15 @@ SLOPE_ANGLE=%.16g
     file:close()
 end
 
+---@return string
+local function getInfo()
+    return format("Slope angle: %.16g.", params.SLOPE_ANGLE)
+end
+
 ---@type Method__slop
 return {
     params = params,
     handleTerrainTool_hook = handleTerrainTool_hook,
     writeParamsFile = writeParamsFile,
+    getInfo = getInfo
 }
