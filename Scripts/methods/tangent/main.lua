@@ -77,7 +77,11 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
             ---@diagnostic disable-next-line: missing-fields
             local hitResult = {} ---@type FHitResult
 
-            --[[ Why 6? It's (maybe) the ObjectType for the terrain. You can do tests with this code:
+            --[[ How to get Object types?
+            Create a GetHitResultUnderCursorForObjects node in Blueprint. Make an array on "Object Types".
+            List: WorldStatic, WorldDynamic, Pawn, PhysicsBody, Vehicle, Destructible, TerrainObj, BuriedObj, HazardObj, InteractObj, CameraObj.
+
+            Another solution is to do tests with this code:
                 local hitResult = {}
                 local playerController = UEHelpers:GetPlayerController()
                 for i = 1, 33, 1 do
@@ -85,7 +89,9 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
                     local hitActor = GetActorFromHitResult(hitResult)
                     print(i, hitActor:GetFullName())
                 end --]]
-            local result = playerController:GetHitResultUnderCursorForObjects({ 6 }, false, hitResult)
+
+            local terrainObj = 6
+            local result = playerController:GetHitResultUnderCursorForObjects({ terrainObj }, false, hitResult)
             if result then
                 local hitActor = func.getActorFromHitResult(hitResult)
                 if not hitActor:IsValid() or not hitActor:IsA("/Script/Astro.SolarBody") then
