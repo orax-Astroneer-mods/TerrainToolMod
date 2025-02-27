@@ -1,0 +1,1 @@
+---@class (exact) Method__Smoothen: Method
