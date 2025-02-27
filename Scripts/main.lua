@@ -169,6 +169,7 @@ local function setMethod(method)
 
     -- if same method; no change
     if newMethod == Method then
+        log.debug("The newMethod == Method. No change.")
         return method
     end
 
@@ -368,6 +369,7 @@ local function setDeformTypeTo(deformType, deformTool)
     deformType = math.max(0, deformType)
 
     deformTool.Operation = deformType
+    deformTool.TerrainBrush:ChangeBrushOperation(deformType)
     log.info("DeformType is set to %s (%d).", EDeformTypeName[deformType + 1], deformType)
 end
 
