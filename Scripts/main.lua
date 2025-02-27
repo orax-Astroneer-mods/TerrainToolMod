@@ -461,6 +461,10 @@ registerKeyBind(options.set_slope_method_Key,
     options.set_slope_method_ModifierKeys,
     function() setMethod("slope") end)
 
+registerKeyBind(options.set_smoothen_method_Key,
+    options.set_smoothen_method_ModifierKeys,
+    function() setMethod("smoothen") end)
+
 registerKeyBind(options.set_Flatten_mode_Key,
     options.set_Flatten_mode_ModifierKeys,
     function() setDeformTypeTo(EDeformType.Flatten) end)

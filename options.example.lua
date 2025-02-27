@@ -34,7 +34,7 @@ LOG_LEVEL = "INFO" ---@type _LogLevel
 MIN_LEVEL_OF_FATAL_ERROR = "ERROR" ---@type _LogLevel
 
 local options = {
-    method = "tangent", -- tangent | slope
+    method = "tangent", -- tangent | slope | smoothen
 
     -- Predefined altitudes.
     altitudes_userList = {
@@ -60,6 +60,10 @@ local options = {
     -- Keybinds to turn on the "slope" method. It is used with the Flatten mode.
     set_slope_method_Key = Key.TWO,
     set_slope_method_ModifierKeys = {},
+
+    -- Keybinds to turn on the "slope" method. It is used with the Smoothen mode.
+    set_smoothen_method_Key = Key.THREE,
+    set_smoothen_method_ModifierKeys = {},
 
     -- Brush scale/size
     -- Default size (without augment) is 350.
