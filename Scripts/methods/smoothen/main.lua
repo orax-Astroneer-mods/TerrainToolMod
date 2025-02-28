@@ -39,7 +39,7 @@ local function perpendicular(a)
     if a.x ~= 0 or a.y ~= 0 then
         return vec3.new(-a.y, a.x, 0)
     else
-        return vec3.new(a.z, 0, a.z)
+        return vec3.new(1, 0, 0)
     end
 end
 
