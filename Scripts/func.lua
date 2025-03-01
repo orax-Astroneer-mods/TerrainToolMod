@@ -134,4 +134,41 @@ function m.getActorFromHitResult(HitResult)
     end
 end
 
+function m.FVector(x, y, z)
+    return { X = x, Y = y, Z = z }
+end
+
+function m.fvectorToUserData(v)
+    return { X = v.X, Y = v.Y, Z = v.Z }
+end
+
+function m.vec3ToFVector(v)
+    return { X = v.x, Y = v.y, Z = v.z }
+end
+
+---@param world UWorld
+---@param staticMeshActorClass UClass
+---@param mesh UStaticMesh
+---@param material UMaterialInterface
+---@param location FVector
+---@param rotation FRotator?
+---@param scale FVector?
+---@param color FLinearColor?
+function m.spawnDebugObject(world, staticMeshActorClass, mesh, material, location, rotation, scale, color)
+    rotation = rotation or { Pitch = 0, Roll = 0, Yaw = 0 }
+    scale = scale or { X = 1, Y = 1, Z = 1 }
+    color = color or { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
+
+    ---@diagnostic disable-next-line: undefined-field
+    local staticMeshActor = world:SpawnActor(staticMeshActorClass, m.fvectorToUserData(location),
+        rotation) ---@cast staticMeshActor AStaticMeshActor
+    assert(staticMeshActor:IsValid())
+
+    staticMeshActor:SetActorScale3D(scale)
+    staticMeshActor.StaticMeshComponent.StaticMesh = mesh
+
+    local matInstance = staticMeshActor.StaticMeshComponent:CreateDynamicMaterialInstance(0, material, FName(0))
+    matInstance:SetVectorParameterValue(FName("Color"), color)
+end
+
 return m

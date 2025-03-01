@@ -3,18 +3,34 @@ local func = require("func")
 
 local log = Log
 local vec3 = Vec3
-local sqrt, rad = math.sqrt, math.rad
 local insert = table.insert
 local format = string.format
 
+---@class Debug
+---@field staticMeshActorClassShortName string
+---@field staticMeshActorClassName string
+---@field staticMeshActorClass UClass?
+---@field material UMaterialInterface?
+---@field mesh UStaticMesh?
+---@field scale FVector
+local debug = {
+    staticMeshActorClassShortName = "StaticMeshActor",
+    staticMeshActorClassName = "/Script/Engine.StaticMeshActor",
+    staticMeshActorClass = nil,
+    material = nil,
+    mesh = nil,
+    scale = { X = 0.1, Y = 0.1, Z = 0.1 }
+}
+
 -- load PARAMS global table
 local paramsFile = func.getParamsFile()
-local params = func.loadParamsFile(paramsFile)
-
+local params = func.loadParamsFile(paramsFile) ---@type Method__Smoothen__PARAMS
 
 local sys = UEHelpers.GetKismetSystemLibrary()
 local LineTraceSingleForObjects = sys.LineTraceSingleForObjects
-local world = CreateInvalidObject()
+local world = UEHelpers:GetWorld()
+
+local pi2 = math.pi * 2
 
 local DeformType = {
     Subtract = 0,
@@ -112,77 +128,78 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         end
     end
 
-    -- local dbgcube = startedInteraction
-    -- local cubeactor, cuberot, cubeloc, cubeclass
-
-    local radiusScale = 1
-    local startOffset = 100
+    -- for debugging
+    local dbgObject = params.DEBUG_OBJECTS and startedInteraction
 
     local Location = vec3.new(toolHit.Location.X, toolHit.Location.Y, toolHit.Location.Z)
     local Normal = vec3.new(toolHit.Normal.X, toolHit.Normal.Y, toolHit.Normal.Z)
     local direction = vec3.new(-Normal.x, -Normal.y, -Normal.z)
     local perp = vec3.normalize(perpendicular(Normal))
 
-    perp = vec3.scale(perp, deformTool.BaseBrushIndicatorScale * deformTool.BaseBrushDeformationScale * radiusScale)
-
     local normals = {} ---@type FVector[]
     local locations = {} ---@type FVector[]
 
     insert(normals, toolHit.Normal)
 
-    local start = Location + vec3.scale(Normal, startOffset)
-    local P = vec3.add(start, perp)
-    local startP = P - start
-
-    -- Cube (debug)
-    -- if dbgcube then
-    --     local cubes = FindAllOf("Cube_BP_C") ---@type AActor[]?
-    --     if cubes then
-    --         for _, value in ipairs(cubes) do
-    --             value:K2_DestroyActor()
-    --         end
-    --     end
-    --     local cubeclassName = "/Game/Mods/orax/CubeMod/Cube_BP.Cube_BP_C"
-    --     cubeclass = StaticFindObject(cubeclassName)
-    --     assert(cubeclass:IsValid())
-    --     cubeloc = { X = toolHit.Location.X, Y = toolHit.Location.Y, Z = toolHit.Location.Z } ---@type FVector
-    --     cuberot = { Pitch = 0, Roll = 0, Yaw = 0 } ---@type FRotator
-    --     ---@diagnostic disable-next-line: undefined-field
-    --     cubeactor = world:SpawnActor(cubeclass, cubeloc, cuberot) ---@type AActor
-    --     cubeactor:SetActorScale3D({ X = 0.2, Y = 0.2, Z = 0.2 })
-    --     cubeactor:SetActorEnableCollision(false)
-    -- end
-
-    local numberOfHits = 16
-    local numberOfCircles = 2
-    local lineTraceLength = startOffset + 300
-    local numberOfHitsModifier = 0
-
-    local color = { A = 0, B = 0, G = 0, R = 0 }
-
-    for j = 1, numberOfCircles, 2 do
-        numberOfHits = numberOfHits + numberOfHitsModifier
-        if numberOfHits <= 0 then
-            break
+    if dbgObject then
+        local dbgObjectsInst = FindAllOf(debug.staticMeshActorClassShortName) ---@type AActor[]?
+        if dbgObjectsInst then
+            for _, value in ipairs(dbgObjectsInst) do
+                value:K2_DestroyActor()
+            end
         end
 
-        local stepAngle = 360 / numberOfHits
+        func.spawnDebugObject(world, debug.staticMeshActorClass, debug.mesh, debug.material, toolHit.Location,
+            nil, debug.scale, { R = 50, G = 0, B = 0, A = 1 })
+    end
+
+    local start = Location
+    local color = { R = 0, G = 0, B = 0, A = 0 }
+    local brushScale = deformTool.BaseBrushIndicatorScale * deformTool.BaseBrushDeformationScale
+
+    for _, circle in ipairs(params.CIRCLES) do
+        local numberOfHits = circle.HITS
+        local stepAngle = pi2 / numberOfHits
+
         for i = 0, numberOfHits - 1, 1 do
-            P = vec3.add(start, vec3.scale(perp, 1 / j))
-            startP = P - start
+            -- deformTool.BaseBrush... works only in Adventure mode.
+            local scaledPerp = vec3.scale(perp, brushScale * circle.RADIUS)
+
+            P = vec3.add(start, scaledPerp)
+            local startP = P - start
 
             local angle = i * stepAngle
-            local r = vec3.rotate(startP, math.rad(angle), Normal)
-            r = vec3.add(start, r)
-            local endPoint = vec3.add(vec3.scale(vec3.normalize(direction), lineTraceLength), r)
+            local r = vec3.rotate(startP, angle, Normal) + start
 
-            -- if dbgcube then
-            --     cubeloc = { X = r.x, Y = r.y, Z = r.z } ---@type FVector
-            --     ---@diagnostic disable-next-line: undefined-field
-            --     cubeactor = world:SpawnActor(cubeclass, cubeloc, cuberot) ---@type AActor
-            --     cubeactor:SetActorScale3D({ X = 0.1, Y = 0.1, Z = 0.1 })
-            --     cubeactor:SetActorEnableCollision(false)
-            -- end
+            -- determine max offset
+            local maxOffset = params.MAX_OFFSET
+            local endPoint = r + vec3.scale(Normal, maxOffset) ---@type vec3
+
+            ---@diagnostic disable-next-line: missing-fields
+            local hit = {} ---@type FHitResult
+            LineTraceSingleForObjects(sys,
+                world, { X = r.x, Y = r.y, Z = r.z },
+                { X = endPoint.x, Y = endPoint.y, Z = endPoint.z }, { 6 }, false, {}, 0,
+                hit, true, color, color, 0)
+
+            -- If there is a hit, set the max offset to the distance of the hit.
+            if hit.Distance > 0 then
+                maxOffset = hit.Distance
+            end
+
+            r = r + vec3.scale(Normal, maxOffset)
+            local lineTraceLength = maxOffset + params.TRACE_LENGTH
+            endPoint = vec3.add(vec3.scale(vec3.normalize(direction), lineTraceLength), r)
+
+            if dbgObject then
+                local c = { R = 50, G = 0, B = 50, A = 1.0 } ---@type FLinearColor
+                if hit.Distance ~= 0 then
+                    c = { R = 0, G = 50, B = 0, A = 1.0 }
+                end
+                func.spawnDebugObject(world, debug.staticMeshActorClass, debug.mesh, debug.material,
+                    { X = r.x, Y = r.y, Z = r.z },
+                    nil, debug.scale, c)
+            end
 
             ---@diagnostic disable-next-line: missing-fields
             local outHit = {} ---@type FHitResult
@@ -191,13 +208,11 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
                 { X = endPoint.x, Y = endPoint.y, Z = endPoint.z }, { 6 }, false, {}, 0,
                 outHit, true, color, color, 0)
 
-            -- if dbgcube then
-            --     cubeloc = { X = outHit.Location.X, Y = outHit.Location.Y, Z = outHit.Location.Z } ---@type FVector
-            --     ---@diagnostic disable-next-line: undefined-field
-            --     cubeactor = world:SpawnActor(cubeclass, cubeloc, cuberot) ---@type AActor
-            --     cubeactor:SetActorScale3D({ X = 0.2, Y = 0.2, Z = 0.2 })
-            --     cubeactor:SetActorEnableCollision(false)
-            -- end
+            if dbgObject then
+                func.spawnDebugObject(world, debug.staticMeshActorClass, debug.mesh, debug.material,
+                    outHit.Location,
+                    nil, debug.scale, { R = 0, G = 0, B = 50, A = 1.0 })
+            end
 
             if outHit.Normal.X ~= 0 or outHit.Normal.Y ~= 0 or outHit.Normal.Z ~= 0 then
                 insert(normals, outHit.Normal)
@@ -208,76 +223,99 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         end
     end
 
-    local x_norm, y_norm, z_norm = 0, 0, 0
-    for _, normal in ipairs(normals) do
-        x_norm = x_norm + normal.X
-        y_norm = y_norm + normal.Y
-        z_norm = z_norm + normal.Z
-    end
-    x_norm = x_norm / #normals
-    y_norm = y_norm / #normals
-    z_norm = z_norm / #normals
-
-    local x_loc, y_loc, z_loc = 0, 0, 0
-    for _, loc in ipairs(locations) do
-        x_loc = x_loc + loc.X
-        y_loc = y_loc + loc.Y
-        z_loc = z_loc + loc.Z
-    end
-    x_loc = x_loc / #locations
-    y_loc = y_loc / #locations
-    z_loc = z_loc / #locations
-
-    -- if dbgcube then
-    --     ---@diagnostic disable-next-line: undefined-field
-    --     cubeactor = world:SpawnActor(cubeclass, { X = x_loc, Y = y_loc, Z = z_loc }, {})
-    --     cubeactor:SetActorScale3D({ X = 0.1, Y = 0.1, Z = 0.1 })
-    --     cubeactor:SetActorEnableCollision(false)
-    --     cuberot = { Pitch = 0, Roll = 0, Yaw = 0 } ---@type FRotator
-    --     for i = 100, 1000, 100 do
-    --         ---@diagnostic disable-next-line: undefined-field
-    --         cubeactor = world:SpawnActor(cubeclass,
-    --             { X = x_loc + x_norm * i, Y = y_loc + y_norm * i, Z = z_loc + z_norm * i },
-    --             cuberot) ---@type AActor
-
-    --         cubeactor:SetActorScale3D({ X = 0.1, Y = 0.1, Z = 0.1 })
-    --         cubeactor:SetActorEnableCollision(false)
-    --     end
-    -- end
-
-    -- -- RepBrushState (0x804)
-    deformTool.RepBrushState.CurrentDeformNormal = { X = x_norm, Y = y_norm, Z = z_norm }
-    deformTool.RepBrushState.CurrentDeformLocation = { X = x_loc, Y = y_loc, Z = z_loc }
-
     ---@diagnostic disable: inject-field
 
-    -- LocalBrushState (0x838)
-    deformTool.LocalBrushStateNormalX = x_norm
-    deformTool.LocalBrushStateNormalY = y_norm
-    deformTool.LocalBrushStateNormalZ = z_norm
-    deformTool.LocalBrushStateLocationX = x_loc
-    deformTool.LocalBrushStateLocationY = y_loc
-    deformTool.LocalBrushStateLocationZ = z_loc
+    if #normals > 0 then
+        local x_norm, y_norm, z_norm = 0, 0, 0
+        for _, normal in ipairs(normals) do
+            x_norm = x_norm + normal.X
+            y_norm = y_norm + normal.Y
+            z_norm = z_norm + normal.Z
+        end
+        x_norm = x_norm / #normals
+        y_norm = y_norm / #normals
+        z_norm = z_norm / #normals
 
-    -- -- DeformActionStartLocation (0x8C0)
-    deformTool.DeformActionStartLocationX = x_loc
-    deformTool.DeformActionStartLocationY = y_loc
-    deformTool.DeformActionStartLocationZ = z_loc
+        -- RepBrushState (0x804)
+        deformTool.RepBrushState.CurrentDeformNormal = { X = x_norm, Y = y_norm, Z = z_norm }
 
-    -- -- DeformActionStartNormal (0x8CC)
-    deformTool.DeformActionStartNormalX = x_norm
-    deformTool.DeformActionStartNormalY = y_norm
-    deformTool.DeformActionStartNormalZ = z_norm
+        -- LocalBrushState (0x838)
+        deformTool.LocalBrushStateNormalX = x_norm
+        deformTool.LocalBrushStateNormalY = y_norm
+        deformTool.LocalBrushStateNormalZ = z_norm
 
-    -- -- DeformLaggedLocation (0x8D8)
-    deformTool.DeformLaggedLocationX = x_loc
-    deformTool.DeformLaggedLocationY = y_loc
-    deformTool.DeformLaggedLocationZ = z_loc
+        -- DeformActionStartNormal (0x8CC)
+        deformTool.DeformActionStartNormalX = x_norm
+        deformTool.DeformActionStartNormalY = y_norm
+        deformTool.DeformActionStartNormalZ = z_norm
 
-    deformTool.HitLocation = { X = x_loc, Y = y_loc, Z = z_loc }
-    deformTool.HitNormal = { X = x_norm, Y = y_norm, Z = z_norm }
+        deformTool.HitNormal = { X = x_norm, Y = y_norm, Z = z_norm }
+    end
+
+    if #locations > 0 then
+        local x_loc, y_loc, z_loc = 0, 0, 0
+        for _, loc in ipairs(locations) do
+            x_loc = x_loc + loc.X
+            y_loc = y_loc + loc.Y
+            z_loc = z_loc + loc.Z
+        end
+        x_loc = x_loc / #locations
+        y_loc = y_loc / #locations
+        z_loc = z_loc / #locations
+
+        -- RepBrushState (0x804)
+        deformTool.RepBrushState.CurrentDeformLocation = { X = x_loc, Y = y_loc, Z = z_loc }
+
+        -- LocalBrushState (0x838)
+        deformTool.LocalBrushStateLocationX = x_loc
+        deformTool.LocalBrushStateLocationY = y_loc
+        deformTool.LocalBrushStateLocationZ = z_loc
+
+        -- DeformActionStartLocation (0x8C0)
+        deformTool.DeformActionStartLocationX = x_loc
+        deformTool.DeformActionStartLocationY = y_loc
+        deformTool.DeformActionStartLocationZ = z_loc
+
+        -- DeformLaggedLocation (0x8D8)
+        deformTool.DeformLaggedLocationX = x_loc
+        deformTool.DeformLaggedLocationY = y_loc
+        deformTool.DeformLaggedLocationZ = z_loc
+
+        deformTool.HitLocation = { X = x_loc, Y = y_loc, Z = z_loc }
+    end
 
     ---@diagnostic enable: inject-field
+
+    if dbgObject then
+        if #normals > 0 and #locations > 0 then
+            local x_loc, y_loc, z_loc = 0, 0, 0
+            for _, loc in ipairs(locations) do
+                x_loc = x_loc + loc.X
+                y_loc = y_loc + loc.Y
+                z_loc = z_loc + loc.Z
+            end
+            x_loc = x_loc / #locations
+            y_loc = y_loc / #locations
+            z_loc = z_loc / #locations
+
+            local x_norm, y_norm, z_norm = 0, 0, 0
+            for _, normal in ipairs(normals) do
+                x_norm = x_norm + normal.X
+                y_norm = y_norm + normal.Y
+                z_norm = z_norm + normal.Z
+            end
+            x_norm = x_norm / #normals
+            y_norm = y_norm / #normals
+            z_norm = z_norm / #normals
+
+            -- new normal
+            for i = 50, 500, 50 do
+                func.spawnDebugObject(world, debug.staticMeshActorClass, debug.mesh, debug.material,
+                    { X = x_loc + x_norm * i, Y = y_loc + y_norm * i, Z = z_loc + z_norm * i },
+                    nil, debug.scale, { R = 1, G = 1, B = 1, A = 0.1 })
+            end
+        end
+    end
 end
 
 local function writeParamsFile()
@@ -296,6 +334,57 @@ end
 local function getInfo()
     return ""
 end
+
+local function init()
+    world = UEHelpers:GetWorld()
+
+    if params.DEBUG_OBJECTS == true then
+        ExecuteInGameThread(function()
+            --[[
+        Open FModel, go in Engine > Content > EngineDebugMaterials
+
+        "/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"
+        "/Engine/EngineDebugMaterials/WireframeMaterial.WireframeMaterial" -- Params: Color (wireframe, emissive).
+        "/Engine/EngineDebugMaterials/DebugMeshMaterial.DebugMeshMaterial" -- Params: Color (emissive).
+        "/Engine/EngineDebugMaterials/DebugEditorMaterial.DebugEditorMaterial" -- Params: Color, Desaturation, Opacity (emissive).
+        "/Engine/EngineDebugMaterials/M_SimpleTranslucent.M_SimpleTranslucent" -- Params: Color (translucent).
+        "/Engine/EngineMaterials/EmissiveTexturedMaterial.EmissiveTexturedMaterial" -- Params: Texture.
+        "/Engine/EngineMaterials/WorldGridMaterial.WorldGridMaterial" -- Params: None.
+        ]]
+            local mat = "/Engine/EngineDebugMaterials/DebugMeshMaterial.DebugMeshMaterial"
+            LoadAsset(mat) ---@diagnostic disable-line: undefined-global
+
+            -- Cone, Cube, Cylinder, Plane, Sphere
+            local mesh = "/Engine/BasicShapes/Sphere.Sphere"
+            LoadAsset(mesh) ---@diagnostic disable-line: undefined-global
+
+            debug.staticMeshActorClass = StaticFindObject(debug.staticMeshActorClassName) ---@diagnostic disable-line: assign-type-mismatch
+            debug.material = StaticFindObject(mat) ---@diagnostic disable-line: assign-type-mismatch
+            debug.mesh = StaticFindObject(mesh) ---@diagnostic disable-line: assign-type-mismatch
+
+            assert(debug.staticMeshActorClass:IsValid())
+            assert(debug.material:IsValid())
+            assert(debug.mesh:IsValid())
+        end)
+    end
+end
+
+RegisterKeyBind(Key.F3, function()
+    local pl = UEHelpers:GetPlayer()
+    local loc = pl:K2_GetActorLocation()
+    func.spawnDebugObject(world, debug.staticMeshActorClass, debug.mesh, debug.material, loc,
+        { Pitch = 0, Roll = 0, Yaw = 0 }, { X = 1, Y = 1, Z = 1 }, { R = 1, G = 0, B = 0, A = 1.0 })
+end)
+
+ExecuteWithDelay(5000, function()
+    ---@param self RemoteUnrealParam
+    ---@param NewPawn RemoteUnrealParam
+    RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
+        init()
+    end)
+end)
+
+init()
 
 ---@type Method__Smoothen
 return {
