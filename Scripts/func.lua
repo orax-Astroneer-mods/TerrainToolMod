@@ -31,7 +31,7 @@ function m.getParamsFile()
         for key, value in pairs(params) do
             if ex[key] == nil then
                 -- this key does not exist in the example file
-                print(string.format("WARN: The key %q in the params.lua file is unknown. You should delete it."))
+                print(string.format("WARN: The key %q in the params.lua file is unknown. You should delete it.", key))
                 break
             end
         end
