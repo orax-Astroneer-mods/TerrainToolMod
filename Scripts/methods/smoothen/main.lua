@@ -369,13 +369,6 @@ local function init()
     end
 end
 
-RegisterKeyBind(Key.F3, function()
-    local pl = UEHelpers:GetPlayer()
-    local loc = pl:K2_GetActorLocation()
-    func.spawnDebugObject(world, debug.staticMeshActorClass, debug.mesh, debug.material, loc,
-        { Pitch = 0, Roll = 0, Yaw = 0 }, { X = 1, Y = 1, Z = 1 }, { R = 1, G = 0, B = 0, A = 1.0 })
-end)
-
 ExecuteWithDelay(5000, function()
     ---@param self RemoteUnrealParam
     ---@param NewPawn RemoteUnrealParam
