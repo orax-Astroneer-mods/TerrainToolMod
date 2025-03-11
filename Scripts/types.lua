@@ -5,3 +5,8 @@
 ---@field handleTerrainTool_hook fun(self: RemoteUnrealParam, controller: RemoteUnrealParam, toolHit: RemoteUnrealParam, clickResult: RemoteUnrealParam, startedInteraction: RemoteUnrealParam, endedInteraction: RemoteUnrealParam, isUsingTool: RemoteUnrealParam, justActivated: RemoteUnrealParam, canUse): boolean
 ---@field writeParamsFile fun()
 ---@field getInfo fun(): string
+---@field onLoad fun(init: boolean?)?
+---@field onUnload fun()?
+---@field onEnable fun()?
+---@field onDisable fun()?
+---@field onClientRestart fun(self: RemoteUnrealParam, NewPawn: RemoteUnrealParam)?

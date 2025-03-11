@@ -1,7 +1,7 @@
 ---@class FOutputDevice
 ---@field Log function
 
-local EDeformType = {
+EDeformType = {
     Subtract = 0,
     Add = 1,
     Flatten = 2,
@@ -17,6 +17,8 @@ local EDeformType = {
     Count = 12,
     EDeformType_MAX = 13,
 }
+
+local EDeformType = EDeformType
 
 local EDeformTypeName = {
     "Subtract",
@@ -63,6 +65,7 @@ local sqrt = math.sqrt
 local format = string.format
 
 local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
+local enable_handleTerrainTool = function(silent) end
 
 ---@param filename string
 ---@return boolean
@@ -151,7 +154,8 @@ end
 
 ---Set current method.
 ---@param method string|integer
-local function setMethod(method)
+---@param init boolean?
+local function setMethod(method, init)
     local newMethod
 
     if type(tonumber(method)) == "number" then
@@ -166,6 +170,12 @@ local function setMethod(method)
     if newMethod == nil or Methods[newMethod] == nil then
         newMethod = MethodNamesList[0]
     end
+
+    if not init then
+        enable_handleTerrainTool(true)
+    end
+
+    log.info(format("Set method: %q. %s", newMethod, Methods[newMethod].getInfo()))
 
     -- if same method; no change
     if newMethod == Method then
@@ -182,7 +192,17 @@ local function setMethod(method)
         end
     end
 
-    log.info(format("Set method: %q. %s", newMethod, Methods[newMethod].getInfo()))
+    -- execute onUnload event for the unloaded (old) method
+    if Method ~= "" and type(Methods[Method].onUnload) == "function" then
+        log.debug("Execute onUnload event for the old method %q.", Method)
+        Methods[Method].onUnload()
+    end
+
+    -- execute onLoad event for the loaded (new) method
+    if type(Methods[newMethod].onLoad) == "function" then
+        log.debug("Execute onLoad event for the new method %q.", newMethod)
+        Methods[newMethod].onLoad(init)
+    end
 
     Method = newMethod
 
@@ -290,7 +310,22 @@ RegisterCustomProperty({
 
 Methods, MethodNamesList = loadAllMethods()
 MethodNamesList[0] = options.method -- default method
-log.info("Current method: " .. setMethod(options.method) .. ".")
+log.info("Current method: " .. setMethod(options.method, true) .. ".")
+
+-- On client restart
+ExecuteWithDelay(5000, function()
+    ---@param self RemoteUnrealParam
+    ---@param NewPawn RemoteUnrealParam
+    RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
+        -- execute onClientRestart event for the methods
+        for key, method in pairs(Methods) do
+            if type(method.onClientRestart) == "function" then
+                log.debug("Execute onClientRestart event for method %q.", key)
+                method.onClientRestart(self, NewPawn)
+            end
+        end
+    end)
+end)
 
 --#endregion
 
@@ -319,7 +354,7 @@ local function getTerrainTool()
     return CreateInvalidObject()
 end
 
-local function enable_handleTerrainTool(silent)
+enable_handleTerrainTool = function(silent)
     if HandleTerrainToolStatus == false then
         if type(Methods[Method].handleTerrainTool_hook) ~= "function" then
             log.info("handleTerrainTool_hook is not implemented in the current method.")
@@ -327,6 +362,12 @@ local function enable_handleTerrainTool(silent)
         end
         registerHookFor_handleTerrainTool(Methods[Method].handleTerrainTool_hook)
         HandleTerrainToolStatus = true
+
+        -- execute onDisable event for the unloaded (old) method
+        if Method ~= "" and type(Methods[Method].onEnable) == "function" then
+            log.debug("Execute onEnable event for the current method %q.", Method)
+            Methods[Method].onEnable()
+        end
     end
 
     if not silent then
@@ -338,6 +379,12 @@ local function disable_handleTerrainTool()
     if HandleTerrainToolStatus == true then
         unregisterHookFor_handleTerrainTool()
         HandleTerrainToolStatus = false
+
+        -- execute onDisable event for the unloaded (old) method
+        if Method ~= "" and type(Methods[Method].onDisable) == "function" then
+            log.debug("Execute onDisable event for the current method %q.", Method)
+            Methods[Method].onDisable()
+        end
     end
 
     log.info("HandleTerrainTool is DISABLED.")
@@ -464,6 +511,10 @@ registerKeyBind(options.set_slope_method_Key,
 registerKeyBind(options.set_smoothen_method_Key,
     options.set_smoothen_method_ModifierKeys,
     function() setMethod("smoothen") end)
+
+registerKeyBind(options.set_auto_method_Key,
+    options.set_auto_method_ModifierKeys,
+    function() setMethod("auto") end)
 
 registerKeyBind(options.set_Flatten_mode_Key,
     options.set_Flatten_mode_ModifierKeys,
@@ -807,5 +858,3 @@ RegisterConsoleCommandHandler("look", function(fullCommand, parameters, outputDe
 
     return true
 end)
-
-enable_handleTerrainTool()

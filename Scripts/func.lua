@@ -1,3 +1,5 @@
+local utils = require("lib.lua-mods-libs.utils")
+
 local floor, sqrt = math.floor, math.sqrt
 
 local m = {}
@@ -169,6 +171,16 @@ function m.spawnDebugObject(world, staticMeshActorClass, mesh, material, locatio
 
     local matInstance = staticMeshActor.StaticMeshComponent:CreateDynamicMaterialInstance(0, material, FName(0))
     matInstance:SetVectorParameterValue(FName("Color"), color)
+end
+
+---Set that the mod is started in a shared variable.
+function m.setModStarted()
+    ModRef:SetSharedVariable(utils.mod.name, true)
+end
+
+---Return true if the mod has been restarted.
+function m.isModRestarted()
+    return ModRef:GetSharedVariable(utils.mod.name)
 end
 
 return m
