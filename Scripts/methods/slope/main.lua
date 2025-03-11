@@ -85,64 +85,48 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     -- ignored
     if startedInteraction == false and SlopeDirection.x == huge then return end
 
+    controller = controller:get()
     toolHit = toolHit:get()
 
     ---@cast controller APlayController
     ---@cast toolHit FHitResult
-    ---@cast clickResult FClickResult
+    -- ---@cast clickResult FClickResult
     ---@cast startedInteraction boolean
-    ---@cast endedInteraction boolean
-    ---@cast isUsingTool boolean
-    ---@cast justActivated boolean
-    ---@cast canUse boolean
+    -- ---@cast endedInteraction boolean
+    -- ---@cast isUsingTool boolean
+    -- ---@cast justActivated boolean
+    -- ---@cast canUse boolean
 
-    local location = toolHit.Location
+    -- check if the hit actor is a SolarBody (planet)
+    if not toolHit.Actor:Get():IsA("/Script/Astro.SolarBody") then ---@diagnostic disable-line: undefined-field
+        log.debug("Hit actor is not a SolarBody. Try to get a SolarBody.")
+
+        toolHit = {}
+        local result = controller:GetHitResultUnderCursorForObjects({ 6 }, false, toolHit)
+        if not result then
+            return
+        end
+
+        local hitActor = func.getActorFromHitResult(toolHit)
+        if not hitActor:IsValid() or not hitActor:IsA("/Script/Astro.SolarBody") then
+            log.debug("[!!] New hit actor is not a SolarBody.")
+            return
+        end
+    end
 
     if startedInteraction == true then
-        local playerController = UEHelpers:GetPlayerController() ---@cast playerController APlayControllerInstance_C
-        if not playerController:IsValid() then
-            log.warn("PlayerController invalid.")
-        end
-
         -- Planet center is (0, 0, 0) for SYLVA.
-        PlanetCenter = playerController:GetLocalSolarBody():GetCenter()
-
-        -- check if the hit actor is a SolarBody (planet)
-        local actor = toolHit.Actor:Get() ---@diagnostic disable-line: undefined-field
-        if not actor:IsA("/Script/Astro.SolarBody") then
-            log.debug("Hit actor is not a SolarBody. Try to get a SolarBody.")
-
-            toolHit = {}
-
-            --[[ Why 6? It's (maybe) the ObjectType for the terrain. You can do tests with this code:
-                local hitResult = {}
-                local playerController = UEHelpers:GetPlayerController()
-                for i = 1, 33, 1 do
-                    playerController:GetHitResultUnderCursorForObjects({ i }, false, hitResult)
-                    local hitActor = GetActorFromHitResult(hitResult)
-                    print(i, hitActor:GetFullName())
-                end --]]
-            local result = playerController:GetHitResultUnderCursorForObjects({ 6 }, false, toolHit)
-            if result then
-                local hitActor = func.getActorFromHitResult(toolHit)
-                if not hitActor:IsValid() or not hitActor:IsA("/Script/Astro.SolarBody") then
-                    log.debug("[!!] New hit actor is not a SolarBody.")
-                    return
-                end
-            end
-
-            location = toolHit.Location
-        end
+        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
 
         local keyName_fromCamera = OPTIONS.set_slope_direction_from_camera_KeyName
         local keyName_fromCamera_reversed = OPTIONS.set_slope_direction_from_camera_reversed_KeyName
         local keyName_fromSlope = OPTIONS.set_slope_direction_from_slope_KeyName
 
-        if keyName_fromCamera and playerController:IsInputKeyDown({ KeyName = FName(keyName_fromCamera) }) then
+        if keyName_fromCamera and controller:IsInputKeyDown({ KeyName = FName(keyName_fromCamera) }) then
             setSlopeDirectionFromCamera(false)
-        elseif keyName_fromCamera_reversed and playerController:IsInputKeyDown({ KeyName = FName(keyName_fromCamera_reversed) }) then
+        elseif keyName_fromCamera_reversed and controller:IsInputKeyDown({ KeyName = FName(keyName_fromCamera_reversed) }) then
             setSlopeDirectionFromCamera(true)
-        elseif keyName_fromSlope and playerController:IsInputKeyDown({ KeyName = FName(keyName_fromSlope) }) then
+        elseif keyName_fromSlope and controller:IsInputKeyDown({ KeyName = FName(keyName_fromSlope) }) then
             setSlopeDirectionFromSlope(
                 vec3.new(
                     toolHit.Location.X - PlanetCenter.X,
@@ -164,9 +148,9 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
 
     ---@type FVector
     local u = {
-        X = location.X - PlanetCenter.X,
-        Y = location.Y - PlanetCenter.Y,
-        Z = location.Z - PlanetCenter.Z
+        X = toolHit.Location.X - PlanetCenter.X,
+        Y = toolHit.Location.Y - PlanetCenter.Y,
+        Z = toolHit.Location.Z - PlanetCenter.Z
     }
 
     local altitude = sqrt(u.X * u.X + u.Y * u.Y + u.Z * u.Z)

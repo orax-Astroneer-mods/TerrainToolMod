@@ -46,38 +46,26 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         return
     end
 
-    startedInteraction = startedInteraction:get()
+    controller = controller:get()
     toolHit = toolHit:get()
+    startedInteraction = startedInteraction:get()
 
     ---@cast controller APlayController
     ---@cast toolHit FHitResult
-    ---@cast clickResult FClickResult
+    -- ---@cast clickResult FClickResult
     ---@cast startedInteraction boolean
-    ---@cast endedInteraction boolean
-    ---@cast isUsingTool boolean
-    ---@cast justActivated boolean
-    ---@cast canUse boolean
+    -- ---@cast endedInteraction boolean
+    -- ---@cast isUsingTool boolean
+    -- ---@cast justActivated boolean
+    -- ---@cast canUse boolean
 
-    local location = toolHit.Location
+    -- check if the hit actor is a SolarBody (planet)
+    if not toolHit.Actor:Get():IsA("/Script/Astro.SolarBody") then ---@diagnostic disable-line: undefined-field
+        log.debug("Hit actor is not a SolarBody. Try to get a SolarBody.")
 
-    if startedInteraction then
-        local playerController = UEHelpers:GetPlayerController() ---@cast playerController APlayControllerInstance_C
-        if not playerController:IsValid() then
-            log.warn("PlayerController invalid.")
-        end
+        toolHit = {}
 
-        -- Planet center is (0, 0, 0) for SYLVA.
-        PlanetCenter = playerController:GetLocalSolarBody():GetCenter()
-
-        -- check if the hit actor is a SolarBody (planet)
-        local actor = toolHit.Actor:Get() ---@diagnostic disable-line: undefined-field
-        if not actor:IsA("/Script/Astro.SolarBody") then
-            log.debug("Hit actor is not a SolarBody. Try to get a SolarBody.")
-
-            ---@diagnostic disable-next-line: missing-fields
-            local hitResult = {} ---@type FHitResult
-
-            --[[ How to get Object types?
+        --[[ How to get Object types?
             Create a GetHitResultUnderCursorForObjects node in Blueprint. Make an array on "Object Types".
             List: WorldStatic, WorldDynamic, Pawn, PhysicsBody, Vehicle, Destructible, TerrainObj, BuriedObj, HazardObj, InteractObj, CameraObj.
 
@@ -88,20 +76,23 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
                     playerController:GetHitResultUnderCursorForObjects({ i }, false, hitResult)
                     local hitActor = GetActorFromHitResult(hitResult)
                     print(i, hitActor:GetFullName())
-                end --]]
-
-            local terrainObj = 6
-            local result = playerController:GetHitResultUnderCursorForObjects({ terrainObj }, false, hitResult)
-            if result then
-                local hitActor = func.getActorFromHitResult(hitResult)
-                if not hitActor:IsValid() or not hitActor:IsA("/Script/Astro.SolarBody") then
-                    log.debug("[!!] New hit actor is not a SolarBody.")
-                    return
                 end
-            end
-
-            location = hitResult.Location
+        --]]
+        local result = controller:GetHitResultUnderCursorForObjects({ 6 }, false, toolHit)
+        if not result then
+            return
         end
+
+        local hitActor = func.getActorFromHitResult(toolHit)
+        if not hitActor:IsValid() or not hitActor:IsA("/Script/Astro.SolarBody") then
+            log.debug("[!!] New hit actor is not a SolarBody.")
+            return
+        end
+    end
+
+    if startedInteraction then
+        -- Planet center is (0, 0, 0) for SYLVA.
+        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
 
         if params.CUSTOM_ALTITUDE ~= huge then
             RoundedAltitude = params.CUSTOM_ALTITUDE
@@ -111,9 +102,9 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
             assert(params.ALTITUDE_STEP ~= huge, "ALTITUDE_STEP is not defined.")
 
             RoundedAltitude = func.roundToBase(func.getVectorLen({
-                X = location.X - PlanetCenter.X,
-                Y = location.Y - PlanetCenter.Y,
-                Z = location.Z - PlanetCenter.Z
+                X = toolHit.Location.X - PlanetCenter.X,
+                Y = toolHit.Location.Y - PlanetCenter.Y,
+                Z = toolHit.Location.Z - PlanetCenter.Z
             }), params.ALTITUDE_STEP)
 
             log.debug("Rounded altitude is %.16g.", RoundedAltitude)
@@ -122,9 +113,9 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
 
     ---@type FVector
     local u = {
-        X = location.X - PlanetCenter.X,
-        Y = location.Y - PlanetCenter.Y,
-        Z = location.Z - PlanetCenter.Z
+        X = toolHit.Location.X - PlanetCenter.X,
+        Y = toolHit.Location.Y - PlanetCenter.Y,
+        Z = toolHit.Location.Z - PlanetCenter.Z
     }
 
     local pointLocationAltitude = sqrt(u.X * u.X + u.Y * u.Y + u.Z * u.Z)

@@ -90,51 +90,47 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         return
     end
 
-    startedInteraction = startedInteraction:get()
+    controller = controller:get()
     toolHit = toolHit:get()
+    startedInteraction = startedInteraction:get()
 
     ---@cast controller APlayController
     ---@cast toolHit FHitResult
-    ---@cast clickResult FClickResult
+    -- ---@cast clickResult FClickResult
     ---@cast startedInteraction boolean
-    ---@cast endedInteraction boolean
-    ---@cast isUsingTool boolean
-    ---@cast justActivated boolean
-    ---@cast canUse boolean
+    -- ---@cast endedInteraction boolean
+    -- ---@cast isUsingTool boolean
+    -- ---@cast justActivated boolean
+    -- ---@cast canUse boolean
+
+    -- check if the hit actor is a SolarBody (planet)
+    if not toolHit.Actor:Get():IsA("/Script/Astro.SolarBody") then ---@diagnostic disable-line: undefined-field
+        log.debug("Hit actor is not a SolarBody. Try to get a SolarBody.")
+
+        toolHit = {}
+        local result = controller:GetHitResultUnderCursorForObjects({ 6 }, false, toolHit)
+        if not result then
+            return
+        end
+
+        local hitActor = func.getActorFromHitResult(toolHit)
+        if not hitActor:IsValid() or not hitActor:IsA("/Script/Astro.SolarBody") then
+            log.debug("[!!] New hit actor is not a SolarBody.")
+            return
+        end
+    end
 
     if startedInteraction == true then
-        local playerController = UEHelpers:GetPlayerController() ---@cast playerController APlayControllerInstance_C
-        if not playerController:IsValid() then
-            log.warn("PlayerController invalid.")
-        end
-
         world = UEHelpers:GetWorld()
-
-        -- check if the hit actor is a SolarBody (planet)
-        local actor = toolHit.Actor:Get() ---@diagnostic disable-line: undefined-field
-        if not actor:IsA("/Script/Astro.SolarBody") then
-            log.debug("Hit actor is not a SolarBody. Try to get a SolarBody.")
-
-            toolHit = {}
-
-            local result = playerController:GetHitResultUnderCursorForObjects({ 6 }, false, toolHit)
-            if result then
-                local hitActor = func.getActorFromHitResult(toolHit)
-                if not hitActor:IsValid() or not hitActor:IsA("/Script/Astro.SolarBody") then
-                    log.debug("[!!] New hit actor is not a SolarBody.")
-                    return
-                end
-            end
-        end
     end
 
     -- for debugging
     local dbgObject = params.DEBUG_OBJECTS and startedInteraction
 
-    local Location = vec3.new(toolHit.Location.X, toolHit.Location.Y, toolHit.Location.Z)
-    local Normal = vec3.new(toolHit.Normal.X, toolHit.Normal.Y, toolHit.Normal.Z)
-    local direction = vec3.new(-Normal.x, -Normal.y, -Normal.z)
-    local perp = vec3.normalize(perpendicular(Normal))
+    local start = vec3.new(toolHit.Location.X, toolHit.Location.Y, toolHit.Location.Z)
+    local normal = vec3.new(toolHit.Normal.X, toolHit.Normal.Y, toolHit.Normal.Z)
+    local direction = vec3.new(-normal.x, -normal.y, -normal.z)
+    local perp = vec3.normalize(perpendicular(normal))
 
     local normals = {} ---@type FVector[]
     local locations = {} ---@type FVector[]
@@ -153,7 +149,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
             nil, debug.scale, { R = 50, G = 0, B = 0, A = 1 })
     end
 
-    local start = Location
     local color = { R = 0, G = 0, B = 0, A = 0 }
     local brushScale = deformTool.BaseBrushIndicatorScale * deformTool.BaseBrushDeformationScale
 
@@ -169,11 +164,11 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
             local startP = P - start
 
             local angle = i * stepAngle
-            local r = vec3.rotate(startP, angle, Normal) + start
+            local r = vec3.rotate(startP, angle, normal) + start
 
             -- determine max offset
             local maxOffset = params.MAX_OFFSET
-            local endPoint = r + vec3.scale(Normal, maxOffset) ---@type vec3
+            local endPoint = r + vec3.scale(normal, maxOffset) ---@type vec3
 
             ---@diagnostic disable-next-line: missing-fields
             local hit = {} ---@type FHitResult
@@ -187,7 +182,7 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
                 maxOffset = hit.Distance
             end
 
-            r = r + vec3.scale(Normal, maxOffset)
+            r = r + vec3.scale(normal, maxOffset)
             local lineTraceLength = maxOffset + params.TRACE_LENGTH
             endPoint = vec3.add(vec3.scale(vec3.normalize(direction), lineTraceLength), r)
 
@@ -361,10 +356,6 @@ local function init()
             debug.staticMeshActorClass = StaticFindObject(debug.staticMeshActorClassName) ---@diagnostic disable-line: assign-type-mismatch
             debug.material = StaticFindObject(mat) ---@diagnostic disable-line: assign-type-mismatch
             debug.mesh = StaticFindObject(mesh) ---@diagnostic disable-line: assign-type-mismatch
-
-            assert(debug.staticMeshActorClass:IsValid())
-            assert(debug.material:IsValid())
-            assert(debug.mesh:IsValid())
         end)
     end
 end
