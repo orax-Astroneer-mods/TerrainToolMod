@@ -1,4 +1,5 @@
 ---@type Method__Auto__PARAMS
 return {
-    LAST_PRESET = "road 1"
+    LAST_PRESET = "road 1",
+    LOOP_DELAY = 250
 }

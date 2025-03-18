@@ -1,7 +1,8 @@
 ---@class FOutputDevice
 ---@field Log function
 
-EDeformType = {
+---@type EDeformType
+local EDeformType = {
     Subtract = 0,
     Add = 1,
     Flatten = 2,
@@ -17,8 +18,6 @@ EDeformType = {
     Count = 12,
     EDeformType_MAX = 13,
 }
-
-local EDeformType = EDeformType
 
 local EDeformTypeName = {
     "Subtract",
@@ -37,19 +36,27 @@ local EDeformTypeName = {
     "EDeformType_MAX",
 }
 
+---@type ESlateVisibility
+local ESlateVisibility = {
+    Visible = 0,
+    Collapsed = 1,
+    Hidden = 2,
+    HitTestInvisible = 3,
+    SelfHitTestInvisible = 4,
+    ESlateVisibility_MAX = 5
+}
+
+HandleTerrainToolStatus = false
 inf = math.huge ---@diagnostic disable-line: lowercase-global
 
 -- functions implemented in the method file
----@type Method[]
-local Methods = {}
+local Methods = {} ---@type Method[]
+local MethodNamesList = {}
 
 local CachedTerrainTool = CreateInvalidObject() ---@cast CachedTerrainTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
 
-local MethodNamesList = {}
+local HelpUI = { showed = false }
 
-local Method = "" -- current method
-
-local HandleTerrainToolStatus = false
 local PreId_handleTerrainTool, PostId_handleTerrainTool
 
 local UEHelpers = require("UEHelpers")
@@ -65,6 +72,8 @@ local sqrt = math.sqrt
 local format = string.format
 
 local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
+local mainParamsFile = currentModDirectory .. [[\main_params.lua]]
+local mainParams = {}
 local enable_handleTerrainTool = function(silent) end
 
 ---@param filename string
@@ -79,6 +88,7 @@ local function isFileExists(filename)
     end
 end
 
+---@return TerrainToolMod_Options
 local function loadOptions()
     local file = format([[%s\options.lua]], currentModDirectory)
 
@@ -95,6 +105,23 @@ local function loadOptions()
     return dofile(file)
 end
 
+---@return TerrainToolMod_Options_UI
+local function loadOptionsUI()
+    local file = format([[%s\ui.lua]], currentModDirectory)
+
+    if not isFileExists(file) then
+        local cmd = format([[copy "%s\ui.example.lua" "%s\ui.lua"]],
+            currentModDirectory,
+            currentModDirectory)
+
+        print("Copy example UI to ui.lua. Execute command: " .. cmd .. "\n")
+
+        os.execute(cmd)
+    end
+
+    return dofile(file)
+end
+
 --------------------------------------------------------------------------------
 
 -- Default logging levels. They can be overwritten in the options file.
@@ -103,6 +130,8 @@ MIN_LEVEL_OF_FATAL_ERROR = "ERROR" ---@type _LogLevel
 
 local options = loadOptions()
 OPTIONS = options
+local optUI = loadOptionsUI()
+OPTIONS_UI = optUI
 
 Log = logging.new(LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR)
 local log = Log
@@ -123,6 +152,33 @@ local function unregisterHookFor_handleTerrainTool()
     end
 end
 --#endregion hooks
+
+local function writeMainParamsFile()
+    log.debug("Write main params file.")
+
+    local file = io.open(mainParamsFile, "w+")
+    assert(file, format("\nUnable to open the main params file %q.", mainParamsFile))
+
+    -- defaults
+    if mainParams.METHOD == nil then mainParams.METHOD = "tangent" end
+
+    file:write(format(
+        [[return { ---@type TerrainToolMod_Main_PARAMS
+METHOD="%s"
+}]],
+        mainParams.METHOD))
+
+    file:close()
+end
+
+---@return TerrainToolMod_Main_PARAMS
+local function loadMainParams()
+    if not isFileExists(mainParamsFile) then
+        writeMainParamsFile()
+    end
+
+    return dofile(mainParamsFile)
+end
 
 ---Retrieve functions from method files.
 ---@return Method[], table
@@ -175,10 +231,10 @@ local function setMethod(method, init)
         enable_handleTerrainTool(true)
     end
 
-    log.info(format("Set method: %q. %s", newMethod, Methods[newMethod].getInfo()))
+    log.debug(format("Set method: %q.", newMethod))
 
     -- if same method; no change
-    if newMethod == Method then
+    if newMethod == mainParams.METHOD then
         log.debug("The newMethod == Method. No change.")
         return method
     end
@@ -193,9 +249,9 @@ local function setMethod(method, init)
     end
 
     -- execute onUnload event for the unloaded (old) method
-    if Method ~= "" and type(Methods[Method].onUnload) == "function" then
-        log.debug("Execute onUnload event for the old method %q.", Method)
-        Methods[Method].onUnload()
+    if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onUnload) == "function" then
+        log.debug("Execute onUnload event for the old method %q.", mainParams.METHOD)
+        Methods[mainParams.METHOD].onUnload()
     end
 
     -- execute onLoad event for the loaded (new) method
@@ -204,7 +260,9 @@ local function setMethod(method, init)
         Methods[newMethod].onLoad(init)
     end
 
-    Method = newMethod
+    mainParams.METHOD = newMethod
+
+    writeMainParamsFile()
 
     return newMethod
 end
@@ -308,9 +366,11 @@ RegisterCustomProperty({
 
 --#region Initialization
 
+mainParams = loadMainParams()
+
 Methods, MethodNamesList = loadAllMethods()
-MethodNamesList[0] = options.method -- default method
-log.info("Current method: " .. setMethod(options.method, true) .. ".")
+MethodNamesList[0] = mainParams.METHOD -- default method
+log.info("Current method: " .. setMethod(mainParams.METHOD, true) .. ".")
 
 -- On client restart
 ExecuteWithDelay(5000, function()
@@ -356,22 +416,32 @@ end
 
 enable_handleTerrainTool = function(silent)
     if HandleTerrainToolStatus == false then
-        if type(Methods[Method].handleTerrainTool_hook) ~= "function" then
-            log.info("handleTerrainTool_hook is not implemented in the current method.")
+        if type(Methods[mainParams.METHOD].handleTerrainTool_hook) ~= "function" then
+            log.debug("handleTerrainTool_hook is not implemented in the current method.")
             return
         end
-        registerHookFor_handleTerrainTool(Methods[Method].handleTerrainTool_hook)
+        registerHookFor_handleTerrainTool(Methods[mainParams.METHOD].handleTerrainTool_hook)
         HandleTerrainToolStatus = true
 
-        -- execute onDisable event for the unloaded (old) method
-        if Method ~= "" and type(Methods[Method].onEnable) == "function" then
-            log.debug("Execute onEnable event for the current method %q.", Method)
-            Methods[Method].onEnable()
+        -- execute onEnable event for the method
+        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onEnable) == "function" then
+            log.debug("Execute onEnable event for the current method %q.", mainParams.METHOD)
+            Methods[mainParams.METHOD].onEnable()
         end
-    end
 
-    if not silent then
-        log.info(format("HandleTerrainTool is ENABLED. Method: %q. %s", Method, Methods[Method].getInfo()))
+        if not silent then
+            log.debug(format("HandleTerrainTool is ENABLED. Method enabled: %q.", mainParams.METHOD))
+        end
+    else
+        -- execute onUpdate event for the (updated) method
+        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onUpdate) == "function" then
+            log.debug("Execute onUpdate event for the current method %q.", mainParams.METHOD)
+            Methods[mainParams.METHOD].onUpdate()
+        end
+
+        if not silent then
+            log.debug(format("HandleTerrainTool is already ENABLED. Method updated: %q.", mainParams.METHOD))
+        end
     end
 end
 
@@ -381,13 +451,13 @@ local function disable_handleTerrainTool()
         HandleTerrainToolStatus = false
 
         -- execute onDisable event for the unloaded (old) method
-        if Method ~= "" and type(Methods[Method].onDisable) == "function" then
-            log.debug("Execute onDisable event for the current method %q.", Method)
-            Methods[Method].onDisable()
+        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onDisable) == "function" then
+            log.debug("Execute onDisable event for the current method %q.", mainParams.METHOD)
+            Methods[mainParams.METHOD].onDisable()
         end
     end
 
-    log.info("HandleTerrainTool is DISABLED.")
+    log.debug("HandleTerrainTool is DISABLED.")
 end
 
 local function toggle_handleTerrainTool()
@@ -397,7 +467,7 @@ local function toggle_handleTerrainTool()
         enable_handleTerrainTool()
     end
 
-    log.info("HandleTerrainTool is %s.", HandleTerrainToolStatus and "ENABLED" or "DISABLED")
+    log.debug("HandleTerrainTool is %s.", HandleTerrainToolStatus and "ENABLED" or "DISABLED")
 end
 
 ---@param deformType? EDeformType
@@ -424,11 +494,11 @@ end
 ---@param outputDevice FOutputDevice
 ---@return boolean
 local function checkIfPropertyExists(property, outputDevice)
-    if Methods[Method].params[property] == nil then
+    if Methods[mainParams.METHOD].params[property] == nil then
         if outputDevice then
             outputDevice:Log(format(
                 "This property does not exist for the method %q. Use the \"method\" command to change the method.",
-                Method))
+                mainParams.METHOD))
         end
 
         return false
@@ -468,21 +538,179 @@ local function registerKeyBind(key, modifierKeys, callback)
     end
 end
 
-registerKeyBind(Key.MIDDLE_MOUSE_BUTTON, { ModifierKey.SHIFT }, function()
-    local terrainTool = getTerrainTool()
+-- Sources:
+--   https://github.com/MichaelK-UnderscoreUnderscore/PseudoregaliaSavestates/blob/main/Scripts/Utils.lua
+--   https://github.com/massclown/HalfSwordTrainerMod-playtest/blob/main/HalfSwordTrainerMod/scripts/main.lua
+local function createHelpUI()
+    local umg_MultiLineEditableTextBox = StaticFindObject("/Script/UMG.MultiLineEditableTextBox")
+    local prefix = "TerrainMod_helpUI_"
 
-    terrainTool.BaseBrushDeformationScale = math.min(
-        terrainTool.BaseBrushDeformationScale + options.BaseBrushDeformationScale_step,
-        options.BaseBrushDeformationScale_max)
-end)
+    local gameInstance = UEHelpers.GetGameInstance()
+    if not gameInstance:IsValid() then
+        return false
+    end
 
-registerKeyBind(Key.MIDDLE_MOUSE_BUTTON, { ModifierKey.CONTROL }, function()
-    local terrainTool = getTerrainTool()
+    local fmt = "%-50s%20s"
+    local text = ""
+    local textLeft = options.help_ui.title_left
+    local textRight = options.help_ui.title_right
 
-    terrainTool.BaseBrushDeformationScale = math.max(
-        terrainTool.BaseBrushDeformationScale - options.BaseBrushDeformationScale_step,
-        options.BaseBrushDeformationScale_min)
-end)
+    local function add(name, keyName, description)
+        local key = options[name .. "_Key"]
+        local modifierKeys = options[name .. "_ModifierKeys"]
+        description = description or options[name .. "_text"]
+        keyName = keyName or func.getKeybindName(key, modifierKeys)
+        text = text .. string.format(fmt, description, keyName) .. "\n"
+        textLeft = textLeft .. description .. "\n"
+        textRight = textRight .. keyName .. "\n"
+    end
+
+    ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
+
+    ---@type UUserWidget
+    HelpUI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
+        FName(prefix .. "UserWidget"))
+    assert(HelpUI.userWidget:IsValid())
+
+    HelpUI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), HelpUI.userWidget,
+        FName(prefix .. "WidgetTree"))
+    assert(HelpUI.userWidget.WidgetTree:IsValid())
+
+    ---@type UCanvasPanel
+    HelpUI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
+        HelpUI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
+    assert(HelpUI.canvas:IsValid())
+    HelpUI.userWidget.WidgetTree.RootWidget = HelpUI.canvas
+
+    ---@type UVerticalBox
+    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
+        HelpUI.userWidget.WidgetTree.RootWidget, FName(prefix .. "VerticalBox"))
+
+    ---@type UHorizontalBox
+    local horizontalBox = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        verticalBox, FName(prefix .. "HorizontalBox1"))
+
+    ---@type UMultiLineEditableTextBox
+    local multiLineEditableTextBox = StaticConstructObject(umg_MultiLineEditableTextBox,
+        horizontalBox, FName(prefix .. "MultiLineEditableTextBox"))
+
+    ---@type UMultiLineEditableTextBox
+    local multiLineEditableTextBox2 = StaticConstructObject(umg_MultiLineEditableTextBox,
+        horizontalBox, FName(prefix .. "MultiLineEditableTextBox2"))
+
+    text = text .. "[Globals]\n"
+    textLeft = textLeft .. "[Globals]\n"
+    textRight = textRight .. "\n"
+    add("enable_handleTerrainTool")
+    add("disable_handleTerrainTool")
+    add("toggle_handleTerrainTool")
+    add("set_tangent_method")
+    add("set_slope_method")
+    add("set_smoothen_method")
+    add("set_auto_method")
+    add("set_paint_method")
+    add("increase_BaseBrushDeformationScale")
+    add("decrease_BaseBrushDeformationScale")
+    add("set_deformType")
+    add("set_Flatten_mode")
+    add("set_FlattenSubtractOnly_mode")
+    add("set_FlattenAddOnly_mode")
+
+    text = text .. "[Method: slope]\n"
+    textLeft = textLeft .. "[Method: slope]\n"
+    textRight = textRight .. "\n"
+    add("set_slope_direction_from_camera", options.set_slope_direction_from_camera_KeyName)
+    add("set_slope_direction_from_camera_reversed", options.set_slope_direction_from_camera_reversed_KeyName)
+    add("set_slope_direction_from_slope", options.set_slope_direction_from_slope_KeyName)
+
+    text = text .. "[Method: auto]\n"
+    textLeft = textLeft .. "[Method: auto]\n"
+    textRight = textRight .. "\n"
+    add("auto__increase_angle", options.auto__increase_angle_KeyName)
+    add("auto__decrease_angle", options.auto__decrease_angle_KeyName)
+    add("auto__increase_expected_angle",
+        options.auto__increase_or_decrease_expected_angle_KeyName .. "+" .. options.auto__increase_angle_KeyName,
+        options.auto__increase_expected_angle_text)
+    add("auto__decrease_expected_angle",
+        options.auto__increase_or_decrease_expected_angle_KeyName .. "+" .. options.auto__decrease_angle_KeyName,
+        options.auto__decrease_expected_angle_text)
+    add("auto__set_angle_to_value1", options.auto__set_angle_to_value1_KeyName)
+    add("auto__set_angle_to_value2", options.auto__set_angle_to_value2_KeyName)
+    add("auto__set_angle_to_zero", options.auto__set_angle_to_zero_KeyName)
+    add("auto__set_angle_from_slope", options.auto__set_angle_from_slope_KeyName)
+    add("auto__set_angle_from_inverse_slope",
+        options.auto__set_angle_from_slope_Modifier_KeyName .. "+" .. options.auto__set_angle_from_slope_KeyName,
+        options.auto__set_angle_from_inverse_slope_text)
+    add("auto__set_angle_to_expectedAngle",
+        options.auto__set_angle_to_expectedAngle_Modifier_KeyName ..
+        "+" .. options.auto__set_angle_to_expectedAngle_KeyName, options.auto__set_angle_to_expectedAngle_text)
+
+    -- remove new line (\n) at the ned
+    textRight = textRight:sub(1, -2)
+
+    local commandsText = "\nCommands: deform_type, get_altitude,\nttmod, look."
+    local notesText = "\nNotes: Method-specific shortcuts only work\nwhen you have your terrain tool equipped."
+    textLeft = textLeft .. commandsText
+    textLeft = textLeft .. notesText
+    text = text .. commandsText
+    text = text .. notesText
+
+    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    multiLineEditableTextBox.WidgetStyle.Font.FontObject = fontObj
+    multiLineEditableTextBox.WidgetStyle.Font.Size = options.help_ui.font_size
+    multiLineEditableTextBox.bIsReadOnly = true
+
+    multiLineEditableTextBox:SetText(FText(textLeft))
+    multiLineEditableTextBox2:SetText(FText(textRight))
+    multiLineEditableTextBox2.WidgetStyle.Font.FontObject = fontObj
+    multiLineEditableTextBox2.WidgetStyle.Font.Size = options.help_ui.font_size
+    multiLineEditableTextBox2.bIsReadOnly = true
+
+    horizontalBox:AddChildToHorizontalBox(multiLineEditableTextBox)
+    horizontalBox:AddChildToHorizontalBox(multiLineEditableTextBox2)
+    verticalBox:AddChildToVerticalBox(horizontalBox)
+
+    ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
+
+    local slot = HelpUI.canvas:AddChildToCanvas(verticalBox)
+    slot:SetAutoSize(true)
+
+    HelpUI.userWidget:SetPositionInViewport(options.help_ui.positionInViewport, false)
+    HelpUI.userWidget:AddToViewport(options.help_ui.zOrder)
+    HelpUI.userWidget:SetVisibility(ESlateVisibility.Visible)
+
+    log.debug("\n" .. text)
+
+    log.debug("Help UI created.")
+
+    return true
+end
+
+local function showHelpUI()
+    if HelpUI.userWidget and HelpUI.userWidget:IsValid() then
+        HelpUI.userWidget:SetVisibility(ESlateVisibility.Visible)
+    else
+        createHelpUI()
+    end
+    HelpUI.showed = true
+end
+
+local function hideHelpUI()
+    if HelpUI.userWidget and HelpUI.userWidget:IsValid() then
+        HelpUI.userWidget:SetVisibility(ESlateVisibility.Hidden)
+    end
+    HelpUI.showed = false
+end
+
+local function toogleHelpUI()
+    if HelpUI.showed == true then
+        hideHelpUI()
+    else
+        showHelpUI()
+    end
+end
+
+registerKeyBind(options.toggle_help_ui_Key, options.toggle_help_ui_ModifierKeys, toogleHelpUI)
 
 registerKeyBind(options.enable_handleTerrainTool_Key,
     options.enable_handleTerrainTool_ModifierKeys,
@@ -516,6 +744,10 @@ registerKeyBind(options.set_auto_method_Key,
     options.set_auto_method_ModifierKeys,
     function() setMethod("auto") end)
 
+registerKeyBind(options.set_paint_method_Key,
+    options.set_paint_method_ModifierKeys,
+    function() setMethod("paint") end)
+
 registerKeyBind(options.set_Flatten_mode_Key,
     options.set_Flatten_mode_ModifierKeys,
     function() setDeformTypeTo(EDeformType.Flatten) end)
@@ -523,6 +755,10 @@ registerKeyBind(options.set_Flatten_mode_Key,
 registerKeyBind(options.set_FlattenSubtractOnly_mode_Key,
     options.set_FlattenSubtractOnly_mode_ModifierKeys,
     function() setDeformTypeTo(EDeformType.FlattenSubtractOnly) end)
+
+registerKeyBind(options.set_FlattenAddOnly_mode_Key,
+    options.set_FlattenAddOnly_mode_ModifierKeys,
+    function() setDeformTypeTo(EDeformType.FlattenAddOnly) end)
 
 registerKeyBind(options.increase_BaseBrushDeformationScale_Key,
     options.increase_BaseBrushDeformationScale_ModifierKeys,
@@ -546,119 +782,6 @@ registerKeyBind(options.decrease_BaseBrushDeformationScale_Key,
 ---@param parameters table
 ---@param outputDevice FOutputDevice
 ---@return boolean
-RegisterConsoleCommandHandler("slope_angle", function(fullCommand, parameters, outputDevice)
-    if not checkIfPropertyExists("SLOPE_ANGLE", outputDevice) then
-        return true
-    end
-
-    local helpMsg =
-        "Usage: slope_angle <angle in degrees (-360 to 360)>\n" ..
-        "Examples: slope_angle 45"
-
-    if #parameters < 1 then
-        outputDevice:Log(helpMsg)
-        return true
-    end
-
-    local angle = tonumber(parameters[1])
-    if angle == nil then
-        outputDevice:Log(helpMsg)
-        return true
-    end
-    Methods[Method].params.SLOPE_ANGLE = angle
-
-    local msg = format("Set slope angle: %d°.", Methods[Method].params.SLOPE_ANGLE)
-    log.info(msg)
-    outputDevice:Log(msg)
-
-    Methods[Method].writeParamsFile()
-
-    return true
-end)
-
----@param fullCommand string
----@param parameters table
----@param outputDevice FOutputDevice
----@return boolean
-RegisterConsoleCommandHandler("altitude", function(fullCommand, parameters, outputDevice)
-    if not checkIfPropertyExists("CUSTOM_ALTITUDE", outputDevice) then
-        return true
-    end
-
-    local helpMsg =
-        "Usage: altitude <altitude (number)>\n" ..
-        "Examples: altitude 121000"
-
-    if #parameters < 1 then
-        outputDevice:Log(helpMsg)
-        Methods[Method].params.CUSTOM_ALTITUDE = inf
-        local msg = format("Unfreeze altitude.")
-        log.info(msg)
-        outputDevice:Log(msg)
-        return true
-    end
-
-    local altitude = tonumber(parameters[1])
-    if altitude == nil then
-        outputDevice:Log(helpMsg)
-        return true
-    end
-    Methods[Method].params.CUSTOM_ALTITUDE = altitude
-
-    local msg = format("Set altitude: %s.", Methods[Method].params.CUSTOM_ALTITUDE)
-    log.info(msg)
-    outputDevice:Log(msg)
-
-    Methods[Method].writeParamsFile()
-
-    return true
-end)
-
----@param fullCommand string
----@param parameters table
----@param outputDevice FOutputDevice
----@return boolean
-RegisterConsoleCommandHandler("alt", function(fullCommand, parameters, outputDevice)
-    if not checkIfPropertyExists("CUSTOM_ALTITUDE", outputDevice) then
-        return true
-    end
-
-    local helpMsg =
-        "Set altitude to a predefined value in options.lua file.\n" ..
-        "Usage: alt <name>\n" ..
-        "Example: alt base1"
-
-    if #parameters < 1 then
-        outputDevice:Log(helpMsg)
-        Methods[Method].params.CUSTOM_ALTITUDE = inf
-        local msg = format("Unfreeze altitude.")
-        log.info(msg)
-        outputDevice:Log(msg)
-        return true
-    end
-
-    local name = table.concat(parameters, " ")
-    local altitude = tonumber(options.altitudes_userList[name])
-    if type(altitude) ~= "number" then
-        outputDevice:Log(format("Predefined altitude %q not found or not valid."), name)
-        return true
-    end
-
-    Methods[Method].params.CUSTOM_ALTITUDE = altitude
-
-    local msg = format("Set altitude %q: %s.", name, Methods[Method].params.CUSTOM_ALTITUDE)
-    log.info(msg)
-    outputDevice:Log(msg)
-
-    Methods[Method].writeParamsFile()
-
-    return true
-end)
-
----@param fullCommand string
----@param parameters table
----@param outputDevice FOutputDevice
----@return boolean
 RegisterConsoleCommandHandler("get_altitude", function(fullCommand, parameters, outputDevice)
     ---@diagnostic disable-next-line: missing-fields
     local hitResult = {} ---@type FHitResult
@@ -675,45 +798,9 @@ RegisterConsoleCommandHandler("get_altitude", function(fullCommand, parameters, 
         return true
     end
 
-    local msg = format("Altitude: %.16g", getVectorLen(hitResult.Location))
+    local msg = format("Altitude under cursor: %.16g", getVectorLen(hitResult.Location))
     outputDevice:Log(msg)
     log.info(msg)
-
-    return true
-end)
-
----@param fullCommand string
----@param parameters table
----@param outputDevice FOutputDevice
----@return boolean
-RegisterConsoleCommandHandler("altitude_step", function(fullCommand, parameters, outputDevice)
-    if not checkIfPropertyExists("ALTITUDE_STEP", outputDevice) then
-        return true
-    end
-
-    Methods[Method].writeParamsFile()
-    local helpMsg =
-        "Usage: altitude_step <step>\n" ..
-        "Example: altitude_step 100\n" ..
-        format("Current altitude step: %.16g", Methods[Method].params.ALTITUDE_STEP)
-
-    if #parameters < 1 then
-        outputDevice:Log(helpMsg)
-        return true
-    end
-
-    local step = tonumber(parameters[1])
-    if step == nil then
-        outputDevice:Log(helpMsg)
-        return true
-    end
-    Methods[Method].params.ALTITUDE_STEP = step
-
-    local msg = format("Set altitude step: %.16g", Methods[Method].params.ALTITUDE_STEP)
-    log.info(msg)
-    outputDevice:Log(msg)
-
-    Methods[Method].writeParamsFile()
 
     return true
 end)
@@ -795,34 +882,6 @@ RegisterConsoleCommandHandler("deform_type", function(fullCommand, parameters, o
 
     outputDevice:Log(format("DeformType is set to %d.", deformType))
     setDeformTypeTo(deformType)
-
-    return true
-end)
-
----@param fullCommand string
----@param parameters table
----@param outputDevice FOutputDevice
----@return boolean
-RegisterConsoleCommandHandler("method", function(fullCommand, parameters, outputDevice)
-    local helpMsg =
-        "You can choose a method by this index or name.\n" ..
-        "Index 0 corresponds to the method in defined in options.lua.\n" ..
-        "Available methods:\n"
-
-    helpMsg = helpMsg .. format("index: 0 name: %s\n", options.method)
-
-    for index, name in ipairs(MethodNamesList) do
-        helpMsg = helpMsg .. format("index: %d name: %s\n", index, name)
-    end
-
-    if #parameters < 1 then
-        outputDevice:Log(helpMsg)
-        return true
-    end
-
-    setMethod(parameters[1])
-
-    outputDevice:Log(format("Current method is set to %s.", Method))
 
     return true
 end)

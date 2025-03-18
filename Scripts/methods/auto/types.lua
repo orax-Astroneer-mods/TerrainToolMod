@@ -2,6 +2,7 @@
 
 ---@class Method__Auto__PARAMS
 ---@field LAST_PRESET string
+---@field LOOP_DELAY integer
 
 ---@class Method__Auto__PRESET
 ---@field doDeformation fun(params: Method__Auto__PRESET_DeformationParams)

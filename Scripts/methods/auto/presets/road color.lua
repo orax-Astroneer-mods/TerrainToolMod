@@ -1,8 +1,30 @@
+--[[
+    How to get a "material index" (color)?
+
+    Open the "paint" method (shortcut "5" by default) and click on a color to see its material index.
+]]
+
 local UEHelpers = require("UEHelpers")
 local sys = UEHelpers.GetKismetSystemLibrary()
 local vec3 = Vec3
 local rad, random = math.rad, math.random
-local EDeformType = EDeformType
+
+---@type EDeformType
+local EDeformType = {
+    Subtract = 0,
+    Add = 1,
+    Flatten = 2,
+    ColorPick = 3,
+    ColorPaint = 4,
+    CountCreative = 5,
+    Crater = 6,
+    FlattenSubtractOnly = 7,
+    FlattenAddOnly = 8,
+    TrueFlatStamp = 9,
+    PlatformSurface = 10,
+    RevertModifications = 11,
+    Count = 12,
+}
 
 -- Planets: SYLVA, DESOLO, CALIDOR, VESANIA, NOVUS, GLACIO, ATROX.
 

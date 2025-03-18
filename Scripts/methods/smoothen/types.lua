@@ -1,11 +1,14 @@
----@class (exact) Method__Smoothen: Method
+---@class Method__Smoothen: Method
 
----@class (exact) Method__Smoothen__PARAMS
+---@class Method__Smoothen__PARAMS
 ---@field DEBUG_OBJECTS boolean
+---@field LAST_PRESET string
+
+---@class Method__Smoothen__PRESET
+---@field CIRCLES Method__Smoothen__PARAMS__CIRCLE[]
 ---@field MAX_OFFSET float
 ---@field TRACE_LENGTH float
----@field CIRCLES Method__Smoothen__PARAMS__CIRCLE[]
 
----@class (exact) Method__Smoothen__PARAMS__CIRCLE
+---@class Method__Smoothen__PARAMS__CIRCLE
 ---@field HITS number
 ---@field RADIUS float

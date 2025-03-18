@@ -1,1 +1,1 @@
----@class (exact) Method__slop: Method
+---@class Method__slop: Method

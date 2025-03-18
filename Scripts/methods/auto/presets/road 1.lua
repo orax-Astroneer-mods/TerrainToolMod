@@ -1,8 +1,30 @@
+--[[
+    How to get a "material index" (color)?
+
+    Open the "paint" method (shortcut "5" by default) and click on a color to see its material index.
+]]
+
 local UEHelpers = require("UEHelpers")
 local sys = UEHelpers.GetKismetSystemLibrary()
 local vec3 = Vec3
 local rad = math.rad
-local EDeformType = EDeformType
+
+---@type EDeformType
+local EDeformType = {
+    Subtract = 0,
+    Add = 1,
+    Flatten = 2,
+    ColorPick = 3,
+    ColorPaint = 4,
+    CountCreative = 5,
+    Crater = 6,
+    FlattenSubtractOnly = 7,
+    FlattenAddOnly = 8,
+    TrueFlatStamp = 9,
+    PlatformSurface = 10,
+    RevertModifications = 11,
+    Count = 12,
+}
 
 ---@type Method__Auto__PRESET
 return {
@@ -11,9 +33,10 @@ return {
 
         -- Planets: SYLVA, DESOLO, CALIDOR, VESANIA, NOVUS, GLACIO, ATROX.
         -- Documentation: if then else | https://www.lua.org/pil/4.3.1.html
-        local materialIndex = 128 -- default (gray white)
+        -- material index 128 = default (gray white)
+        local materialIndex = 15
         if p.planetName == "SYLVA" then
-            materialIndex = 16    -- green
+            materialIndex = 16 -- green on Sylva
         end
 
         local relativeFloor = vec3.new(

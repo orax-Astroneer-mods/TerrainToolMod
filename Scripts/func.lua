@@ -18,7 +18,9 @@ function m.isFileExists(filename)
     end
 end
 
-function m.getParamsFile()
+---@param method? string
+---@return string
+function m.getParamsFile(method)
     local function check(file, exampleFile)
         local f1 = loadfile(file)
         if f1 == nil then
@@ -39,9 +41,16 @@ function m.getParamsFile()
         end
     end
 
-    local currentDirectory = debug.getinfo(2, "S").source:match([[@?(.+\Mods\[^\\]+\Scripts\methods\[^\]+)]])
-    local file = currentDirectory .. "\\params.lua"
-    local exampleFile = currentDirectory .. "\\params.example.lua"
+    local methodDirectory
+    if method == nil or method == "" then
+        -- current directory
+        methodDirectory = debug.getinfo(2, "S").source:match([[@?(.+\Mods\[^\\]+\Scripts\methods\[^\]+)]])
+    else
+        methodDirectory = debug.getinfo(2, "S").source:match([[@?(.+\Mods\[^\\]+\Scripts\methods\)]]) .. method
+    end ---@cast methodDirectory string
+
+    local file = methodDirectory .. "\\params.lua"
+    local exampleFile = methodDirectory .. "\\params.example.lua"
 
     local _, fileSize = m.isFileExists(file)
     if fileSize == 0 or check(file, exampleFile) == false then
@@ -76,9 +85,7 @@ function m.loadParamsFile(paramsFile)
         i = i + 1
     end
 
-    if i > 0 then
-        print(string.format("Loaded params (%d): \n%s", i, str))
-    else
+    if i == 0 then
         print(string.format("WARN: No parameters were loaded from the file %q.", paramsFile))
     end
 
@@ -181,6 +188,26 @@ end
 ---Return true if the mod has been restarted.
 function m.isModRestarted()
     return ModRef:GetSharedVariable(utils.mod.name)
+end
+
+---Sort a table.
+---Source: https://www.lua.org/pil/19.3.html
+---@param t table
+---@param f function?
+function m.pairsByKeys(t, f)
+    local a = {}
+    for n in pairs(t) do table.insert(a, n) end
+    table.sort(a, f)
+    local i = 0             -- iterator variable
+    local iter = function() -- iterator function
+        i = i + 1
+        if a[i] == nil then
+            return nil
+        else
+            return a[i], t[a[i]]
+        end
+    end
+    return iter
 end
 
 return m
