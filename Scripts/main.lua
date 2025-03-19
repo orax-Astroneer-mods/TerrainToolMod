@@ -46,17 +46,15 @@ local ESlateVisibility = {
     ESlateVisibility_MAX = 5
 }
 
-local HandleTerrainToolStatus = false
 inf = math.huge ---@diagnostic disable-line: lowercase-global
 
 -- functions implemented in the method file
 local Methods = {} ---@type Method[]
 local MethodNamesList = {}
 
+local HandleTerrainToolStatus = false
 local CachedTerrainTool = CreateInvalidObject() ---@cast CachedTerrainTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
-
 local HelpUI = { showed = false }
-
 local PreId_handleTerrainTool, PostId_handleTerrainTool
 
 local UEHelpers = require("UEHelpers")
