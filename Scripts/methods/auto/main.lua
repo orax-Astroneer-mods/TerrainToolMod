@@ -552,9 +552,7 @@ return {
     end,
     onLoad = function()
         init()
-        if HandleTerrainToolStatus == true then
-            showUI()
-        end
+        showUI()
     end,
     onUnload = function()
         hideUI()

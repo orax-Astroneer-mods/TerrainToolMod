@@ -369,10 +369,8 @@ return {
     end,
     onLoad = function()
         init()
-        if HandleTerrainToolStatus == true then
-            showUI()
-            updateUI()
-        end
+        showUI()
+        updateUI()
     end,
     onUnload = function()
         updateParamsFromUI()

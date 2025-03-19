@@ -46,7 +46,7 @@ local ESlateVisibility = {
     ESlateVisibility_MAX = 5
 }
 
-HandleTerrainToolStatus = false
+local HandleTerrainToolStatus = false
 inf = math.huge ---@diagnostic disable-line: lowercase-global
 
 -- functions implemented in the method file

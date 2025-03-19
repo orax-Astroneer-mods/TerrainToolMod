@@ -427,10 +427,8 @@ return {
         hideUI()
     end,
     onLoad = function()
-        if HandleTerrainToolStatus == true then
-            params_paint = func.loadParamsFile(paramsFile_paint)
-            showUI()
-        end
+        params_paint = func.loadParamsFile(paramsFile_paint)
+        showUI()
     end,
     onUnload = function()
         hideUI()

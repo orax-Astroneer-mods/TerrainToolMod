@@ -374,7 +374,6 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_roundedAltitude"))
     UI.roundedAltitude.WidgetStyle.Font.Size = optUI.tangent.font_size
     UI.roundedAltitude.WidgetStyle.Font.FontObject = fontObj
-    UI.roundedAltitude.HintText = FText(optUI.tangent.txt.roundedAltitude_hintText)
     UI.roundedAltitude.IsReadOnly = true
     UI.roundedAltitude:SetToolTipText(FText(optUI.tangent.txt.roundedAltitude_tip))
 
@@ -558,10 +557,8 @@ return {
         hideUI()
     end,
     onLoad = function()
-        if HandleTerrainToolStatus == true then
-            params_paint = func.loadParamsFile(paramsFile_paint)
-            showUI()
-        end
+        params_paint = func.loadParamsFile(paramsFile_paint)
+        showUI()
     end,
     onUnload = function()
         hideUI()

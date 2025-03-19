@@ -27,10 +27,12 @@ local ui = {
                 "Usage: Equip your Terrain Tool and choose a Flatten mode.",
             altitudeList_tip =
                 "List of predefined altitudes.\n" ..
+                "The \"Force Altitude\" checkbox needs to be checked to use this selected altitude; otherwise, the altitude will be the one under the cursor.\n" ..
                 [[You can modify them in the "methods\tangent\params.lua". After editing the file, press %s to update the list.]],
             temporaryAltitude = "Temporary altitude",
             temporaryAltitude_tip =
-            "You can set an altitude manually. This value will override the preset altitude in the ComboBox list.",
+                "You can set an altitude manually. This value will override the preset altitude in the ComboBox list above.\n" ..
+                "The \"Force Altitude\" checkbox needs to be checked to use this selected altitude; otherwise, the altitude will be the one under the cursor.",
             forceAltitude = "Force altitude",
             forceAltitude_tip =
                 "Check to force the altitude to the set value when using a Flatten mode.\n" ..
@@ -38,8 +40,7 @@ local ui = {
             altitudeRound = "Round altitude to",
             altitudeRound_tip = "The altitude will be rounded to this value.\n" ..
                 [[For example, if the value is "100": "120124" will be rounded to "120100"; "100165" will be rounded to "100200.]],
-            roundedAltitude_hintText = "Rounded altitude",
-            roundedAltitude_tip = "Last rounded altitude (read only).",
+            roundedAltitude_tip = "Last altitude used (read only).",
             paint = "Paint",
         },
         font_size = default.font_size,
