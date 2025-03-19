@@ -563,39 +563,6 @@ local function createHelpUI()
         textRight = textRight .. keyName .. "\n"
     end
 
-    ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
-
-    ---@type UUserWidget
-    HelpUI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
-        FName(prefix .. "UserWidget"))
-    assert(HelpUI.userWidget:IsValid())
-
-    HelpUI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), HelpUI.userWidget,
-        FName(prefix .. "WidgetTree"))
-    assert(HelpUI.userWidget.WidgetTree:IsValid())
-
-    ---@type UCanvasPanel
-    HelpUI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
-        HelpUI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
-    assert(HelpUI.canvas:IsValid())
-    HelpUI.userWidget.WidgetTree.RootWidget = HelpUI.canvas
-
-    ---@type UVerticalBox
-    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
-        HelpUI.userWidget.WidgetTree.RootWidget, FName(prefix .. "VerticalBox"))
-
-    ---@type UHorizontalBox
-    local horizontalBox = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        verticalBox, FName(prefix .. "HorizontalBox1"))
-
-    ---@type UMultiLineEditableTextBox
-    local multiLineEditableTextBox = StaticConstructObject(umg_MultiLineEditableTextBox,
-        horizontalBox, FName(prefix .. "MultiLineEditableTextBox"))
-
-    ---@type UMultiLineEditableTextBox
-    local multiLineEditableTextBox2 = StaticConstructObject(umg_MultiLineEditableTextBox,
-        horizontalBox, FName(prefix .. "MultiLineEditableTextBox2"))
-
     text = text .. "[Globals]\n"
     textLeft = textLeft .. "[Globals]\n"
     textRight = textRight .. "\n"
@@ -643,30 +610,67 @@ local function createHelpUI()
         options.auto__set_angle_to_expectedAngle_Modifier_KeyName ..
         "+" .. options.auto__set_angle_to_expectedAngle_KeyName, options.auto__set_angle_to_expectedAngle_text)
 
-    -- remove new line (\n) at the ned
+    -- remove new line (\n) at the end
+    textLeft = textLeft:sub(1, -2)
     textRight = textRight:sub(1, -2)
 
-    local commandsText = "\nCommands: deform_type, get_altitude,\nttmod, look."
-    local notesText = "\nNotes: Method-specific shortcuts only work\nwhen you have your terrain tool equipped."
-    textLeft = textLeft .. commandsText
-    textLeft = textLeft .. notesText
-    text = text .. commandsText
-    text = text .. notesText
+    text = text .. "\n" .. optUI["*main*"].helpText_bottom
 
     local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
-    multiLineEditableTextBox.WidgetStyle.Font.FontObject = fontObj
-    multiLineEditableTextBox.WidgetStyle.Font.Size = options.help_ui.font_size
-    multiLineEditableTextBox.bIsReadOnly = true
 
-    multiLineEditableTextBox:SetText(FText(textLeft))
-    multiLineEditableTextBox2:SetText(FText(textRight))
-    multiLineEditableTextBox2.WidgetStyle.Font.FontObject = fontObj
-    multiLineEditableTextBox2.WidgetStyle.Font.Size = options.help_ui.font_size
-    multiLineEditableTextBox2.bIsReadOnly = true
+    ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
-    horizontalBox:AddChildToHorizontalBox(multiLineEditableTextBox)
-    horizontalBox:AddChildToHorizontalBox(multiLineEditableTextBox2)
+    ---@type UUserWidget
+    HelpUI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
+        FName(prefix .. "UserWidget"))
+    assert(HelpUI.userWidget:IsValid())
+
+    HelpUI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), HelpUI.userWidget,
+        FName(prefix .. "WidgetTree"))
+    assert(HelpUI.userWidget.WidgetTree:IsValid())
+
+    ---@type UCanvasPanel
+    HelpUI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
+        HelpUI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
+    assert(HelpUI.canvas:IsValid())
+    HelpUI.userWidget.WidgetTree.RootWidget = HelpUI.canvas
+
+    ---@type UVerticalBox
+    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
+        HelpUI.userWidget.WidgetTree.RootWidget, FName(prefix .. "VerticalBox"))
+
+    ---@type UHorizontalBox
+    local horizontalBox = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        verticalBox, FName(prefix .. "HorizontalBox1"))
+
+    ---@type UMultiLineEditableTextBox
+    local multiLineEditableTextBox_left = StaticConstructObject(umg_MultiLineEditableTextBox,
+        horizontalBox, FName(prefix .. "multiLineEditableTextBox_left"))
+    multiLineEditableTextBox_left.WidgetStyle.Font.FontObject = fontObj
+    multiLineEditableTextBox_left.WidgetStyle.Font.Size = options.help_ui.font_size
+    multiLineEditableTextBox_left.bIsReadOnly = true
+    multiLineEditableTextBox_left:SetText(FText(textLeft))
+    horizontalBox:AddChildToHorizontalBox(multiLineEditableTextBox_left)
+
+    ---@type UMultiLineEditableTextBox
+    local multiLineEditableTextBox_right = StaticConstructObject(umg_MultiLineEditableTextBox,
+        horizontalBox, FName(prefix .. "MultiLineEditableTextBox_right"))
+    multiLineEditableTextBox_right.WidgetStyle.Font.FontObject = fontObj
+    multiLineEditableTextBox_right.WidgetStyle.Font.Size = options.help_ui.font_size
+    multiLineEditableTextBox_right.bIsReadOnly = true
+    multiLineEditableTextBox_right:SetText(FText(textRight))
+    horizontalBox:AddChildToHorizontalBox(multiLineEditableTextBox_right)
+
+    ---@type UMultiLineEditableTextBox
+    local multiLineEditableTextBox_bottom = StaticConstructObject(umg_MultiLineEditableTextBox,
+        horizontalBox, FName(prefix .. "MultiLineEditableTextBox_bottom"))
+    multiLineEditableTextBox_bottom.WidgetStyle.Font.FontObject = fontObj
+    multiLineEditableTextBox_bottom.WidgetStyle.Font.Size = options.help_ui.font_size
+    multiLineEditableTextBox_bottom.bIsReadOnly = true
+    multiLineEditableTextBox_bottom:SetText(FText(optUI["*main*"].helpText_bottom))
+
     verticalBox:AddChildToVerticalBox(horizontalBox)
+    verticalBox:AddChildToVerticalBox(multiLineEditableTextBox_bottom)
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 

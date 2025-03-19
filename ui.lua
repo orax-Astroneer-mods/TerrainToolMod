@@ -19,6 +19,13 @@ local ui = {
                 "- The hardness of the terrain may be modified."
         }
     },
+    ["*main*"] = {
+        helpText_bottom =
+            "Commands: deform_type, get_altitude, ttmod, look.\n" ..
+            "Notes:\n" ..
+            "- Method-specific shortcuts only work when your terrain tool is equipped.\n" ..
+            "- Some features do not work in Creative mode."
+    },
     tangent = {
         txt = {
             title = "tangent",
