@@ -25,13 +25,29 @@ local PaintTerrain = false
 ---@field material UMaterialInterface?
 ---@field mesh UStaticMesh?
 ---@field scale FVector
+---@field meshClassName string
+---@field matClassName string
 local dbg = {
     staticMeshActorClassShortName = "StaticMeshActor",
     staticMeshActorClassName = "/Script/Engine.StaticMeshActor",
     staticMeshActorClass = nil,
     material = nil,
     mesh = nil,
-    scale = { X = 0.1, Y = 0.1, Z = 0.1 }
+    scale = { X = 0.1, Y = 0.1, Z = 0.1 },
+    --[[ Cone, Cube, Cylinder, Plane, Sphere ]]
+    meshClassName = "/Engine/BasicShapes/Sphere.Sphere",
+    --[[
+        Open FModel, go in Engine > Content > EngineDebugMaterials
+
+        "/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"
+        "/Engine/EngineDebugMaterials/WireframeMaterial.WireframeMaterial" -- Params: Color (wireframe, emissive).
+        "/Engine/EngineDebugMaterials/DebugMeshMaterial.DebugMeshMaterial" -- Params: Color (emissive).
+        "/Engine/EngineDebugMaterials/DebugEditorMaterial.DebugEditorMaterial" -- Params: Color, Desaturation, Opacity (emissive).
+        "/Engine/EngineDebugMaterials/M_SimpleTranslucent.M_SimpleTranslucent" -- Params: Color (translucent).
+        "/Engine/EngineMaterials/EmissiveTexturedMaterial.EmissiveTexturedMaterial" -- Params: Texture.
+        "/Engine/EngineMaterials/WorldGridMaterial.WorldGridMaterial" -- Params: None.
+        ]]
+    matClassName = "/Engine/EngineDebugMaterials/DebugMeshMaterial.DebugMeshMaterial"
 }
 
 local options = OPTIONS
@@ -635,34 +651,19 @@ local function init()
     World = UEHelpers:GetWorld()
 
     ExecuteInGameThread(function()
-        --[[
-        Open FModel, go in Engine > Content > EngineDebugMaterials
-
-        "/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"
-        "/Engine/EngineDebugMaterials/WireframeMaterial.WireframeMaterial" -- Params: Color (wireframe, emissive).
-        "/Engine/EngineDebugMaterials/DebugMeshMaterial.DebugMeshMaterial" -- Params: Color (emissive).
-        "/Engine/EngineDebugMaterials/DebugEditorMaterial.DebugEditorMaterial" -- Params: Color, Desaturation, Opacity (emissive).
-        "/Engine/EngineDebugMaterials/M_SimpleTranslucent.M_SimpleTranslucent" -- Params: Color (translucent).
-        "/Engine/EngineMaterials/EmissiveTexturedMaterial.EmissiveTexturedMaterial" -- Params: Texture.
-        "/Engine/EngineMaterials/WorldGridMaterial.WorldGridMaterial" -- Params: None.
-        ]]
-        local mat = "/Engine/EngineDebugMaterials/DebugMeshMaterial.DebugMeshMaterial"
-        LoadAsset(mat) ---@diagnostic disable-line: undefined-global
-
-        -- Cone, Cube, Cylinder, Plane, Sphere
-        local mesh = "/Engine/BasicShapes/Sphere.Sphere"
-        LoadAsset(mesh) ---@diagnostic disable-line: undefined-global
+        LoadAsset(dbg.matClassName) ---@diagnostic disable-line: undefined-global
+        LoadAsset(dbg.meshClassName) ---@diagnostic disable-line: undefined-global
 
         if dbg.staticMeshActorClass == nil or dbg.staticMeshActorClass:IsValid() == false then
             dbg.staticMeshActorClass = StaticFindObject(dbg.staticMeshActorClassName) ---@diagnostic disable-line: assign-type-mismatch
         end
 
         if dbg.material == nil or dbg.material:IsValid() == false then
-            dbg.material = StaticFindObject(mat) ---@diagnostic disable-line: assign-type-mismatch
+            dbg.material = StaticFindObject(dbg.matClassName) ---@diagnostic disable-line: assign-type-mismatch
         end
 
         if dbg.mesh == nil or dbg.mesh:IsValid() == false then
-            dbg.mesh = StaticFindObject(mesh) ---@diagnostic disable-line: assign-type-mismatch
+            dbg.mesh = StaticFindObject(dbg.meshClassName) ---@diagnostic disable-line: assign-type-mismatch
         end
     end)
 end
