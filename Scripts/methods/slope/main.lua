@@ -414,7 +414,7 @@ SLOPE_ANGLE=%.16g
     file:close()
 end
 
----@type Method__slop
+---@type Method__Slope
 return {
     params = params,
     handleTerrainTool_hook = handleTerrainTool_hook,
