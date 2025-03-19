@@ -15,41 +15,8 @@ local updateUI = function() end
 local paramsFile_paint = func.getParamsFile("paint")
 local params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
 
+local DebugObjects = {} ---@type AStaticMeshActor[]
 local PaintTerrain = false
-
----@type ESlateVisibility
-local ESlateVisibility = {
-    Visible = 0,
-    Collapsed = 1,
-    Hidden = 2,
-    HitTestInvisible = 3,
-    SelfHitTestInvisible = 4,
-    ESlateVisibility_MAX = 5
-}
-
----@type ECheckBoxState
-local ECheckBoxState = {
-    Unchecked    = 0,
-    Checked      = 1,
-    Undetermined = 2,
-}
-
----@type EDeformType
-local EDeformType = {
-    Subtract = 0,
-    Add = 1,
-    Flatten = 2,
-    ColorPick = 3,
-    ColorPaint = 4,
-    CountCreative = 5,
-    Crater = 6,
-    FlattenSubtractOnly = 7,
-    FlattenAddOnly = 8,
-    TrueFlatStamp = 9,
-    PlatformSurface = 10,
-    RevertModifications = 11,
-    Count = 12,
-}
 
 ---@class Debug
 ---@field staticMeshActorClassShortName string
@@ -89,6 +56,40 @@ local LineTraceSingleForObjects = sys.LineTraceSingleForObjects
 local World = UEHelpers:GetWorld()
 
 local pi2 = math.pi * 2
+
+---@type ESlateVisibility
+local ESlateVisibility = {
+    Visible = 0,
+    Collapsed = 1,
+    Hidden = 2,
+    HitTestInvisible = 3,
+    SelfHitTestInvisible = 4,
+    ESlateVisibility_MAX = 5
+}
+
+---@type ECheckBoxState
+local ECheckBoxState = {
+    Unchecked    = 0,
+    Checked      = 1,
+    Undetermined = 2,
+}
+
+---@type EDeformType
+local EDeformType = {
+    Subtract = 0,
+    Add = 1,
+    Flatten = 2,
+    ColorPick = 3,
+    ColorPaint = 4,
+    CountCreative = 5,
+    Crater = 6,
+    FlattenSubtractOnly = 7,
+    FlattenAddOnly = 8,
+    TrueFlatStamp = 9,
+    PlatformSurface = 10,
+    RevertModifications = 11,
+    Count = 12,
+}
 
 --- Get the perpendicular vector of a vector.
 ---@param a vec3 Vector to get perpendicular axes from
@@ -201,10 +202,9 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
             writeParamsFile()
 
             -- destroy debug objects
-            local dbgObjectsInst = FindAllOf(dbg.staticMeshActorClassShortName) ---@type AActor[]?
-            if dbgObjectsInst then
-                for _, value in ipairs(dbgObjectsInst) do
-                    value:K2_DestroyActor()
+            for _, object in ipairs(DebugObjects) do
+                if object and object:IsValid() then
+                    object:K2_DestroyActor()
                 end
             end
         end
@@ -224,15 +224,16 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     insert(normals, toolHit.Normal)
 
     if dbgObject then
-        local dbgObjectsInst = FindAllOf(dbg.staticMeshActorClassShortName) ---@type AActor[]?
-        if dbgObjectsInst then
-            for _, value in ipairs(dbgObjectsInst) do
-                value:K2_DestroyActor()
+        -- destroy debug objects
+        for _, object in ipairs(DebugObjects) do
+            if object and object:IsValid() then
+                object:K2_DestroyActor()
             end
         end
 
-        func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material, toolHit.Location,
-            nil, dbg.scale, { R = 50, G = 0, B = 0, A = 1 })
+        table.insert(DebugObjects,
+            func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material, toolHit.Location,
+                nil, dbg.scale, { R = 50, G = 0, B = 0, A = 1 }))
     end
 
     local color = { R = 0, G = 0, B = 0, A = 0 }
@@ -277,9 +278,10 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
                 if hit.Distance ~= 0 then
                     c = { R = 0, G = 50, B = 0, A = 1.0 }
                 end
-                func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
-                    { X = r.x, Y = r.y, Z = r.z },
-                    nil, dbg.scale, c)
+                table.insert(DebugObjects,
+                    func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
+                        { X = r.x, Y = r.y, Z = r.z },
+                        nil, dbg.scale, c))
             end
 
             ---@diagnostic disable-next-line: missing-fields
@@ -290,9 +292,10 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
                 outHit, true, color, color, 0)
 
             if dbgObject then
-                func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
-                    outHit.Location,
-                    nil, dbg.scale, { R = 0, G = 0, B = 50, A = 1.0 })
+                table.insert(DebugObjects,
+                    func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
+                        outHit.Location,
+                        nil, dbg.scale, { R = 0, G = 0, B = 50, A = 1.0 }))
             end
 
             if outHit.Normal.X ~= 0 or outHit.Normal.Y ~= 0 or outHit.Normal.Z ~= 0 then
@@ -391,9 +394,10 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
 
             -- new normal
             for i = 50, 500, 50 do
-                func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
-                    { X = x_loc + x_norm * i, Y = y_loc + y_norm * i, Z = z_loc + z_norm * i },
-                    nil, dbg.scale, { R = 1, G = 1, B = 1, A = 0.1 })
+                table.insert(DebugObjects,
+                    func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
+                        { X = x_loc + x_norm * i, Y = y_loc + y_norm * i, Z = z_loc + z_norm * i },
+                        nil, dbg.scale, { R = 1, G = 1, B = 1, A = 0.1 }))
             end
         end
     end

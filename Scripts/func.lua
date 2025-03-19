@@ -163,6 +163,7 @@ end
 ---@param rotation FRotator?
 ---@param scale FVector?
 ---@param color FLinearColor?
+---@return AStaticMeshActor
 function m.spawnDebugObject(world, staticMeshActorClass, mesh, material, location, rotation, scale, color)
     rotation = rotation or { Pitch = 0, Roll = 0, Yaw = 0 }
     scale = scale or { X = 1, Y = 1, Z = 1 }
@@ -178,6 +179,8 @@ function m.spawnDebugObject(world, staticMeshActorClass, mesh, material, locatio
 
     local matInstance = staticMeshActor.StaticMeshComponent:CreateDynamicMaterialInstance(0, material, FName(0))
     matInstance:SetVectorParameterValue(FName("Color"), color)
+
+    return staticMeshActor
 end
 
 ---Set that the mod is started in a shared variable.
