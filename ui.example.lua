@@ -108,7 +108,8 @@ local ui = {
                 "- This method only activates when your character is moving with your Terrain Tool equipped.",
             loop_delay = "Loop delay",
             loop_delay_tip =
-            "The angle will be increased/decreased every n milliseconds until it is equal to the expected angle (in degrees).",
+                "The angle will be increased/decreased every n milliseconds until it is equal to the expected angle (in degrees).\n" ..
+                "Unequip and equip your Terrain Tool to take into account the modifications.",
             angle = "Angle",
             angle_tip =
                 "Terraforming angle.\n" ..
