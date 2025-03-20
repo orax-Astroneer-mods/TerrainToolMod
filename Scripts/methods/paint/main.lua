@@ -291,11 +291,8 @@ end
 local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
                                       isUsingTool, justActivated, canUse)
     local deformTool = self:get() ---@type ASmallDeform_TERRAIN_EXPERIMENTAL_C
-    controller = controller:get() ---@cast controller APlayController
-    toolHit = toolHit:get() ---@cast toolHit FHitResult
-    justActivated = justActivated:get() ---@cast justActivated boolean
 
-    if justActivated == true then
+    if justActivated:get() == true then
         deformTool.Operation = EDeformType.ColorPaint
 
         updateUI()
@@ -304,6 +301,9 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     if isUsingTool:get() == false then
         return
     end
+
+    controller = controller:get() ---@cast controller APlayController
+    toolHit = toolHit:get() ---@cast toolHit FHitResult
 
     if deformTool.Operation == EDeformType.ColorPaint then
         isUsingTool:set(false)

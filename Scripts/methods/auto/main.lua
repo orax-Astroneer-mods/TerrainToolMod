@@ -441,7 +441,7 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     controller = controller:get() ---@cast controller APlayController
     justActivated = justActivated:get() ---@cast justActivated boolean
 
-    if justActivated then
+    if justActivated == true then
         updateParamsFile()
 
         startMainLoop()

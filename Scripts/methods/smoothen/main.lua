@@ -162,7 +162,14 @@ local function updateUI()
         if index == -1 then
             index = 0
         end
+        -- select preset
         UI.presetsComboBox:SetSelectedIndex(index)
+        CurrentPresetName = UI.presetsComboBox:GetSelectedOption():ToString()
+        if CurrentPresetName == "" then
+            log.warn("No preset found.")
+        else
+            CurrentPreset = Presets[CurrentPresetName]
+        end
     end
 
     if UI.debugCheckBox:IsValid() then
@@ -232,7 +239,6 @@ local function updateParamsFile()
 
     -- get paint CheckBox state
     local paint = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
-    print(params.PAINT, paint)
     if params.PAINT ~= paint then
         params.PAINT = paint
         updateRequired = true
@@ -254,6 +260,11 @@ end
 ---@param canUse any
 local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
                                       isUsingTool, justActivated, canUse)
+    if justActivated:get() == true then
+        World = UEHelpers:GetWorld()
+        updateParamsFile()
+    end
+
     if isUsingTool:get() == false or canUse:get() == false then
         return
     end
@@ -262,12 +273,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     controller = controller:get() ---@cast controller APlayController
     toolHit = toolHit:get() ---@cast toolHit FHitResult
     startedInteraction = startedInteraction:get() ---@cast startedInteraction boolean
-    justActivated = justActivated:get() ---@cast justActivated boolean
-
-    if justActivated then
-        World = UEHelpers:GetWorld()
-        updateParamsFile()
-    end
 
     local operation = deformTool.Operation
 

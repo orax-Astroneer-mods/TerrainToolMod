@@ -148,6 +148,12 @@ end
 
 local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
                                       isUsingTool, justActivated, canUse)
+    if justActivated:get() == true then
+        updateParamsFile()
+        -- Planet center is (0, 0, 0) for SYLVA.
+        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
+    end
+
     if isUsingTool:get() == false or canUse:get() == false then
         return
     end
@@ -156,13 +162,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     controller = controller:get() ---@cast controller APlayController
     toolHit = toolHit:get() ---@cast toolHit FHitResult
     startedInteraction = startedInteraction:get() ---@cast startedInteraction boolean
-    justActivated = justActivated:get() ---@cast justActivated boolean
-
-    if justActivated then
-        updateParamsFile()
-        -- Planet center is (0, 0, 0) for SYLVA.
-        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
-    end
 
     local operation = deformTool.Operation
 
