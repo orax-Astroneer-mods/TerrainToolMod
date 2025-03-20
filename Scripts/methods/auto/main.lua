@@ -180,6 +180,8 @@ local function startMainLoop()
             setExpectedAngle(mathHuge)
         end
 
+        MainLoop.enabled = not MainLoop.stopping
+
         return MainLoop.stopping
     end)
 end
@@ -234,12 +236,12 @@ local function createUI()
         rootWidget, FName(prefix .. "HorizontalBox_loop_delay"))
 
     ---@type UTextBlock
-    local textBlock_loop_delay = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+    UI.textBlock_loop_delay = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
         rootWidget, FName(prefix .. "TextBlock_loop_delay"))
-    textBlock_loop_delay.Font.Size = optUI.auto.font_size
-    textBlock_loop_delay.Font.FontObject = fontObj
-    textBlock_loop_delay:SetText(FText(optUI.auto.txt.loop_delay))
-    textBlock_loop_delay:SetToolTipText(FText(optUI.auto.txt.loop_delay_tip))
+    UI.textBlock_loop_delay.Font.Size = optUI.auto.font_size
+    UI.textBlock_loop_delay.Font.FontObject = fontObj
+    UI.textBlock_loop_delay:SetText(FText(optUI.auto.txt.loop_delay))
+    UI.textBlock_loop_delay:SetToolTipText(FText(optUI.auto.txt.loop_delay_tip))
 
     ---@type USpacer
     local spacer_loop_delay = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
@@ -252,7 +254,7 @@ local function createUI()
     UI.loop_delay.WidgetStyle.Font.Size = optUI.auto.font_size
     UI.loop_delay.WidgetStyle.Font.FontObject = fontObj
 
-    horizontalBox_loop_delay:AddChildToHorizontalBox(textBlock_loop_delay)
+    horizontalBox_loop_delay:AddChildToHorizontalBox(UI.textBlock_loop_delay)
     horizontalBox_loop_delay:AddChildToHorizontalBox(spacer_loop_delay)
     horizontalBox_loop_delay:AddChildToHorizontalBox(UI.loop_delay)
     --#endregion
@@ -340,8 +342,6 @@ local function createUI()
     UI.userWidget:AddToViewport(optUI.auto.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
-    writeParamsFile()
-
     log.debug("UI created (auto).")
 
     return true
@@ -401,8 +401,17 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         end
         CurrentPreset = Presets[CurrentPresetName]
 
-        if params.LAST_PRESET ~= CurrentPresetName then
+        -- get loop delay from UI
+        local loopDelay = tonumber(UI.loop_delay:GetText():ToString())
+        if loopDelay == nil then
+            loopDelay = params.LOOP_DELAY
+            UI.loop_delay:SetText(FText(tostring(loopDelay)))
+        end
+
+        if (params.LAST_PRESET ~= CurrentPresetName) or
+            (params.LOOP_DELAY ~= loopDelay) then
             params.LAST_PRESET = CurrentPresetName
+            params.LOOP_DELAY = loopDelay
             writeParamsFile()
         end
 
