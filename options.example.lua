@@ -150,28 +150,28 @@ local options = {
     -- (List of Key/Gamepad Input Names) https://michaeljcole.github.io/wiki.unrealengine.com/List_of_Key/Gamepad_Input_Names/
     auto__value1 = 1,
     auto__value2 = 5,
-    auto__increase_angle_text = "Increase angle by 1°",
+    auto__increase_angle_text = "Increase angle by 1",
     auto__increase_angle_KeyName = "Home",
-    auto__decrease_angle_text = "Decrease angle by 1°",
+    auto__decrease_angle_text = "Decrease angle by 1",
     auto__decrease_angle_KeyName = "End",
 
-    auto__increase_expected_angle_text = "Increase expected angle by 5°",
-    auto__decrease_expected_angle_text = "Decrease expected angle by 5°",
+    auto__increase_expected_angle_text = "Increase expected angle by 5",
+    auto__decrease_expected_angle_text = "Decrease expected angle by 5",
     auto__increase_or_decrease_expected_angle_KeyName = "LeftAlt",
 
     auto__angle_value1 = 45,
     auto__angle_value2 = -45,
-    auto__set_angle_to_value1_text = "Set expected angle to 45°",
+    auto__set_angle_to_value1_text = "Set expected angle to 45",
     auto__set_angle_to_value1_KeyName = "PageUp",
-    auto__set_angle_to_value2_text = "Set expected angle to -45°",
+    auto__set_angle_to_value2_text = "Set expected angle to -45",
     auto__set_angle_to_value2_KeyName = "PageDown",
 
-    auto__set_angle_to_zero_text = "Set expected angle to 0°",
+    auto__set_angle_to_zero_text = "Set expected angle to 0",
     auto__set_angle_to_zero_KeyName = "Delete",
 
     auto__set_angle_from_slope_text = "Set angle equal to slope angle (under cursor)",
     auto__set_angle_from_slope_KeyName = "Insert",
-    auto__set_angle_from_inverse_slope_text = "Set angle equal to −slope angle (under cursor)",
+    auto__set_angle_from_inverse_slope_text = "Set angle equal to -slope angle (under cursor)",
     auto__set_angle_from_slope_Modifier_KeyName = "LeftAlt",
 
     auto__set_angle_to_expectedAngle_KeyName = "Delete",

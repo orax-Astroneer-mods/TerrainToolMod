@@ -547,7 +547,7 @@ local function createHelpUI()
         return false
     end
 
-    local fmt = "%-50s%20s"
+    local fmt = "%-50s%30s"
     local text = ""
     local textLeft = options.help_ui.title_left
     local textRight = options.help_ui.title_right
