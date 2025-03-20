@@ -30,8 +30,6 @@ local PaintTerrain = false
 local RoundedAltitude = 0
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
 
-local writeParamsFile = function() end
-
 ---@type EDeformType
 local EDeformType = {
     Subtract = 0,
@@ -67,6 +65,89 @@ local ECheckBoxState = {
     Undetermined = 2,
 }
 
+---@param t table
+local function numberTableToString(t)
+    local str = "{"
+    for key, value in pairs(t) do
+        str = str .. format("[\"%s\"]=%.16g,", key, value)
+    end
+    str = str .. "}"
+
+    return str
+end
+
+local function writeParamsFile()
+    log.debug("Write params file.")
+
+    local file = io.open(paramsFile, "w+")
+
+    assert(file, format("\nUnable to open the params file %q.", paramsFile))
+
+    -- defaults
+    if params.ALTITUDES == nil then params.ALTITUDES = {} end
+    if params.ALTITUDE_ROUND == nil then params.ALTITUDE_ROUND = 50 end
+    if params.FORCE_ALTITUDE == nil then params.FORCE_ALTITUDE = false end
+    if params.PAINT == nil then params.PAINT = false end
+    if params.SELECTED_ALTITUDE_INDEX == nil then params.SELECTED_ALTITUDE_INDEX = 0 end
+    file:write(format(
+        [[return {
+ALTITUDES=%s,
+ALTITUDE_ROUND=%.16g,
+FORCE_ALTITUDE=%s,
+PAINT=%s,
+SELECTED_ALTITUDE_INDEX=%d,
+}]],
+        numberTableToString(params.ALTITUDES),
+        params.ALTITUDE_ROUND,
+        params.FORCE_ALTITUDE,
+        params.PAINT,
+        params.SELECTED_ALTITUDE_INDEX
+    ))
+
+    file:close()
+end
+
+local function updateParamsFile()
+    local updateRequired = false
+
+    -- get the selected altitude index from the altitude list (ComboBox)
+    local selectedIndex = UI.altitudeComboBox:GetSelectedIndex()
+    if params.SELECTED_ALTITUDE_INDEX ~= selectedIndex then
+        params.SELECTED_ALTITUDE_INDEX = selectedIndex
+        updateRequired = true
+    end
+
+    -- get altitude round
+    local round = tonumber(UI.altitudeRound:GetText():ToString())
+    if round == nil then
+        round = params.ALTITUDE_ROUND
+        UI.altitudeRound:SetText(FText(tostring(round)))
+    end
+    if params.ALTITUDE_ROUND ~= round then
+        params.ALTITUDE_ROUND = round
+        updateRequired = true
+    end
+
+
+    -- get force altitude CheckBox state
+    local forceAltitude = UI.forceAltitudeCheckBox.CheckedState == ECheckBoxState.Checked
+    if params.FORCE_ALTITUDE ~= forceAltitude then
+        params.FORCE_ALTITUDE = forceAltitude
+        updateRequired = true
+    end
+
+    -- get paint CheckBox state
+    local paint = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
+    if params.PAINT ~= paint then
+        params.PAINT = paint
+        updateRequired = true
+    end
+
+    if updateRequired then
+        writeParamsFile()
+    end
+end
+
 local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
                                       isUsingTool, justActivated, canUse)
     if isUsingTool:get() == false or canUse:get() == false then
@@ -77,6 +158,14 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     controller = controller:get() ---@cast controller APlayController
     toolHit = toolHit:get() ---@cast toolHit FHitResult
     startedInteraction = startedInteraction:get() ---@cast startedInteraction boolean
+    justActivated = justActivated:get() ---@cast justActivated boolean
+
+    if justActivated then
+        updateParamsFile()
+
+        -- Planet center is (0, 0, 0) for SYLVA.
+        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
+    end
 
     -- check if the hit actor is a SolarBody (planet)
     if not toolHit.Actor:Get():IsA("/Script/Astro.SolarBody") then ---@diagnostic disable-line: undefined-field
@@ -149,35 +238,9 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     end
 
     if startedInteraction then
-        -- Planet center is (0, 0, 0) for SYLVA.
-        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
+        local forceAltitude = params.FORCE_ALTITUDE
 
-        -- get the selected altitude index from the altitude list (ComboBox)
-        local selectedIndex = UI.altitudeComboBox:GetSelectedIndex()
-        if params.SELECTED_ALTITUDE_INDEX ~= selectedIndex then
-            params.SELECTED_ALTITUDE_INDEX = selectedIndex
-            writeParamsFile()
-        end
-
-        -- get altitude round
-        local round = tonumber(UI.altitudeRound:GetText():ToString())
-        if round == nil then
-            UI.altitudeRound:SetText(FText(tostring(params.ALTITUDE_ROUND)))
-        else
-            if params.ALTITUDE_ROUND ~= round then
-                params.ALTITUDE_ROUND = round
-                writeParamsFile()
-            end
-        end
-
-        -- get force altitude CheckBox state
-        local forceAltitude = UI.forceAltitudeCheckBox.CheckedState == ECheckBoxState.Checked
-        if params.FORCE_ALTITUDE ~= forceAltitude then
-            params.FORCE_ALTITUDE = forceAltitude
-            writeParamsFile()
-        end
-
-        if forceAltitude then
+        if forceAltitude == true then
             -- get altitude from the TextBox
             local alt = tonumber(UI.altitudeTextBox.Text:ToString())
 
@@ -282,7 +345,6 @@ local function updateAltitudeList()
     end
 
     local index = UI.altitudeComboBox:GetSelectedIndex()
-    params = func.loadParamsFile(paramsFile) ---@type Method__Tangent__PARAMS
     UI.altitudeComboBox:ClearOptions()
 
     for key, value in func.pairsByKeys(params.ALTITUDES) do
@@ -297,6 +359,9 @@ local function updateAltitudeList()
 end
 
 local function updateUI()
+    params = func.loadParamsFile(paramsFile)
+    params_paint = func.loadParamsFile(paramsFile_paint)
+
     updateAltitudeList()
 
     if UI.altitudeRound:IsValid() then
@@ -305,6 +370,11 @@ local function updateUI()
 
     if UI.forceAltitudeCheckBox:IsValid() then
         UI.forceAltitudeCheckBox:SetCheckedState(params.FORCE_ALTITUDE == true and
+            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+    end
+
+    if UI.paintCheckBox:IsValid() then
+        UI.paintCheckBox:SetCheckedState(params.PAINT == true and
             ECheckBoxState.Checked or ECheckBoxState.Unchecked)
     end
 end
@@ -497,6 +567,7 @@ local function hideUI()
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
+    updateParamsFile()
     UI.showed = false
 end
 
@@ -508,56 +579,17 @@ local function toogleUI()
     end
 end
 
----@param t table
-local function numberTableToString(t)
-    local str = "{"
-    for key, value in pairs(t) do
-        str = str .. format("[\"%s\"]=%.16g,", key, value)
-    end
-    str = str .. "}"
-
-    return str
-end
-
-writeParamsFile = function()
-    log.debug("Write params file.")
-
-    local file = io.open(paramsFile, "w+")
-
-    assert(file, format("\nUnable to open the params file %q.", paramsFile))
-
-    -- defaults
-    if params.ALTITUDE_ROUND == nil then params.ALTITUDE_ROUND = 50 end
-    if params.FORCE_ALTITUDE == nil then params.FORCE_ALTITUDE = false end
-    if params.SELECTED_ALTITUDE_INDEX == nil then params.SELECTED_ALTITUDE_INDEX = 0 end
-    if params.ALTITUDES == nil then params.ALTITUDES = {} end
-    file:write(format(
-        [[return {
-ALTITUDE_ROUND=%.16g,
-FORCE_ALTITUDE=%s,
-SELECTED_ALTITUDE_INDEX=%d,
-ALTITUDES=%s
-}]],
-        params.ALTITUDE_ROUND, params.FORCE_ALTITUDE, params.SELECTED_ALTITUDE_INDEX,
-        numberTableToString(params.ALTITUDES)))
-
-    file:close()
-end
-
 ---@type Method__tangent
 return {
     params = params,
     handleTerrainTool_hook = handleTerrainTool_hook,
-    writeParamsFile = writeParamsFile,
     onEnable = function()
-        params_paint = func.loadParamsFile(paramsFile_paint)
         showUI()
     end,
     onDisable = function()
         hideUI()
     end,
     onLoad = function()
-        params_paint = func.loadParamsFile(paramsFile_paint)
         showUI()
     end,
     onUnload = function()

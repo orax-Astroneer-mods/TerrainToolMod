@@ -6,5 +6,6 @@ return {
     },
     ALTITUDE_ROUND = 50,
     FORCE_ALTITUDE = false,
+    PAINT = false,
     SELECTED_ALTITUDE_INDEX = 0
 }

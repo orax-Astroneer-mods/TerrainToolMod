@@ -1,7 +1,7 @@
 ---@class Method__Auto: Method
 
 ---@class Method__Auto__PARAMS
----@field LAST_PRESET string
+---@field LATEST_PRESET string
 ---@field LOOP_DELAY integer
 
 ---@class Method__Auto__PRESET

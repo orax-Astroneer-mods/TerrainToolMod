@@ -5,11 +5,8 @@ local func = require("func")
 
 local log = Log
 local vec3 = Vec3
-local insert = table.insert
 local format = string.format
-local rad, mathHuge = math.rad, math.huge
-
-local writeParamsFile = function() end
+local mathHuge = math.huge
 
 local Presets, PresetNamesList = {}, {}
 local CurrentPreset ---@type Method__Auto__PRESET
@@ -34,10 +31,7 @@ local options = OPTIONS
 local optUI = OPTIONS_UI
 local Angle = 0
 local ExpectedAngle = mathHuge
-local MainLoop = {
-    enabled = false,
-    stopping = true
-}
+local MainLoops = {}
 
 --- Get the perpendicular vector of a vector.
 ---@param a vec3 Vector to get perpendicular axes from
@@ -63,6 +57,10 @@ local ESlateVisibility = {
 local function setAngle(angle)
     Angle = angle
     UI.angle:SetText(FText(tostring(angle)))
+
+    if angle == ExpectedAngle then
+        UI.expected_angle:SetText(FText(tostring(mathHuge)))
+    end
 end
 
 local function setExpectedAngle(angle)
@@ -109,6 +107,55 @@ local function getDesignAstro()
     return designAstro
 end
 
+local function writeParamsFile()
+    local file = io.open(paramsFile, "w+")
+
+    assert(file, format("\nUnable to open the params file %q.", paramsFile))
+
+    if params.LATEST_PRESET == nil then params.LATEST_PRESET = "" end
+    if params.LOOP_DELAY == nil then params.LOOP_DELAY = 250 end
+
+    file:write(format(
+        [[return {
+LATEST_PRESET="%s",
+LOOP_DELAY=%d
+}]],
+        params.LATEST_PRESET,
+        params.LOOP_DELAY))
+
+    file:close()
+end
+
+local function updateParamsFile()
+    local updateRequired = false
+
+    -- select preset from the UI
+    local currentPresetName = UI.comboBox_presets:GetSelectedOption():ToString()
+    if currentPresetName == "" then
+        UI.comboBox_presets:SetSelectedIndex(0)
+        currentPresetName = UI.comboBox_presets:GetSelectedOption():ToString()
+    end
+    if currentPresetName ~= params.LATEST_PRESET then
+        params.LATEST_PRESET = currentPresetName
+        updateRequired = true
+    end
+
+    -- get loop delay from the UI
+    local loopDelay = tonumber(UI.loop_delay:GetText():ToString())
+    if loopDelay == nil then
+        loopDelay = params.LOOP_DELAY
+        UI.loop_delay:SetText(FText(tostring(loopDelay)))
+    end
+    if loopDelay ~= params.LOOP_DELAY then
+        params.LOOP_DELAY = loopDelay
+        updateRequired = true
+    end
+
+    if updateRequired then
+        writeParamsFile()
+    end
+end
+
 local function updateGameVariables()
     World = UEHelpers:GetWorld()
     local designAstro = getDesignAstro()
@@ -125,6 +172,8 @@ local function updateGameVariables()
 end
 
 local function updateUI()
+    params = func.loadParamsFile(paramsFile)
+
     setAngle(0)
     setExpectedAngle(mathHuge)
     UI.loop_delay:SetText(FText(tostring(params.LOOP_DELAY)))
@@ -142,47 +191,52 @@ local function updateUI()
     end
     -- select last selected preset
     ---@diagnostic disable-next-line: param-type-mismatch
-    if params.LAST_PRESET and params.LAST_PRESET ~= "" and UI.comboBox_presets:FindOptionIndex(params.LAST_PRESET) ~= -1 then
+    if params.LATEST_PRESET and params.LATEST_PRESET ~= "" and UI.comboBox_presets:FindOptionIndex(params.LATEST_PRESET) ~= -1 then
         ---@diagnostic disable-next-line: param-type-mismatch
-        UI.comboBox_presets:SetSelectedOption(params.LAST_PRESET)
+        UI.comboBox_presets:SetSelectedOption(params.LATEST_PRESET)
     else
         UI.comboBox_presets:SetSelectedIndex(0)
-        params.LAST_PRESET = UI.comboBox_presets:GetOptionAtIndex(0):ToString()
+        params.LATEST_PRESET = UI.comboBox_presets:GetOptionAtIndex(0):ToString()
     end
 
     -- set semi-global variables
-    CurrentPresetName = params.LAST_PRESET
+    CurrentPresetName = params.LATEST_PRESET
     CurrentPreset = Presets[CurrentPresetName]
 end
 
-local function startMainLoop()
-    MainLoop.stopping = false
+local function stopAllMainLoops()
+    for i = 1, #MainLoops, 1 do
+        MainLoops[i] = true
+    end
+end
 
-    if MainLoop.enabled then
-        log.debug("Main loop already enabled.")
+local function startMainLoop()
+    stopAllMainLoops()
+
+    if not DesignAstro:IsValid() then
         return
     end
 
+    table.insert(MainLoops, false)
+    local loopIndex = #MainLoops
+
     LoopAsync(params.LOOP_DELAY or 250, function()
-        -- The angle will not change if the character is not holding the Terrain tool or moving.
-        if DesignAstro:IsValid() and (DesignAstro.HoldingTool == false or DesignAstro.CurrentSpeed == 0) then
-            return false
+        -- The angle will not change if the character is not holding the Terrain tool or moving,
+        -- or if the loop must stop.
+        if MainLoops[loopIndex] == false and DesignAstro.HoldingTool == true and DesignAstro.CurrentSpeed > 0 then
+            if ExpectedAngle == mathHuge then
+                return MainLoops[loopIndex]
+            end
+            if Angle < ExpectedAngle then
+                setAngle(Angle + 1)
+            elseif Angle > ExpectedAngle then
+                setAngle(Angle - 1)
+            elseif Angle == ExpectedAngle then
+                setExpectedAngle(mathHuge)
+            end
         end
 
-        if ExpectedAngle == mathHuge then
-            return MainLoop.stopping
-        end
-        if Angle < ExpectedAngle then
-            setAngle(Angle + 1)
-        elseif Angle > ExpectedAngle then
-            setAngle(Angle - 1)
-        elseif Angle == ExpectedAngle then
-            setExpectedAngle(mathHuge)
-        end
-
-        MainLoop.enabled = not MainLoop.stopping
-
-        return MainLoop.stopping
+        return MainLoops[loopIndex]
     end)
 end
 
@@ -360,11 +414,13 @@ local function showUI()
 end
 
 local function hideUI()
-    MainLoop.stopping = true
+    stopAllMainLoops()
 
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
+
+    updateParamsFile()
 end
 
 ---@param self any
@@ -378,42 +434,27 @@ end
 ---@param canUse any
 local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
                                       isUsingTool, justActivated, canUse)
-    controller = controller:get()
-    justActivated = justActivated:get()
+    if CurrentPresetName == "" then
+        return -- no preset found
+    end
 
-    ---@cast controller APlayController
-    -- ---@cast toolHit FHitResult
-    -- ---@cast clickResult FClickResult
-    -- ---@cast startedInteraction boolean
-    -- ---@cast endedInteraction boolean
-    -- ---@cast isUsingTool boolean
-    ---@cast justActivated boolean
-    -- ---@cast canUse boolean
+    controller = controller:get() ---@cast controller APlayController
+    justActivated = justActivated:get() ---@cast justActivated boolean
 
-    if justActivated == true then
-        World = UEHelpers:GetWorld()
+    if justActivated then
+        updateParamsFile()
 
-        -- select preset from UI
+        startMainLoop()
+
+        -- select preset from the UI
         CurrentPresetName = UI.comboBox_presets:GetSelectedOption():ToString()
-        if CurrentPresetName == "" then
-            log.warn("No preset found.")
-            return
-        end
         CurrentPreset = Presets[CurrentPresetName]
 
-        -- get loop delay from UI
-        local loopDelay = tonumber(UI.loop_delay:GetText():ToString())
-        if loopDelay == nil then
-            loopDelay = params.LOOP_DELAY
-            UI.loop_delay:SetText(FText(tostring(loopDelay)))
-        end
+        -- Planet center is (0, 0, 0) for SYLVA.
+        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
+        PlanetName = controller:GetLocalSolarBody().Name:ToString()
 
-        if (params.LAST_PRESET ~= CurrentPresetName) or
-            (params.LOOP_DELAY ~= loopDelay) then
-            params.LAST_PRESET = CurrentPresetName
-            params.LOOP_DELAY = loopDelay
-            writeParamsFile()
-        end
+        World = UEHelpers:GetWorld()
 
         -- get angle from UI
         Angle = tonumber(UI.angle:GetText():ToString()) or 0
@@ -421,14 +462,15 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         -- get selected angle from UI
         ExpectedAngle = tonumber(UI.expected_angle:GetText():ToString()) or mathHuge
 
-        -- Planet center is (0, 0, 0) for SYLVA.
-        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
-        PlanetName = controller:GetLocalSolarBody().Name:ToString()
-
         ---@diagnostic disable-next-line: cast-local-type
         DesignAstro = controller:GetAstroCharacter() ---@cast DesignAstro ADesignAstro_C
 
         log.debug(format("Angle: %.16g", Angle))
+
+        if CurrentPresetName == "" then
+            log.warn("No preset found.")
+            return
+        end
     end
 
     if controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__decrease_angle_KeyName) }) then
@@ -526,23 +568,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     CurrentPreset.doDeformation(parameters)
 end
 
-writeParamsFile = function()
-    local file = io.open(paramsFile, "w+")
-
-    assert(file, format("\nUnable to open the params file %q.", paramsFile))
-
-    if params.LAST_PRESET == nil then params.LAST_PRESET = "" end
-    if params.LOOP_DELAY == nil then params.LOOP_DELAY = 250 end
-
-    file:write(format(
-        [[return {
-LAST_PRESET="%s",
-LOOP_DELAY=%d
-}]], params.LAST_PRESET, params.LOOP_DELAY))
-
-    file:close()
-end
-
 local function init()
     updateGameVariables()
 end
@@ -551,7 +576,6 @@ end
 return {
     params = params,
     handleTerrainTool_hook = handleTerrainTool_hook,
-    writeParamsFile = writeParamsFile,
     onEnable = function()
         updateGameVariables()
         showUI()

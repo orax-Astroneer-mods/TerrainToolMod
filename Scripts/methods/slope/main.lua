@@ -6,8 +6,6 @@ local vec3 = Vec3
 local sqrt, rad = math.sqrt, math.rad
 local format = string.format
 
-local writeParamsFile = function() end
-
 -- load PARAMS from "paint" method
 local paramsFile_paint = func.getParamsFile("paint")
 local params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
@@ -16,7 +14,7 @@ local PaintTerrain = false
 
 -- load PARAMS global table
 local paramsFile = func.getParamsFile()
-local params = func.loadParamsFile(paramsFile)
+local params = func.loadParamsFile(paramsFile) ---@type Method__Slope__PARAMS
 
 local huge = math.huge
 local SlopeDirection = vec3(huge, huge, huge)
@@ -96,6 +94,58 @@ local function setSlopeDirectionFromSlope(location, normal)
     SlopeDirection = vec3.cross(location, normal)
 end
 
+local function writeParamsFile()
+    local file = io.open(paramsFile, "w+")
+
+    assert(file, format("\nUnable to open the params file %q.", paramsFile))
+
+    -- defaults
+    if params.PAINT == nil then params.PAINT = false end
+    if params.SLOPE_ANGLE == nil then params.SLOPE_ANGLE = 45 end
+
+    file:write(format(
+        [[return {
+PAINT=%s,
+SLOPE_ANGLE=%.16g
+}]],
+        params.PAINT,
+        params.SLOPE_ANGLE))
+
+    file:close()
+end
+
+local function updateParamsFile()
+    local updateRequired = false
+
+    -- get paint CheckBox state
+    local paint = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
+    if params.PAINT ~= paint then
+        params.PAINT = paint
+        updateRequired = true
+    end
+
+    -- get slope angle
+    local slopeAngle = tonumber(UI.angleTextBox:GetText():ToString())
+    if slopeAngle ~= nil and params.SLOPE_ANGLE ~= slopeAngle then
+        params.SLOPE_ANGLE = slopeAngle
+        updateRequired = true
+    end
+
+    if updateRequired then
+        writeParamsFile()
+    end
+end
+
+local function updateUI()
+    params = func.loadParamsFile(paramsFile)
+    params_paint = func.loadParamsFile(paramsFile_paint)
+
+    UI.angleTextBox:SetText(FText(tostring(params.SLOPE_ANGLE)))
+
+    UI.paintCheckBox:SetCheckedState(params.PAINT == true and
+        ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+end
+
 local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
                                       isUsingTool, justActivated, canUse)
     if isUsingTool:get() == false or canUse:get() == false then
@@ -106,6 +156,13 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     controller = controller:get() ---@cast controller APlayController
     toolHit = toolHit:get() ---@cast toolHit FHitResult
     startedInteraction = startedInteraction:get() ---@cast startedInteraction boolean
+    justActivated = justActivated:get() ---@cast justActivated boolean
+
+    if justActivated then
+        updateParamsFile()
+        -- Planet center is (0, 0, 0) for SYLVA.
+        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
+    end
 
     local operation = deformTool.Operation
 
@@ -168,9 +225,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     end
 
     if startedInteraction == true then
-        -- Planet center is (0, 0, 0) for SYLVA.
-        PlanetCenter = controller:GetLocalSolarBody():GetCenter()
-
         local keyName_fromCamera = options.set_slope_direction_from_camera_KeyName
         local keyName_fromCamera_reversed = options.set_slope_direction_from_camera_reversed_KeyName
         local keyName_fromSlope = options.set_slope_direction_from_slope_KeyName
@@ -196,12 +250,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
                 log.debug("Slope is not modified.")
                 return
             end
-        end
-
-        local newSlopeAngle = tonumber(UI.angleTextBox:GetText():ToString()) or 0
-        if newSlopeAngle ~= params.SLOPE_ANGLE then
-            params.SLOPE_ANGLE = newSlopeAngle
-            writeParamsFile()
         end
     end
 
@@ -320,7 +368,6 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_angle"))
     UI.angleTextBox.WidgetStyle.Font.Size = optUI.slope.font_size
     UI.angleTextBox.WidgetStyle.Font.FontObject = fontObj
-    UI.angleTextBox:SetText(FText(tostring(params.SLOPE_ANGLE)))
 
     horizontalBox_angle:AddChildToHorizontalBox(textBlock_angle)
     horizontalBox_angle:AddChildToHorizontalBox(spacer_angle)
@@ -379,6 +426,7 @@ local function showUI()
     else
         createUI()
     end
+    updateUI()
     UI.showed = true
 end
 
@@ -386,6 +434,7 @@ local function hideUI()
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
+    updateParamsFile()
     UI.showed = false
 end
 
@@ -397,40 +446,23 @@ local function toogleUI()
     end
 end
 
-writeParamsFile = function()
-    local file = io.open(paramsFile, "w+")
-
-    assert(file, format("\nUnable to open the params file %q.", paramsFile))
-
-    -- defaults
-    if params.SLOPE_ANGLE == nil then params.SLOPE_ANGLE = 45 end
-
-    file:write(format(
-        [[return {
-SLOPE_ANGLE=%.16g
-}]],
-        params.SLOPE_ANGLE))
-
-    file:close()
-end
-
 ---@type Method__Slope
 return {
     params = params,
     handleTerrainTool_hook = handleTerrainTool_hook,
-    writeParamsFile = writeParamsFile,
     onEnable = function()
-        params_paint = func.loadParamsFile(paramsFile_paint)
         showUI()
     end,
     onDisable = function()
         hideUI()
     end,
     onLoad = function()
-        params_paint = func.loadParamsFile(paramsFile_paint)
         showUI()
     end,
     onUnload = function()
         hideUI()
     end,
+    onUpdate = function()
+        updateUI()
+    end
 }

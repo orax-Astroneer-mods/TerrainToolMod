@@ -8,9 +8,6 @@ local vec3 = Vec3
 local insert = table.insert
 local format = string.format
 
-local writeParamsFile = function() end
-local updateUI = function() end
-
 -- load PARAMS from "paint" method
 local paramsFile_paint = func.getParamsFile("paint")
 local params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
@@ -118,6 +115,134 @@ local function perpendicular(a)
     end
 end
 
+---@return Method__Smoothen__PRESET[]
+---@return table
+local function loadAllPresets()
+    ---@type string[]
+    local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\" .. methodName .. "\\presets\\",
+        ".lua")
+    local presets = {}
+    local presetNamesList = {}
+
+    for index, file in ipairs(fileList) do
+        local presetName = file:match("([^\\]+)[.]lua$")
+        table.insert(presetNamesList, presetName)
+
+        local presetTable = {
+            index = index
+        }
+
+        local preset = dofile(file)
+
+        for key, value in pairs(preset) do
+            presetTable[key] = value
+        end
+
+        presets[presetName] = presetTable
+    end
+
+    return presets, presetNamesList
+end
+
+local function updateUI()
+    params = func.loadParamsFile(paramsFile)
+    params_paint = func.loadParamsFile(paramsFile_paint)
+
+    -- update prests list
+    if UI.presetsComboBox:IsValid() then
+        local index = UI.presetsComboBox:GetSelectedIndex()
+        Presets, PresetNamesList = loadAllPresets()
+        UI.presetsComboBox:ClearOptions()
+
+        -- add presets to ComboBox
+        for _, preset in ipairs(PresetNamesList) do
+            UI.presetsComboBox:AddOption(preset)
+        end
+
+        if index == -1 then
+            index = 0
+        end
+        UI.presetsComboBox:SetSelectedIndex(index)
+    end
+
+    if UI.debugCheckBox:IsValid() then
+        UI.debugCheckBox:SetCheckedState(params.DEBUG_OBJECTS == true and
+            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+    end
+
+    if UI.paintCheckBox:IsValid() then
+        UI.paintCheckBox:SetCheckedState(params.PAINT == true and
+            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+    end
+end
+
+local function writeParamsFile()
+    log.debug("Write params file.")
+
+    local file = io.open(paramsFile, "w+")
+
+    assert(file, format("\nUnable to open the params file %q.", paramsFile))
+
+    -- defaults
+    if params.DEBUG_OBJECTS == nil then params.DEBUG_OBJECTS = false end
+    if params.LAST_PRESET == nil then params.LAST_PRESET = "" end
+    if params.PAINT == nil then params.PAINT = false end
+    file:write(format(
+        [[return {
+DEBUG_OBJECTS=%s,
+LAST_PRESET="%s",
+PAINT=%s
+}]],
+        params.DEBUG_OBJECTS,
+        params.LAST_PRESET,
+        params.PAINT))
+
+    file:close()
+end
+
+local function updateParamsFile()
+    local updateRequired = false
+
+    -- select preset
+    CurrentPresetName = UI.presetsComboBox:GetSelectedOption():ToString()
+    if CurrentPresetName == "" then
+        log.warn("No preset found.")
+    else
+        CurrentPreset = Presets[CurrentPresetName]
+        if CurrentPresetName ~= "" and params.LAST_PRESET ~= CurrentPresetName then
+            params.LAST_PRESET = CurrentPresetName
+            updateRequired = true
+        end
+    end
+
+    -- get debug CheckBox state
+    local isDebugChecked = UI.debugCheckBox:GetCheckedState() == ECheckBoxState.Checked
+    if params.DEBUG_OBJECTS ~= isDebugChecked then
+        params.DEBUG_OBJECTS = isDebugChecked
+        updateRequired = true
+    end
+    if isDebugChecked == false then
+        -- destroy debug objects
+        for _, object in ipairs(DebugObjects) do
+            if object and object:IsValid() then
+                object:K2_DestroyActor()
+            end
+        end
+    end
+
+    -- get paint CheckBox state
+    local paint = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
+    print(params.PAINT, paint)
+    if params.PAINT ~= paint then
+        params.PAINT = paint
+        updateRequired = true
+    end
+
+    if updateRequired then
+        writeParamsFile()
+    end
+end
+
 ---@param self any
 ---@param controller any
 ---@param toolHit any
@@ -137,6 +262,12 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     controller = controller:get() ---@cast controller APlayController
     toolHit = toolHit:get() ---@cast toolHit FHitResult
     startedInteraction = startedInteraction:get() ---@cast startedInteraction boolean
+    justActivated = justActivated:get() ---@cast justActivated boolean
+
+    if justActivated then
+        World = UEHelpers:GetWorld()
+        updateParamsFile()
+    end
 
     local operation = deformTool.Operation
 
@@ -196,39 +327,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
         end
     end
 
-    if startedInteraction == true then
-        World = UEHelpers:GetWorld()
-
-        -- select preset
-        CurrentPresetName = UI.presetsComboBox:GetSelectedOption():ToString()
-        if CurrentPresetName == "" then
-            log.warn("No preset found.")
-            return
-        end
-        CurrentPreset = Presets[CurrentPresetName]
-        if CurrentPresetName ~= "" and params.LAST_PRESET ~= CurrentPresetName then
-            params.LAST_PRESET = CurrentPresetName
-            updateUI()
-            writeParamsFile()
-        end
-
-        local isDebugChecked = UI.debugCheckBox:GetCheckedState() == ECheckBoxState.Checked
-        if params.DEBUG_OBJECTS ~= isDebugChecked then
-            params.DEBUG_OBJECTS = isDebugChecked
-            writeParamsFile()
-
-            -- destroy debug objects
-            for _, object in ipairs(DebugObjects) do
-                if object and object:IsValid() then
-                    object:K2_DestroyActor()
-                end
-            end
-        end
-    end
-
-    -- for debugging
-    local dbgObject = params.DEBUG_OBJECTS and startedInteraction
-
     local start = vec3.new(toolHit.Location.X, toolHit.Location.Y, toolHit.Location.Z)
     local normal = vec3.new(toolHit.Normal.X, toolHit.Normal.Y, toolHit.Normal.Z)
     local direction = vec3.new(-normal.x, -normal.y, -normal.z)
@@ -239,6 +337,8 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
 
     insert(normals, toolHit.Normal)
 
+    -- for debugging
+    local dbgObject = params.DEBUG_OBJECTS and startedInteraction
     if dbgObject then
         -- destroy debug objects
         for _, object in ipairs(DebugObjects) do
@@ -419,55 +519,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     end
 end
 
----@return Method__Smoothen__PRESET[]
----@return table
-local function loadAllPresets()
-    ---@type string[]
-    local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\" .. methodName .. "\\presets\\",
-        ".lua")
-    local presets = {}
-    local presetNamesList = {}
-
-    for index, file in ipairs(fileList) do
-        local presetName = file:match("([^\\]+)[.]lua$")
-        table.insert(presetNamesList, presetName)
-
-        local presetTable = {
-            index = index
-        }
-
-        local preset = dofile(file)
-
-        for key, value in pairs(preset) do
-            presetTable[key] = value
-        end
-
-        presets[presetName] = presetTable
-    end
-
-    return presets, presetNamesList
-end
-
-updateUI = function()
-    if not UI.presetsComboBox:IsValid() then
-        return
-    end
-
-    local index = UI.presetsComboBox:GetSelectedIndex()
-    Presets, PresetNamesList = loadAllPresets()
-    UI.presetsComboBox:ClearOptions()
-
-    -- add presets to ComboBox
-    for _, preset in ipairs(PresetNamesList) do
-        UI.presetsComboBox:AddOption(preset)
-    end
-
-    if index == -1 then
-        index = 0
-    end
-    UI.presetsComboBox:SetSelectedIndex(index)
-end
-
 -- Sources:
 --   https://github.com/MichaelK-UnderscoreUnderscore/PseudoregaliaSavestates/blob/main/Scripts/Utils.lua
 --   https://github.com/massclown/HalfSwordTrainerMod-playtest/blob/main/HalfSwordTrainerMod/scripts/main.lua
@@ -539,7 +590,6 @@ local function createUI()
     ---@type UCheckBox
     UI.debugCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
         rootWidget, FName(prefix .. "CheckBox_debug"))
-    UI.debugCheckBox:SetCheckedState(params.DEBUG_OBJECTS == true and ECheckBoxState.Checked or ECheckBoxState.Unchecked)
 
     horizontalBox:AddChildToHorizontalBox(textBlock)
     horizontalBox:AddChildToHorizontalBox(spacer)
@@ -616,6 +666,8 @@ local function hideUI()
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
+
+    updateParamsFile()
     UI.showed = false
 end
 
@@ -625,26 +677,6 @@ local function toogleUI()
     else
         showUI()
     end
-end
-
-writeParamsFile = function()
-    log.debug("Write params file.")
-
-    local file = io.open(paramsFile, "w+")
-
-    assert(file, format("\nUnable to open the params file %q.", paramsFile))
-
-    -- defaults
-    if params.DEBUG_OBJECTS == nil then params.DEBUG_OBJECTS = false end
-    if params.LAST_PRESET == nil then params.LAST_PRESET = "" end
-    file:write(format(
-        [[return {
-DEBUG_OBJECTS=%s,
-LAST_PRESET="%s"
-}]],
-        params.DEBUG_OBJECTS, params.LAST_PRESET))
-
-    file:close()
 end
 
 local function init()
@@ -684,16 +716,13 @@ Presets, PresetNamesList = loadAllPresets()
 return {
     params = params,
     handleTerrainTool_hook = handleTerrainTool_hook,
-    writeParamsFile = writeParamsFile,
     onEnable = function()
-        params_paint = func.loadParamsFile(paramsFile_paint)
         showUI()
     end,
     onDisable = function()
         hideUI()
     end,
     onLoad = function()
-        params_paint = func.loadParamsFile(paramsFile_paint)
         showUI()
     end,
     onUnload = function()

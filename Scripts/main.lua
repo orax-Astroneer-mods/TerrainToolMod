@@ -72,7 +72,6 @@ local format = string.format
 local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
 local mainParamsFile = currentModDirectory .. [[\main_params.lua]]
 local mainParams = {}
-local enable_handleTerrainTool = function(silent) end
 
 ---@param filename string
 ---@return boolean
@@ -206,10 +205,66 @@ local function loadAllMethods()
     return methods, methodNamesList
 end
 
+local function enable_handleTerrainTool(silent)
+    if HandleTerrainToolStatus == false then
+        if type(Methods[mainParams.METHOD].handleTerrainTool_hook) ~= "function" then
+            log.debug("handleTerrainTool_hook is not implemented in the current method.")
+            return
+        end
+        registerHookFor_handleTerrainTool(Methods[mainParams.METHOD].handleTerrainTool_hook)
+        HandleTerrainToolStatus = true
+
+        -- execute onEnable event for the method
+        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onEnable) == "function" then
+            log.debug("Execute onEnable event for the current method %q.", mainParams.METHOD)
+            Methods[mainParams.METHOD].onEnable()
+        end
+
+        if not silent then
+            log.debug(format("HandleTerrainTool is ENABLED. Method enabled: %q.", mainParams.METHOD))
+        end
+    else
+        -- execute onUpdate event for the (updated) method
+        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onUpdate) == "function" then
+            log.debug("Execute onUpdate event for the current method %q.", mainParams.METHOD)
+            Methods[mainParams.METHOD].onUpdate()
+        end
+
+        if not silent then
+            log.debug(format("HandleTerrainTool is already ENABLED. Method updated: %q.", mainParams.METHOD))
+        end
+    end
+end
+
+local function disable_handleTerrainTool()
+    if HandleTerrainToolStatus == true then
+        unregisterHookFor_handleTerrainTool()
+        HandleTerrainToolStatus = false
+
+        -- execute onDisable event for the unloaded (old) method
+        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onDisable) == "function" then
+            log.debug("Execute onDisable event for the current method %q.", mainParams.METHOD)
+            Methods[mainParams.METHOD].onDisable()
+        end
+    end
+
+    log.debug("HandleTerrainTool is DISABLED.")
+end
+
+local function toggle_handleTerrainTool()
+    if HandleTerrainToolStatus == true then
+        disable_handleTerrainTool()
+    else
+        enable_handleTerrainTool()
+    end
+
+    log.debug("HandleTerrainTool is %s.", HandleTerrainToolStatus and "ENABLED" or "DISABLED")
+end
+
 ---Set current method.
 ---@param method string|integer
----@param init boolean?
-local function setMethod(method, init)
+---@param firstInit boolean?
+local function setMethod(method, firstInit)
     local newMethod
 
     if type(tonumber(method)) == "number" then
@@ -225,7 +280,7 @@ local function setMethod(method, init)
         newMethod = MethodNamesList[0]
     end
 
-    if not init then
+    if not firstInit and HandleTerrainToolStatus == false then
         enable_handleTerrainTool(true)
     end
 
@@ -255,7 +310,7 @@ local function setMethod(method, init)
     -- execute onLoad event for the loaded (new) method
     if type(Methods[newMethod].onLoad) == "function" then
         log.debug("Execute onLoad event for the new method %q.", newMethod)
-        Methods[newMethod].onLoad(init)
+        Methods[newMethod].onLoad(firstInit)
     end
 
     mainParams.METHOD = newMethod
@@ -410,62 +465,6 @@ local function getTerrainTool()
     end
 
     return CreateInvalidObject()
-end
-
-enable_handleTerrainTool = function(silent)
-    if HandleTerrainToolStatus == false then
-        if type(Methods[mainParams.METHOD].handleTerrainTool_hook) ~= "function" then
-            log.debug("handleTerrainTool_hook is not implemented in the current method.")
-            return
-        end
-        registerHookFor_handleTerrainTool(Methods[mainParams.METHOD].handleTerrainTool_hook)
-        HandleTerrainToolStatus = true
-
-        -- execute onEnable event for the method
-        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onEnable) == "function" then
-            log.debug("Execute onEnable event for the current method %q.", mainParams.METHOD)
-            Methods[mainParams.METHOD].onEnable()
-        end
-
-        if not silent then
-            log.debug(format("HandleTerrainTool is ENABLED. Method enabled: %q.", mainParams.METHOD))
-        end
-    else
-        -- execute onUpdate event for the (updated) method
-        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onUpdate) == "function" then
-            log.debug("Execute onUpdate event for the current method %q.", mainParams.METHOD)
-            Methods[mainParams.METHOD].onUpdate()
-        end
-
-        if not silent then
-            log.debug(format("HandleTerrainTool is already ENABLED. Method updated: %q.", mainParams.METHOD))
-        end
-    end
-end
-
-local function disable_handleTerrainTool()
-    if HandleTerrainToolStatus == true then
-        unregisterHookFor_handleTerrainTool()
-        HandleTerrainToolStatus = false
-
-        -- execute onDisable event for the unloaded (old) method
-        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onDisable) == "function" then
-            log.debug("Execute onDisable event for the current method %q.", mainParams.METHOD)
-            Methods[mainParams.METHOD].onDisable()
-        end
-    end
-
-    log.debug("HandleTerrainTool is DISABLED.")
-end
-
-local function toggle_handleTerrainTool()
-    if HandleTerrainToolStatus == true then
-        disable_handleTerrainTool()
-    else
-        enable_handleTerrainTool()
-    end
-
-    log.debug("HandleTerrainTool is %s.", HandleTerrainToolStatus and "ENABLED" or "DISABLED")
 end
 
 ---@param deformType? EDeformType

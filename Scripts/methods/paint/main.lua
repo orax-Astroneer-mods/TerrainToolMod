@@ -11,17 +11,11 @@ local func = require("func")
 local log = Log
 local format = string.format
 
-local writeParamsFile = function() end
-local UpdateParamsFile = false
-
 -- load PARAMS global table
 local paramsFile = func.getParamsFile()
 local params = func.loadParamsFile(paramsFile) ---@type Method__Paint__PARAMS
 
-local utils = require("lib.lua-mods-libs.utils")
-
 local FirstInit = true
-local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
 local options = OPTIONS
 local optUI = OPTIONS_UI
 local UI = {}
@@ -62,6 +56,63 @@ local EPaintIndexType = {
     Invalid = 3,
     EPaintIndexType_MAX = 4,
 }
+
+local function writeParamsFile()
+    local file = io.open(paramsFile, "w+")
+
+    assert(file, format("\nUnable to open the params file %q.", paramsFile))
+
+    if params.SCALE == nil then params.SCALE = 2.0 end
+    if params.MATERIAL_INDEX == nil then params.MATERIAL_INDEX = 0 end
+
+    file:write(format(
+        [[return {
+    MATERIAL_INDEX=%d,
+    SCALE=%.16g,
+    }]], params.MATERIAL_INDEX, params.SCALE))
+
+    file:close()
+end
+
+local function updateParamsFile()
+    local updateRequired = false
+
+    local materialIndex = tonumber(UI.materialIndex:GetText():ToString())
+    if materialIndex == nil then
+        materialIndex = params.MATERIAL_INDEX
+        UI.materialIndex:SetText(FText(tostring(materialIndex)))
+    end
+    if materialIndex ~= params.MATERIAL_INDEX then
+        params.MATERIAL_INDEX = materialIndex
+        updateRequired = true
+    end
+
+    local scale = tonumber(UI.scale:GetText():ToString())
+    if scale == nil then
+        scale = params.SCALE
+        UI.scale:SetText(FText(tostring(scale)))
+    end
+    if scale ~= params.SCALE then
+        params.SCALE = scale
+        updateRequired = true
+    end
+
+    if updateRequired then
+        writeParamsFile()
+    end
+end
+
+local function updateUI()
+    params = func.loadParamsFile(paramsFile)
+
+    updateParamsFile()
+
+    if materialIndexImage ~= params.MATERIAL_INDEX then
+        log.debug("Update active material index image.")
+        UI.menu:OnColorAndTypePicked({ R = 0, G = 0, B = 0, A = 0 }, params.MATERIAL_INDEX, EPaintIndexType
+            .PlanetPalette)
+    end
+end
 
 -- Sources:
 --   https://github.com/MichaelK-UnderscoreUnderscore/PseudoregaliaSavestates/blob/main/Scripts/Utils.lua
@@ -218,39 +269,13 @@ local function showUI()
     else
         createUI()
     end
+
+    updateUI()
 end
 
 local function hideUI()
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
-    end
-end
-
-local function updateParamsFromUI()
-    local materialIndex = tonumber(UI.materialIndex:GetText():ToString())
-    if materialIndex ~= nil and params.MATERIAL_INDEX ~= materialIndex then
-        params.MATERIAL_INDEX = materialIndex
-        UpdateParamsFile = true
-    end
-
-    local scale = tonumber(UI.scale:GetText():ToString())
-    if scale ~= nil and params.SCALE ~= scale then
-        params.SCALE = scale
-        UpdateParamsFile = true
-    end
-
-    if UpdateParamsFile == true then
-        writeParamsFile()
-    end
-end
-
-local function updateUI()
-    updateParamsFromUI()
-
-    if materialIndexImage ~= params.MATERIAL_INDEX then
-        log.debug("Update active material index image.")
-        UI.menu:OnColorAndTypePicked({ R = 0, G = 0, B = 0, A = 0 }, params.MATERIAL_INDEX, EPaintIndexType
-            .PlanetPalette)
     end
 end
 
@@ -309,23 +334,6 @@ local function handleTerrainTool_hook(self, controller, toolHit, clickResult, st
     })
 end
 
-writeParamsFile = function()
-    local file = io.open(paramsFile, "w+")
-
-    assert(file, format("\nUnable to open the params file %q.", paramsFile))
-
-    if params.SCALE == nil then params.SCALE = 2.0 end
-    if params.MATERIAL_INDEX == nil then params.MATERIAL_INDEX = 0 end
-
-    file:write(format(
-        [[return {
-    MATERIAL_INDEX=%d,
-    SCALE=%.16g,
-    }]], params.MATERIAL_INDEX, params.SCALE))
-
-    file:close()
-end
-
 local function init()
     if FirstInit == true then
         RegisterHook("/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C:OnColorAndTypePicked",
@@ -341,7 +349,6 @@ local function init()
                 if PaintType == EPaintIndexType.PlanetPalette then
                     if params.MATERIAL_INDEX ~= SelectedColorIndex then
                         params.MATERIAL_INDEX = SelectedColorIndex
-                        UpdateParamsFile = true -- params file need to be updated
                     end
                     UI.materialIndex:SetText(FText(tostring(SelectedColorIndex)))
                 end
@@ -361,19 +368,17 @@ return {
     onEnable = function()
         init()
         showUI()
-        updateUI()
     end,
     onDisable = function()
-        updateParamsFromUI()
+        updateParamsFile()
         hideUI()
     end,
     onLoad = function()
         init()
         showUI()
-        updateUI()
     end,
     onUnload = function()
-        updateParamsFromUI()
+        updateParamsFile()
         hideUI()
     end,
     onUpdate = function()
