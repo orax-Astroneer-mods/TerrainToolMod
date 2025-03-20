@@ -565,6 +565,7 @@ local function createHelpUI()
     text = text .. "[Globals]\n"
     textLeft = textLeft .. "[Globals]\n"
     textRight = textRight .. "\n"
+    add("toggle_help_ui")
     add("enable_handleTerrainTool")
     add("disable_handleTerrainTool")
     add("toggle_handleTerrainTool")

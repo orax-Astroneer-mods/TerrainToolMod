@@ -47,7 +47,7 @@ local options = {
     -- Note: You can modify/translate the contents of variables that end with _text.
     --
 
-    toggle_help_ui_text = "Shows this help text",
+    toggle_help_ui_text = "Show this help text",
     toggle_help_ui_Key = Key.F1,
     toggle_help_ui_ModifierKeys = {},
 
