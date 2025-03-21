@@ -385,14 +385,14 @@ local function createUI()
     ---@type UTextBlock
     local textBlock_paint = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
         rootWidget, FName(prefix .. "TextBlock_paint"))
-    textBlock_paint.Font.Size = optUI.tangent.font_size
+    textBlock_paint.Font.Size = optUI.slope.font_size
     textBlock_paint.Font.FontObject = fontObj
-    textBlock_paint:SetText(FText(optUI.tangent.txt.paint))
+    textBlock_paint:SetText(FText(optUI.slope.txt.paint))
 
     ---@type USpacer
     local spacer_paint = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
         rootWidget, FName(prefix .. "Spacer_paint"))
-    spacer_paint:SetSize(optUI.tangent.spacer_size)
+    spacer_paint:SetSize(optUI.slope.spacer_size)
 
     ---@type UCheckBox
     UI.paintCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
