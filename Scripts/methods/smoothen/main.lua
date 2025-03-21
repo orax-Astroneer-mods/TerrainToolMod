@@ -676,36 +676,26 @@ local function toogleUI()
     end
 end
 
-local function init()
-    World = UEHelpers:GetWorld()
-
+local function loadDebugAssets()
     ExecuteInGameThread(function()
-        LoadAsset(dbg.matClassName) ---@diagnostic disable-line: undefined-global
-        LoadAsset(dbg.meshClassName) ---@diagnostic disable-line: undefined-global
-
         if dbg.staticMeshActorClass == nil or dbg.staticMeshActorClass:IsValid() == false then
             dbg.staticMeshActorClass = StaticFindObject(dbg.staticMeshActorClassName) ---@diagnostic disable-line: assign-type-mismatch
         end
 
+        dbg.material = StaticFindObject(dbg.matClassName) ---@diagnostic disable-line: assign-type-mismatch
+        dbg.mesh = StaticFindObject(dbg.meshClassName) ---@diagnostic disable-line: assign-type-mismatch
+
         if dbg.material == nil or dbg.material:IsValid() == false then
+            LoadAsset(dbg.matClassName) ---@diagnostic disable-line: undefined-global
             dbg.material = StaticFindObject(dbg.matClassName) ---@diagnostic disable-line: assign-type-mismatch
         end
 
         if dbg.mesh == nil or dbg.mesh:IsValid() == false then
+            LoadAsset(dbg.meshClassName) ---@diagnostic disable-line: undefined-global
             dbg.mesh = StaticFindObject(dbg.meshClassName) ---@diagnostic disable-line: assign-type-mismatch
         end
     end)
 end
-
-ExecuteWithDelay(5000, function()
-    ---@param self RemoteUnrealParam
-    ---@param NewPawn RemoteUnrealParam
-    RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
-        init()
-    end)
-end)
-
-init()
 
 Presets, PresetNamesList = loadAllPresets()
 
@@ -714,12 +704,14 @@ return {
     params = params,
     handleTerrainTool_hook = handleTerrainTool_hook,
     onEnable = function()
+        loadDebugAssets()
         showUI()
     end,
     onDisable = function()
         hideUI()
     end,
     onLoad = function()
+        loadDebugAssets()
         showUI()
     end,
     onUnload = function()
@@ -727,5 +719,5 @@ return {
     end,
     onUpdate = function()
         updateUI()
-    end
+    end,
 }
