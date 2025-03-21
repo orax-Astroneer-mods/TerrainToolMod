@@ -1,4 +1,4 @@
----@class Method__Smoothen: Method
+---@class Method__Smoothen: TerrainToolMod_Method
 
 ---@class Method__Smoothen__PARAMS
 ---@field DEBUG_OBJECTS boolean

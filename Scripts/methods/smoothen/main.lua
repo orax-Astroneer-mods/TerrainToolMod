@@ -15,15 +15,7 @@ local params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Pain
 local DebugObjects = {} ---@type AStaticMeshActor[]
 local PaintTerrain = false
 
----@class Debug
----@field staticMeshActorClassShortName string
----@field staticMeshActorClassName string
----@field staticMeshActorClass UClass?
----@field material UMaterialInterface?
----@field mesh UStaticMesh?
----@field scale FVector
----@field meshClassName string
----@field matClassName string
+---@type TerrainToolMod_Debug
 local dbg = {
     staticMeshActorClassShortName = "StaticMeshActor",
     staticMeshActorClassName = "/Script/Engine.StaticMeshActor",

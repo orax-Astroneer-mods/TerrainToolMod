@@ -1,4 +1,4 @@
----@class Method__tangent: Method
+---@class Method__tangent: TerrainToolMod_Method
 
 ---@class Method__Tangent__PARAMS
 ---@field ALTITUDES table

@@ -49,7 +49,7 @@ local ESlateVisibility = {
 inf = math.huge ---@diagnostic disable-line: lowercase-global
 
 -- functions implemented in the method file
-local Methods = {} ---@type Method[]
+local Methods = {} ---@type TerrainToolMod_Method[]
 local MethodNamesList = {}
 
 local HandleTerrainToolStatus = false
@@ -187,7 +187,7 @@ local function loadMainParams()
 end
 
 ---Retrieve functions from method files.
----@return Method[], table
+---@return TerrainToolMod_Method[], table
 local function loadAllMethods()
     ---@type string[]
     local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\", "main.lua")
@@ -758,6 +758,10 @@ registerKeyBind(options.set_auto_method_Key,
 registerKeyBind(options.set_paint_method_Key,
     options.set_paint_method_ModifierKeys,
     function() setMethod("paint") end)
+
+registerKeyBind(options.set_revert_method_Key,
+    options.set_revert_method_ModifierKeys,
+    function() setMethod("revert") end)
 
 registerKeyBind(options.set_Flatten_mode_Key,
     options.set_Flatten_mode_ModifierKeys,

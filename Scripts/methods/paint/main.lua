@@ -277,6 +277,7 @@ local function hideUI()
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
+    updateParamsFile()
 end
 
 ---@param self any
@@ -370,7 +371,6 @@ return {
         showUI()
     end,
     onDisable = function()
-        updateParamsFile()
         hideUI()
     end,
     onLoad = function()
@@ -378,7 +378,6 @@ return {
         showUI()
     end,
     onUnload = function()
-        updateParamsFile()
         hideUI()
     end,
     onUpdate = function()

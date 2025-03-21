@@ -1,4 +1,4 @@
----@class Method__Auto: Method
+---@class Method__Auto: TerrainToolMod_Method
 
 ---@class Method__Auto__PARAMS
 ---@field LATEST_PRESET string
