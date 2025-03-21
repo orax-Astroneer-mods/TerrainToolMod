@@ -150,7 +150,7 @@ local function updateParamsFile()
     end
 end
 
-local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
+local function hook_HandleTerrainTool(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
                                       isUsingTool, justActivated, canUse)
     if justActivated:get() == true then
         updateParamsFile()
@@ -583,7 +583,7 @@ end
 ---@type Method__tangent
 return {
     params = params,
-    handleTerrainTool_hook = handleTerrainTool_hook,
+    hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
     onEnable = function()
         showUI()
     end,

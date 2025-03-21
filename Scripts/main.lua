@@ -52,10 +52,10 @@ inf = math.huge ---@diagnostic disable-line: lowercase-global
 local Methods = {} ---@type TerrainToolMod_Method[]
 local MethodNamesList = {}
 
-local HandleTerrainToolStatus = false
+local IsModEnabled = false
 local CachedTerrainTool = CreateInvalidObject() ---@cast CachedTerrainTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
 local HelpUI = { showed = false }
-local PreId_handleTerrainTool, PostId_handleTerrainTool
+local PreId_HandleTerrainTool, PostId_HandleTerrainTool
 
 local UEHelpers = require("UEHelpers")
 local logging = require("lib.lua-mods-libs.logging")
@@ -147,14 +147,26 @@ LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR = nil, nil
 
 --#region hooks
 ---@param callback function
-local function registerHookFor_handleTerrainTool(callback)
-    PreId_handleTerrainTool, PostId_handleTerrainTool = RegisterHook("/Script/Astro.DeformTool:HandleTerrainTool",
+local function registerHook_DeformTool_HandleTerrainTool(callback)
+    PreId_HandleTerrainTool, PostId_HandleTerrainTool = RegisterHook("/Script/Astro.DeformTool:HandleTerrainTool",
         callback)
 end
 local function unregisterHookFor_handleTerrainTool()
-    if type(PreId_handleTerrainTool) == "number" and type(PostId_handleTerrainTool) == "number" then
-        UnregisterHook("/Script/Astro.DeformTool:HandleTerrainTool", PreId_handleTerrainTool,
-            PostId_handleTerrainTool)
+    if type(PreId_HandleTerrainTool) == "number" and type(PostId_HandleTerrainTool) == "number" then
+        UnregisterHook("/Script/Astro.DeformTool:HandleTerrainTool", PreId_HandleTerrainTool,
+            PostId_HandleTerrainTool)
+    end
+end
+
+---@param callback function
+local function registerHook_DeformTool_Deactivated(callback)
+    PreId_DeformTool_Deactivated, PostId_DeformTool_Deactivated = RegisterHook("/Script/Astro.DeformTool:Deactivated",
+        callback)
+end
+local function unregisterHookFor_DeformTool_Deactivated()
+    if type(PreId_DeformTool_Deactivated) == "number" and type(PostId_DeformTool_Deactivated) == "number" then
+        UnregisterHook("/Script/Astro.DeformTool:Deactivated", PreId_DeformTool_Deactivated,
+            PostId_DeformTool_Deactivated)
     end
 end
 --#endregion hooks
@@ -214,14 +226,20 @@ local function loadAllMethods()
     return methods, methodNamesList
 end
 
-local function enable_handleTerrainTool(silent)
-    if HandleTerrainToolStatus == false then
-        if type(Methods[mainParams.METHOD].handleTerrainTool_hook) ~= "function" then
-            log.debug("handleTerrainTool_hook is not implemented in the current method.")
+local function enableMod(silent)
+    if IsModEnabled == false then
+        -- hook HandleTerrainTool (main hook)
+        if type(Methods[mainParams.METHOD].hook_DeformTool_HandleTerrainTool) ~= "function" then
+            log.debug("hook_HandleTerrainTool is not implemented in the current method.")
             return
         end
-        registerHookFor_handleTerrainTool(Methods[mainParams.METHOD].handleTerrainTool_hook)
-        HandleTerrainToolStatus = true
+        registerHook_DeformTool_HandleTerrainTool(Methods[mainParams.METHOD].hook_DeformTool_HandleTerrainTool)
+        IsModEnabled = true
+
+        -- hook on Terrain Tool deactivated
+        if type(Methods[mainParams.METHOD].hook_DeformTool_Deactivated) == "function" then
+            registerHook_DeformTool_Deactivated(Methods[mainParams.METHOD].hook_DeformTool_Deactivated)
+        end
 
         -- execute onEnable event for the method
         if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onEnable) == "function" then
@@ -230,7 +248,7 @@ local function enable_handleTerrainTool(silent)
         end
 
         if not silent then
-            log.debug(format("HandleTerrainTool is ENABLED. Method enabled: %q.", mainParams.METHOD))
+            log.debug(format("Terrain Tool Mod is ENABLED. Method enabled: %q.", mainParams.METHOD))
         end
     else
         -- execute onUpdate event for the (updated) method
@@ -240,15 +258,15 @@ local function enable_handleTerrainTool(silent)
         end
 
         if not silent then
-            log.debug(format("HandleTerrainTool is already ENABLED. Method updated: %q.", mainParams.METHOD))
+            log.debug(format("Terrain Tool Mod is already ENABLED. Method updated: %q.", mainParams.METHOD))
         end
     end
 end
 
-local function disable_handleTerrainTool()
-    if HandleTerrainToolStatus == true then
+local function disableMod()
+    if IsModEnabled == true then
         unregisterHookFor_handleTerrainTool()
-        HandleTerrainToolStatus = false
+        IsModEnabled = false
 
         -- execute onDisable event for the unloaded (old) method
         if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onDisable) == "function" then
@@ -257,17 +275,17 @@ local function disable_handleTerrainTool()
         end
     end
 
-    log.debug("HandleTerrainTool is DISABLED.")
+    log.debug("Terrain Tool Mod is DISABLED.")
 end
 
-local function toggle_handleTerrainTool()
-    if HandleTerrainToolStatus == true then
-        disable_handleTerrainTool()
+local function toggleModStatus()
+    if IsModEnabled == true then
+        disableMod()
     else
-        enable_handleTerrainTool()
+        enableMod()
     end
 
-    log.debug("HandleTerrainTool is %s.", HandleTerrainToolStatus and "ENABLED" or "DISABLED")
+    log.debug("Terrain Tool Mod is %s.", IsModEnabled and "ENABLED" or "DISABLED")
 end
 
 ---Set current method.
@@ -289,8 +307,8 @@ local function setMethod(method, firstInit)
         newMethod = MethodNamesList[0]
     end
 
-    if not firstInit and HandleTerrainToolStatus == false then
-        enable_handleTerrainTool(true)
+    if not firstInit and IsModEnabled == false then
+        enableMod(true)
     end
 
     log.debug(format("Set method: %q.", newMethod))
@@ -303,10 +321,10 @@ local function setMethod(method, firstInit)
 
     unregisterHookFor_handleTerrainTool()
 
-    if type(Methods[newMethod].handleTerrainTool_hook) == "function" then
-        if HandleTerrainToolStatus == true then
+    if type(Methods[newMethod].hook_DeformTool_HandleTerrainTool) == "function" then
+        if IsModEnabled == true then
             -- register the hook with the new method
-            registerHookFor_handleTerrainTool(Methods[newMethod].handleTerrainTool_hook)
+            registerHook_DeformTool_HandleTerrainTool(Methods[newMethod].hook_DeformTool_HandleTerrainTool)
         end
     end
 
@@ -725,15 +743,15 @@ registerKeyBind(options.toggle_help_ui_Key, options.toggle_help_ui_ModifierKeys,
 
 registerKeyBind(options.enable_handleTerrainTool_Key,
     options.enable_handleTerrainTool_ModifierKeys,
-    enable_handleTerrainTool)
+    enableMod)
 
 registerKeyBind(options.disable_handleTerrainTool_Key,
     options.disable_handleTerrainTool_ModifierKeys,
-    disable_handleTerrainTool)
+    disableMod)
 
 registerKeyBind(options.toggle_handleTerrainTool_Key,
     options.toggle_handleTerrainTool_ModifierKeys,
-    toggle_handleTerrainTool)
+    toggleModStatus)
 
 registerKeyBind(options.set_deformType_Key,
     options.set_deformType_ModifierKeys,
@@ -826,22 +844,22 @@ end)
 ---@return boolean
 RegisterConsoleCommandHandler("ttmod", function(fullCommand, parameters, outputDevice)
     local function getStatus()
-        return HandleTerrainToolStatus == true and "enabled" or "disabled"
+        return IsModEnabled == true and "enabled" or "disabled"
     end
 
     local fmt = "Terrain Tool mod is %s."
 
     if #parameters < 1 then
-        toggle_handleTerrainTool()
+        toggleModStatus()
         outputDevice:Log(format(fmt, getStatus()))
         return true
     end
 
     local arg = string.lower(parameters[1])
     if arg == "on" then
-        enable_handleTerrainTool()
+        enableMod()
     elseif arg == "off" then
-        disable_handleTerrainTool()
+        disableMod()
     else
         local helpMsg =
             "Usage: ttmod [on | off]>\n" ..

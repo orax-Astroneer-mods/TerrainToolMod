@@ -289,7 +289,7 @@ end
 ---@param isUsingTool any
 ---@param justActivated any
 ---@param canUse any
-local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
+local function hook_HandleTerrainTool(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
                                       isUsingTool, justActivated, canUse)
     local deformTool = self:get() ---@type ASmallDeform_TERRAIN_EXPERIMENTAL_C
 
@@ -364,7 +364,7 @@ end
 ---@type Method__Paint
 return {
     params = params,
-    handleTerrainTool_hook = handleTerrainTool_hook,
+    hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
     writeParamsFile = writeParamsFile,
     onEnable = function()
         init()

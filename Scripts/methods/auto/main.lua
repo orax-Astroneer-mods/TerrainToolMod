@@ -432,7 +432,7 @@ end
 ---@param isUsingTool any
 ---@param justActivated any
 ---@param canUse any
-local function handleTerrainTool_hook(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
+local function hook_HandleTerrainTool(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
                                       isUsingTool, justActivated, canUse)
     if CurrentPresetName == "" then
         return -- no preset found
@@ -575,7 +575,7 @@ end
 ---@type Method__Auto
 return {
     params = params,
-    handleTerrainTool_hook = handleTerrainTool_hook,
+    hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
     onEnable = function()
         updateGameVariables()
         showUI()
