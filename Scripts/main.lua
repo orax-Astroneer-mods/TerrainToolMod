@@ -102,6 +102,14 @@ local function loadOptions()
     return dofile(file)
 end
 
+local function loadDevOptions()
+    local file = format([[%s\options.dev.lua]], currentModDirectory)
+
+    if isFileExists(file) then
+        dofile(file)
+    end
+end
+
 ---@return TerrainToolMod_Options_UI
 local function loadOptionsUI()
     local file = format([[%s\ui.lua]], currentModDirectory)
@@ -129,6 +137,7 @@ local options = loadOptions()
 OPTIONS = options
 local optUI = loadOptionsUI()
 OPTIONS_UI = optUI
+loadDevOptions()
 
 Log = logging.new(LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR)
 local log = Log

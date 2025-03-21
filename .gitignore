@@ -1,5 +1,6 @@
 main_params.lua
 options.lua
+options.dev.lua
 params.lua
 todo.md
 ui.lua
