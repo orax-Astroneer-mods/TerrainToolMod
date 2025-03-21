@@ -1,3 +1,5 @@
+local MethodName = "tangent"
+
 local UEHelpers = require("UEHelpers")
 local func = require("func")
 
@@ -547,7 +549,7 @@ local function createUI()
     UI.userWidget:AddToViewport(optUI.tangent.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
-    log.debug("UI created (tangent).")
+    log.debug(format("UI created (%s).", MethodName))
 
     return true
 end

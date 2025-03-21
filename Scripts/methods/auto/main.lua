@@ -1,4 +1,4 @@
-local methodName = "auto"
+local MethodName = "auto"
 
 local UEHelpers = require("UEHelpers")
 local func = require("func")
@@ -72,7 +72,7 @@ end
 ---@return table
 local function loadAllPresets()
     ---@type string[]
-    local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\" .. methodName .. "\\presets\\",
+    local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\" .. MethodName .. "\\presets\\",
         ".lua")
     local presets = {}
     local presetNamesList = {}
@@ -396,7 +396,7 @@ local function createUI()
     UI.userWidget:AddToViewport(optUI.auto.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
-    log.debug("UI created (auto).")
+    log.debug(format("UI created (%s).", MethodName))
 
     return true
 end

@@ -1,3 +1,5 @@
+local MethodName = "slope"
+
 local UEHelpers = require("UEHelpers")
 local func = require("func")
 
@@ -414,7 +416,7 @@ local function createUI()
     UI.userWidget:AddToViewport(optUI.slope.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
-    log.debug("UI created (slope).")
+    log.debug(format("UI created (%s).", MethodName))
 
     return true
 end
