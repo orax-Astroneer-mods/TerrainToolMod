@@ -148,22 +148,32 @@ local function updateUI()
         ECheckBoxState.Checked or ECheckBoxState.Unchecked)
 end
 
-local function hook_HandleTerrainTool(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
-                                      isUsingTool, justActivated, canUse)
-    if justActivated:get() == true then
+---@param _self RemoteUnrealParam
+---@param _controller RemoteUnrealParam
+---@param _toolHit RemoteUnrealParam
+---@param _clickResult RemoteUnrealParam
+---@param _startedInteraction RemoteUnrealParam
+---@param _endedInteraction RemoteUnrealParam
+---@param _isUsingTool RemoteUnrealParam
+---@param _justActivated RemoteUnrealParam
+---@param _canUse RemoteUnrealParam
+local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult, _startedInteraction, _endedInteraction,
+                                      _isUsingTool, _justActivated, _canUse)
+    local controller = _controller:get() ---@type APlayController
+
+    if _justActivated:get() == true then
         updateParamsFile()
         -- Planet center is (0, 0, 0) for SYLVA.
         PlanetCenter = controller:GetLocalSolarBody():GetCenter()
     end
 
-    if isUsingTool:get() == false or canUse:get() == false then
+    if _isUsingTool:get() == false or _canUse:get() == false then
         return
     end
 
-    local deformTool = self:get() ---@cast deformTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
-    controller = controller:get() ---@cast controller APlayController
-    toolHit = toolHit:get() ---@cast toolHit FHitResult
-    startedInteraction = startedInteraction:get() ---@cast startedInteraction boolean
+    local deformTool = _self:get() ---@type ASmallDeform_TERRAIN_EXPERIMENTAL_C
+    local toolHit = _toolHit:get() ---@type FHitResult
+    local startedInteraction = _startedInteraction:get() ---@type boolean
 
     local operation = deformTool.Operation
 
@@ -211,7 +221,7 @@ local function hook_HandleTerrainTool(self, controller, toolHit, clickResult, st
     if not toolHit.Actor:Get():IsA("/Script/Astro.SolarBody") then ---@diagnostic disable-line: undefined-field
         -- Hit actor is not a SolarBody. Try to get a SolarBody.
 
-        toolHit = {}
+        toolHit = {} ---@diagnostic disable-line: missing-fields
         local result = controller:GetHitResultUnderCursorForObjects({ 6 }, false, toolHit)
         if not result then
             log.debug("[!!] No hit actor. There is no SolarBody under the cursor.")

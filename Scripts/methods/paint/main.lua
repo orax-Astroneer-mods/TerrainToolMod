@@ -280,34 +280,34 @@ local function hideUI()
     updateParamsFile()
 end
 
----@param self any
----@param controller any
----@param toolHit any
----@param clickResult any
----@param startedInteraction any
----@param endedInteraction any
----@param isUsingTool any
----@param justActivated any
----@param canUse any
-local function hook_HandleTerrainTool(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
-                                      isUsingTool, justActivated, canUse)
-    local deformTool = self:get() ---@type ASmallDeform_TERRAIN_EXPERIMENTAL_C
+---@param _self RemoteUnrealParam
+---@param _controller RemoteUnrealParam
+---@param _toolHit RemoteUnrealParam
+---@param _clickResult RemoteUnrealParam
+---@param _startedInteraction RemoteUnrealParam
+---@param _endedInteraction RemoteUnrealParam
+---@param _isUsingTool RemoteUnrealParam
+---@param _justActivated RemoteUnrealParam
+---@param _canUse RemoteUnrealParam
+local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult, _startedInteraction, _endedInteraction,
+                                      _isUsingTool, _justActivated, _canUse)
+    local deformTool = _self:get() ---@type ASmallDeform_TERRAIN_EXPERIMENTAL_C
 
-    if justActivated:get() == true then
+    if _justActivated:get() == true then
         deformTool.Operation = EDeformType.ColorPaint
 
         updateUI()
     end
 
-    if isUsingTool:get() == false then
+    if _isUsingTool:get() == false then
         return
     end
 
-    controller = controller:get() ---@cast controller APlayController
-    toolHit = toolHit:get() ---@cast toolHit FHitResult
+    local controller = _controller:get() ---@type APlayController
+    local toolHit = toolHit:get() ---@type FHitResult
 
     if deformTool.Operation == EDeformType.ColorPaint then
-        isUsingTool:set(false)
+        _isUsingTool:set(false)
     elseif deformTool.Operation == EDeformType.Subtract or
         deformTool.Operation == EDeformType.ColorPick or
         deformTool.Operation == EDeformType.Crater or

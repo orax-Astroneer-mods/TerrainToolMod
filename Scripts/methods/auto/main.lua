@@ -423,23 +423,23 @@ local function hideUI()
     updateParamsFile()
 end
 
----@param self any
----@param controller any
----@param toolHit any
----@param clickResult any
----@param startedInteraction any
----@param endedInteraction any
----@param isUsingTool any
----@param justActivated any
----@param canUse any
-local function hook_HandleTerrainTool(self, controller, toolHit, clickResult, startedInteraction, endedInteraction,
-                                      isUsingTool, justActivated, canUse)
+---@param _self RemoteUnrealParam
+---@param _controller RemoteUnrealParam
+---@param _toolHit RemoteUnrealParam
+---@param _clickResult RemoteUnrealParam
+---@param _startedInteraction RemoteUnrealParam
+---@param _endedInteraction RemoteUnrealParam
+---@param _isUsingTool RemoteUnrealParam
+---@param _justActivated RemoteUnrealParam
+---@param _canUse RemoteUnrealParam
+local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult, _startedInteraction, _endedInteraction,
+                                      _isUsingTool, _justActivated, _canUse)
     if CurrentPresetName == "" then
         return -- no preset found
     end
 
-    controller = controller:get() ---@cast controller APlayController
-    justActivated = justActivated:get() ---@cast justActivated boolean
+    local controller = _controller:get() ---@type APlayController
+    local justActivated = _justActivated:get() ---@type boolean
 
     if justActivated == true then
         updateParamsFile()
