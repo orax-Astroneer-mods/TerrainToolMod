@@ -266,6 +266,7 @@ end
 local function disableMod()
     if IsModEnabled == true then
         unregisterHookFor_handleTerrainTool()
+        unregisterHookFor_DeformTool_Deactivated()
         IsModEnabled = false
 
         -- execute onDisable event for the unloaded (old) method
@@ -320,12 +321,19 @@ local function setMethod(method, firstInit)
     end
 
     unregisterHookFor_handleTerrainTool()
+    unregisterHookFor_DeformTool_Deactivated()
 
+    -- register the hooks with the new method
+    --
+    -- hook HandleTerrainTool (main hook)
     if type(Methods[newMethod].hook_DeformTool_HandleTerrainTool) == "function" then
         if IsModEnabled == true then
-            -- register the hook with the new method
             registerHook_DeformTool_HandleTerrainTool(Methods[newMethod].hook_DeformTool_HandleTerrainTool)
         end
+    end
+    -- hook on Terrain Tool deactivated
+    if type(Methods[mainParams.METHOD].hook_DeformTool_Deactivated) == "function" then
+        registerHook_DeformTool_Deactivated(Methods[mainParams.METHOD].hook_DeformTool_Deactivated)
     end
 
     -- execute onUnload event for the unloaded (old) method
