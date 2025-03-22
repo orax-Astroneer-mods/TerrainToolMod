@@ -304,7 +304,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     end
 
     local controller = _controller:get() ---@type APlayController
-    local toolHit = toolHit:get() ---@type FHitResult
+    local toolHit = _toolHit:get() ---@type FHitResult
 
     if deformTool.Operation == EDeformType.ColorPaint then
         _isUsingTool:set(false)

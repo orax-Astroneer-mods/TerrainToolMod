@@ -8,6 +8,7 @@
 __CONFIG = {} -- Global configuration.
 
 ---@type Mod_Logger
+---@diagnostic disable-next-line: missing-fields
 __LOGGER = {}
 
 ---@class (exact) Mod_ModInfo
@@ -77,15 +78,5 @@ FName = {}
 --Returns the string for this FName.
 ---@return string
 function FName.ToString() end
-
----Returns the FName of this object by copy
----All FNames returned by `__index` are returned by reference
----@return FName
-function UObject:GetFName() end
-
---[[ original
----@retur FName
-function UObject:GetFName() end
-]]
 
 --#endregion

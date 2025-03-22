@@ -4,6 +4,10 @@
         "ModRef",
         "TestsMod"
     ],
+    "diagnostics.libraryFiles": "Disable",
+    "workspace.ignoreDir": [
+        ".vscode"
+    ],
     "workspace.library": [
         "../shared"
     ],

@@ -510,7 +510,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         local sign = controller:IsInputKeyDown({ KeyName = FName(options.auto__set_angle_from_slope_Modifier_KeyName) }) and
             -1 or 1
 
-        toolHit = toolHit:get() ---@cast toolHit FHitResult
+        local toolHit = _toolHit:get() ---@type FHitResult
         local relativeLocation = vec3.new(
             toolHit.Location.X - PlanetCenter.X,
             toolHit.Location.Y - PlanetCenter.Y,

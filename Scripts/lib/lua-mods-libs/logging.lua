@@ -56,6 +56,7 @@ end
 ---@param levelForFatalError _LogLevel
 ---@return Mod_Logger
 function logging.new(level, levelForFatalError)
+    ---@diagnostic disable-next-line: missing-fields
     local logger = {} ---@type Mod_Logger
     local source = debug.getinfo(2, "S").source
 
