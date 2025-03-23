@@ -8,20 +8,18 @@ local vec3 = Vec3
 local insert = table.insert
 local format = string.format
 
--- load PARAMS from "paint" method
-local paramsFile_paint = func.getParamsFile("paint")
-local params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
+local CurrentFile = debug.getinfo(1, "S").source
 
-local DebugObjects = {} ---@type AStaticMeshActor[]
+local DebugObjects = {} ---@type table<UObject|AStaticMeshActor|nil>
 local PaintTerrain = false
 
 ---@type TerrainToolMod_Debug
 local dbg = {
     staticMeshActorClassShortName = "StaticMeshActor",
     staticMeshActorClassName = "/Script/Engine.StaticMeshActor",
-    staticMeshActorClass = nil,
-    material = nil,
-    mesh = nil,
+    staticMeshActorClass = CreateInvalidObject(),
+    material = CreateInvalidObject(),
+    mesh = CreateInvalidObject(),
     scale = { X = 0.1, Y = 0.1, Z = 0.1 },
     --[[ Cone, Cube, Cylinder, Plane, Sphere ]]
     meshClassName = "/Engine/BasicShapes/Sphere.Sphere",
@@ -53,8 +51,12 @@ local utils = require("lib.lua-mods-libs.utils")
 local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
 
 -- load PARAMS global table
-local paramsFile = func.getParamsFile()
-local params = func.loadParamsFile(paramsFile) ---@type Method__Smoothen__PARAMS
+local paramsFile = func.getParamsFile(CurrentFile, true)
+local params = func.loadParamsFile(paramsFile, true) ---@type Method__Smoothen__PARAMS
+
+-- load PARAMS from "paint" method
+local paramsFile_paint = func.getParamsFile(CurrentFile, true, "paint")
+local params_paint = func.loadParamsFile(paramsFile_paint, true) ---@type Method__Paint__PARAMS
 
 local sys = UEHelpers.GetKismetSystemLibrary()
 local LineTraceSingleForObjects = sys.LineTraceSingleForObjects
@@ -118,7 +120,7 @@ local function loadAllPresets()
 
     for index, file in ipairs(fileList) do
         local presetName = file:match("([^\\]+)[.]lua$")
-        table.insert(presetNamesList, presetName)
+        insert(presetNamesList, presetName)
 
         local presetTable = {
             index = index
@@ -137,12 +139,11 @@ local function loadAllPresets()
 end
 
 local function updateUI()
-    params = func.loadParamsFile(paramsFile)
-    params_paint = func.loadParamsFile(paramsFile_paint)
+    params = func.loadParamsFile(paramsFile) ---@type Method__Smoothen__PARAMS
+    params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
 
     -- update prests list
     if UI.presetsComboBox:IsValid() then
-        local index = UI.presetsComboBox:GetSelectedIndex()
         Presets, PresetNamesList = loadAllPresets()
         UI.presetsComboBox:ClearOptions()
 
@@ -151,16 +152,13 @@ local function updateUI()
             UI.presetsComboBox:AddOption(preset)
         end
 
-        if index == -1 then
-            index = 0
-        end
-        -- select preset
-        UI.presetsComboBox:SetSelectedIndex(index)
-        CurrentPresetName = UI.presetsComboBox:GetSelectedOption():ToString()
-        if CurrentPresetName == "" then
-            log.warn("No preset found.")
+        -- select latest selected preset
+        ---@diagnostic disable-next-line: param-type-mismatch
+        if params.LATEST_PRESET and params.LATEST_PRESET ~= "" and UI.presetsComboBox:FindOptionIndex(params.LATEST_PRESET) ~= -1 then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            UI.presetsComboBox:SetSelectedOption(params.LATEST_PRESET)
         else
-            CurrentPreset = Presets[CurrentPresetName]
+            UI.presetsComboBox:SetSelectedIndex(0)
         end
     end
 
@@ -184,49 +182,42 @@ local function writeParamsFile()
 
     -- defaults
     if params.DEBUG_OBJECTS == nil then params.DEBUG_OBJECTS = false end
-    if params.LAST_PRESET == nil then params.LAST_PRESET = "" end
+    if params.LATEST_PRESET == nil then params.LATEST_PRESET = "" end
     if params.PAINT == nil then params.PAINT = false end
     file:write(format(
         [[return {
 DEBUG_OBJECTS=%s,
-LAST_PRESET="%s",
+LATEST_PRESET="%s",
 PAINT=%s
 }]],
         params.DEBUG_OBJECTS,
-        params.LAST_PRESET,
-        params.PAINT))
+        params.LATEST_PRESET,
+        params.PAINT
+    ))
 
     file:close()
 end
 
-local function updateParamsFile()
+local function updateParams()
     local updateRequired = false
 
     -- select preset
-    CurrentPresetName = UI.presetsComboBox:GetSelectedOption():ToString()
+    CurrentPresetName = UI.presetsComboBox.SelectedOption:ToString()
     if CurrentPresetName == "" then
         log.warn("No preset found.")
     else
         CurrentPreset = Presets[CurrentPresetName]
-        if CurrentPresetName ~= "" and params.LAST_PRESET ~= CurrentPresetName then
-            params.LAST_PRESET = CurrentPresetName
+        if params.LATEST_PRESET ~= CurrentPresetName then
+            params.LATEST_PRESET = CurrentPresetName
             updateRequired = true
         end
     end
 
     -- get debug CheckBox state
-    local isDebugChecked = UI.debugCheckBox:GetCheckedState() == ECheckBoxState.Checked
+    local isDebugChecked = UI.debugCheckBox.CheckedState == ECheckBoxState.Checked
     if params.DEBUG_OBJECTS ~= isDebugChecked then
         params.DEBUG_OBJECTS = isDebugChecked
         updateRequired = true
-    end
-    if isDebugChecked == false then
-        -- destroy debug objects
-        for _, object in ipairs(DebugObjects) do
-            if object and object:IsValid() then
-                object:K2_DestroyActor()
-            end
-        end
     end
 
     -- get paint CheckBox state
@@ -238,6 +229,32 @@ local function updateParamsFile()
 
     if updateRequired then
         writeParamsFile()
+    end
+end
+
+local function loadDebugAssets()
+    ---@diagnostic disable: assign-type-mismatch
+    if dbg.material:IsValid() == false then
+        dbg.material = StaticFindObject(dbg.matClassName)
+    end
+
+    if dbg.mesh:IsValid() == false then
+        dbg.mesh = StaticFindObject(dbg.meshClassName)
+    end
+
+    if dbg.staticMeshActorClass:IsValid() == false then
+        dbg.staticMeshActorClass = StaticFindObject(dbg.staticMeshActorClassName)
+    end
+    ---@diagnostic enable: assign-type-mismatch
+
+    if dbg.material:IsValid() == false then
+        LoadAsset(dbg.matClassName)
+        dbg.material = StaticFindObject(dbg.matClassName)
+    end
+
+    if dbg.mesh:IsValid() == false then
+        LoadAsset(dbg.meshClassName)
+        dbg.mesh = StaticFindObject(dbg.meshClassName)
     end
 end
 
@@ -254,7 +271,16 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
                                       _isUsingTool, _justActivated, _canUse)
     if _justActivated:get() == true then
         World = UEHelpers:GetWorld()
-        updateParamsFile()
+
+        updateParams()
+        if not params.DEBUG_OBJECTS then
+            -- destroy debug objects
+            for _, object in ipairs(DebugObjects) do
+                if object and object:IsValid() then
+                    object:K2_DestroyActor()
+                end
+            end
+        end
     end
 
     if _isUsingTool:get() == false or _canUse:get() == false then
@@ -269,7 +295,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local operation = deformTool.Operation
 
     if startedInteraction then
-        PaintTerrain = UI.paintCheckBox:GetCheckedState() == ECheckBoxState.Checked
+        PaintTerrain = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
     end
 
     -- paint terrain
@@ -344,9 +370,14 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             end
         end
 
-        table.insert(DebugObjects,
-            func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material, toolHit.Location,
-                nil, dbg.scale, { R = 50, G = 0, B = 0, A = 1 }))
+        ExecuteInGameThread(function()
+            loadDebugAssets()
+
+            insert(DebugObjects,
+                ---@diagnostic disable-next-line: param-type-mismatch
+                func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material, toolHit.Location,
+                    nil, dbg.scale, { R = 50, G = 0, B = 0, A = 1 }))
+        end)
     end
 
     local color = { R = 0, G = 0, B = 0, A = 0 }
@@ -387,14 +418,17 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             endPoint = vec3.add(vec3.scale(vec3.normalize(direction), lineTraceLength), r)
 
             if dbgObject then
-                local c = { R = 50, G = 0, B = 50, A = 1.0 } ---@type FLinearColor
-                if hit.Distance ~= 0 then
-                    c = { R = 0, G = 50, B = 0, A = 1.0 }
-                end
-                table.insert(DebugObjects,
-                    func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
-                        { X = r.x, Y = r.y, Z = r.z },
-                        nil, dbg.scale, c))
+                ExecuteInGameThread(function()
+                    local c = { R = 50, G = 0, B = 50, A = 1.0 } ---@type FLinearColor
+                    if hit.Distance ~= 0 then
+                        c = { R = 0, G = 50, B = 0, A = 1.0 }
+                    end
+                    insert(DebugObjects,
+                        ---@diagnostic disable-next-line: param-type-mismatch
+                        func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
+                            { X = r.x, Y = r.y, Z = r.z },
+                            nil, dbg.scale, c))
+                end)
             end
 
             ---@diagnostic disable-next-line: missing-fields
@@ -405,10 +439,13 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
                 outHit, true, color, color, 0)
 
             if dbgObject then
-                table.insert(DebugObjects,
-                    func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
-                        outHit.Location,
-                        nil, dbg.scale, { R = 0, G = 0, B = 50, A = 1.0 }))
+                ExecuteInGameThread(function()
+                    insert(DebugObjects,
+                        ---@diagnostic disable-next-line: param-type-mismatch
+                        func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
+                            outHit.Location,
+                            nil, dbg.scale, { R = 0, G = 0, B = 50, A = 1.0 }))
+                end)
             end
 
             if outHit.Normal.X ~= 0 or outHit.Normal.Y ~= 0 or outHit.Normal.Z ~= 0 then
@@ -484,35 +521,38 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     ---@diagnostic enable: inject-field
 
     if dbgObject then
-        if #normals > 0 and #locations > 0 then
-            local x_loc, y_loc, z_loc = 0, 0, 0
-            for _, loc in ipairs(locations) do
-                x_loc = x_loc + loc.X
-                y_loc = y_loc + loc.Y
-                z_loc = z_loc + loc.Z
-            end
-            x_loc = x_loc / #locations
-            y_loc = y_loc / #locations
-            z_loc = z_loc / #locations
+        ExecuteInGameThread(function()
+            if #normals > 0 and #locations > 0 then
+                local x_loc, y_loc, z_loc = 0, 0, 0
+                for _, loc in ipairs(locations) do
+                    x_loc = x_loc + loc.X
+                    y_loc = y_loc + loc.Y
+                    z_loc = z_loc + loc.Z
+                end
+                x_loc = x_loc / #locations
+                y_loc = y_loc / #locations
+                z_loc = z_loc / #locations
 
-            local x_norm, y_norm, z_norm = 0, 0, 0
-            for _, normal in ipairs(normals) do
-                x_norm = x_norm + normal.X
-                y_norm = y_norm + normal.Y
-                z_norm = z_norm + normal.Z
-            end
-            x_norm = x_norm / #normals
-            y_norm = y_norm / #normals
-            z_norm = z_norm / #normals
+                local x_norm, y_norm, z_norm = 0, 0, 0
+                for _, n in ipairs(normals) do
+                    x_norm = x_norm + n.X
+                    y_norm = y_norm + n.Y
+                    z_norm = z_norm + n.Z
+                end
+                x_norm = x_norm / #normals
+                y_norm = y_norm / #normals
+                z_norm = z_norm / #normals
 
-            -- new normal
-            for i = 50, 500, 50 do
-                table.insert(DebugObjects,
-                    func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
-                        { X = x_loc + x_norm * i, Y = y_loc + y_norm * i, Z = z_loc + z_norm * i },
-                        nil, dbg.scale, { R = 1, G = 1, B = 1, A = 0.1 }))
+                -- new normal
+                for i = 50, 500, 50 do
+                    insert(DebugObjects,
+                        ---@diagnostic disable-next-line: param-type-mismatch
+                        func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
+                            { X = x_loc + x_norm * i, Y = y_loc + y_norm * i, Z = z_loc + z_norm * i },
+                            nil, dbg.scale, { R = 1, G = 1, B = 1, A = 0.1 }))
+                end
             end
-        end
+        end)
     end
 end
 
@@ -524,10 +564,15 @@ local function createUI()
 
     local gameInstance = UEHelpers.GetGameInstance()
     if not gameInstance:IsValid() then
+        log.warn("Game instance is not valid.")
         return false
     end
 
     local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    if not fontObj:IsValid() then
+        log.warn("Font object is not valid.")
+        return false
+    end
 
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
@@ -567,10 +612,11 @@ local function createUI()
     UI.presetsComboBox:SetToolTipText(FText(format(optUI.smoothen.txt.presetsComboBox_tip,
         func.getKeybindName(options.enable_handleTerrainTool_Key, options.enable_handleTerrainTool_ModifierKeys))))
 
+    --#region debug
     ---@type UHorizontalBox
-    local horizontalBox = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox"))
-    horizontalBox:SetToolTipText(FText(optUI.smoothen.txt.debug_tip))
+    local horizontalBox_debug = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_debug"))
+    horizontalBox_debug:SetToolTipText(FText(optUI.smoothen.txt.debug_tip))
 
     ---@type UTextBlock
     local textBlock = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
@@ -581,16 +627,17 @@ local function createUI()
 
     ---@type USpacer
     local spacer = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer"))
+        rootWidget, FName(prefix .. "Spacer_debug"))
     spacer:SetSize(optUI.smoothen.spacer_size)
 
     ---@type UCheckBox
     UI.debugCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
         rootWidget, FName(prefix .. "CheckBox_debug"))
 
-    horizontalBox:AddChildToHorizontalBox(textBlock)
-    horizontalBox:AddChildToHorizontalBox(spacer)
-    horizontalBox:AddChildToHorizontalBox(UI.debugCheckBox)
+    horizontalBox_debug:AddChildToHorizontalBox(textBlock)
+    horizontalBox_debug:AddChildToHorizontalBox(spacer)
+    horizontalBox_debug:AddChildToHorizontalBox(UI.debugCheckBox)
+    --#endregion
 
     --#region paint
     ---@type UHorizontalBox
@@ -622,21 +669,11 @@ local function createUI()
 
     verticalBox:AddChildToVerticalBox(textBlock_title)
     verticalBox:AddChildToVerticalBox(UI.presetsComboBox)
-    verticalBox:AddChildToVerticalBox(horizontalBox)
+    verticalBox:AddChildToVerticalBox(horizontalBox_debug)
     verticalBox:AddChildToVerticalBox(horizontalBox_paint)
 
     local slot = UI.canvas:AddChildToCanvas(verticalBox)
     slot:SetAutoSize(true)
-
-    updateUI()
-    -- select last selected preset
-    if params.LAST_PRESET and params.LAST_PRESET ~= "" and UI.presetsComboBox:FindOptionIndex(params.LAST_PRESET) ~= -1 then
-        UI.presetsComboBox:SetSelectedOption(params.LAST_PRESET)
-    else
-        UI.presetsComboBox:SetSelectedIndex(0)
-        params.LAST_PRESET = UI.presetsComboBox:GetOptionAtIndex(0):ToString()
-        writeParamsFile()
-    end
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 
@@ -664,7 +701,7 @@ local function hideUI()
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
 
-    updateParamsFile()
+    updateParams()
     UI.showed = false
 end
 
@@ -676,42 +713,13 @@ local function toogleUI()
     end
 end
 
-local function loadDebugAssets()
-    ExecuteInGameThread(function()
-        if dbg.staticMeshActorClass == nil or dbg.staticMeshActorClass:IsValid() == false then
-            dbg.staticMeshActorClass = StaticFindObject(dbg.staticMeshActorClassName) ---@diagnostic disable-line: assign-type-mismatch
-        end
-
-        dbg.material = StaticFindObject(dbg.matClassName) ---@diagnostic disable-line: assign-type-mismatch
-        dbg.mesh = StaticFindObject(dbg.meshClassName) ---@diagnostic disable-line: assign-type-mismatch
-
-        if dbg.material == nil or dbg.material:IsValid() == false then
-            LoadAsset(dbg.matClassName) ---@diagnostic disable-line: undefined-global
-            dbg.material = StaticFindObject(dbg.matClassName) ---@diagnostic disable-line: assign-type-mismatch
-        end
-
-        if dbg.mesh == nil or dbg.mesh:IsValid() == false then
-            LoadAsset(dbg.meshClassName) ---@diagnostic disable-line: undefined-global
-            dbg.mesh = StaticFindObject(dbg.meshClassName) ---@diagnostic disable-line: assign-type-mismatch
-        end
-    end)
-end
-
 Presets, PresetNamesList = loadAllPresets()
 
 ---@type Method__Smoothen
 return {
     params = params,
     hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
-    onEnable = function()
-        loadDebugAssets()
-        showUI()
-    end,
-    onDisable = function()
-        hideUI()
-    end,
     onLoad = function()
-        loadDebugAssets()
         showUI()
     end,
     onUnload = function()

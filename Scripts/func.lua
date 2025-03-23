@@ -18,9 +18,51 @@ function m.isFileExists(filename)
     end
 end
 
+---@param name string
+---@param directory string
+---@param checkFile? boolean
+---@return string
+function m.getParamsFileByName(name, directory, checkFile)
+    local function check(file, exampleFile)
+        local f1 = loadfile(file)
+        if f1 == nil then
+            -- cannot load file
+            return false
+        end
+
+        local params = f1()
+        local ex = dofile(exampleFile)
+
+        -- check if keys exist in the example file
+        for key, value in pairs(params) do
+            if ex[key] == nil then
+                -- this key does not exist in the example file
+                print(string.format("WARN: The key %q in the %s.lua file is unknown. You should delete it.", key, name))
+                break
+            end
+        end
+    end
+
+    local file = string.format([[%s\\%s.lua]], directory, name)
+
+    if checkFile == true then
+        local exampleFile = string.format([[%s\\%s.example.lua]], directory, name)
+        local _, fileSize = m.isFileExists(file)
+        if fileSize == 0 or check(file, exampleFile) == false then
+            local cmd = string.format([[copy /Y "%s" "%s"]], exampleFile, file)
+            print("Copy example params to params.lua. Execute command: " .. cmd .. "\n")
+            os.execute(cmd)
+        end
+    end
+
+    return file
+end
+
+---@param sourceFile string
+---@param checkFile? boolean
 ---@param method? string
 ---@return string
-function m.getParamsFile(method)
+function m.getParamsFile(sourceFile, checkFile, method)
     local function check(file, exampleFile)
         local f1 = loadfile(file)
         if f1 == nil then
@@ -44,49 +86,53 @@ function m.getParamsFile(method)
     local methodDirectory
     if method == nil or method == "" then
         -- current directory
-        methodDirectory = debug.getinfo(2, "S").source:match([[@?(.+\Mods\[^\\]+\Scripts\methods\[^\]+)]])
+        methodDirectory = sourceFile:match([[@?(.+\Mods\[^\\]+\Scripts\methods\[^\]+)]])
     else
-        methodDirectory = debug.getinfo(2, "S").source:match([[@?(.+\Mods\[^\\]+\Scripts\methods\)]]) .. method
+        methodDirectory = sourceFile:match([[@?(.+\Mods\[^\\]+\Scripts\methods\)]]) .. method
     end ---@cast methodDirectory string
 
     local file = methodDirectory .. "\\params.lua"
-    local exampleFile = methodDirectory .. "\\params.example.lua"
 
-    local _, fileSize = m.isFileExists(file)
-    if fileSize == 0 or check(file, exampleFile) == false then
-        local cmd = string.format([[copy /Y "%s" "%s"]], exampleFile, file)
-        print("Copy example params to params.lua. Execute command: " .. cmd .. "\n")
-        os.execute(cmd)
+    if checkFile == true then
+        local exampleFile = methodDirectory .. "\\params.example.lua"
+        local _, fileSize = m.isFileExists(file)
+        if fileSize == 0 or check(file, exampleFile) == false then
+            local cmd = string.format([[copy /Y "%s" "%s"]], exampleFile, file)
+            print("Copy example params to params.lua. Execute command: " .. cmd .. "\n")
+            os.execute(cmd)
+        end
     end
 
     return file
 end
 
----@param paramsFile? string
+---@param paramsFile string
+---@param checkFile? boolean
 ---@return table
-function m.loadParamsFile(paramsFile)
-    paramsFile = paramsFile or m.getParamsFile()
+function m.loadParamsFile(paramsFile, checkFile)
     local params = dofile(paramsFile)
     assert(type(params) == "table", string.format("\nInvalid parameters file: %q.", paramsFile))
 
-    -- load example file and set defaults if needed
-    local exampleParamsFile = paramsFile:gsub("params.lua", "params.example.lua")
-    local exParams = dofile(exampleParamsFile)
-    assert(type(exParams) == "table", string.format("\nInvalid parameters file: %q.", exampleParamsFile))
-    for key, defaultValue in pairs(exParams) do
-        if params[key] == nil then
-            params[key] = defaultValue
+    if checkFile == true then
+        -- load example file and set defaults if needed
+        local exampleParamsFile = paramsFile:gsub("params.lua", "params.example.lua")
+        local exParams = dofile(exampleParamsFile)
+        assert(type(exParams) == "table", string.format("\nInvalid parameters file: %q.", exampleParamsFile))
+        for key, defaultValue in pairs(exParams) do
+            if params[key] == nil then
+                params[key] = defaultValue
+            end
         end
-    end
 
-    local i, str = 0, ""
-    for key, value in pairs(params) do
-        str = str .. string.format("%s=%s\n", key, value)
-        i = i + 1
-    end
+        local i, str = 0, ""
+        for key, value in pairs(params) do
+            str = str .. string.format("%s=%s\n", key, value)
+            i = i + 1
+        end
 
-    if i == 0 then
-        print(string.format("WARN: No parameters were loaded from the file %q.", paramsFile))
+        if i == 0 then
+            print(string.format("WARN: No parameters were loaded from the file %q.", paramsFile))
+        end
     end
 
     return params
@@ -163,8 +209,12 @@ end
 ---@param rotation FRotator?
 ---@param scale FVector?
 ---@param color FLinearColor?
----@return AStaticMeshActor
+---@return UObject|AStaticMeshActor
 function m.spawnDebugObject(world, staticMeshActorClass, mesh, material, location, rotation, scale, color)
+    if not world:IsValid() or not staticMeshActorClass:IsValid() or not mesh:IsValid() or not material:IsValid() then
+        return CreateInvalidObject()
+    end
+
     rotation = rotation or { Pitch = 0, Roll = 0, Yaw = 0 }
     scale = scale or { X = 1, Y = 1, Z = 1 }
     color = color or { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }

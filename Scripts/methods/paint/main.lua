@@ -11,9 +11,11 @@ local func = require("func")
 local log = Log
 local format = string.format
 
+local CurrentFile = debug.getinfo(1, "S").source
+
 -- load PARAMS global table
-local paramsFile = func.getParamsFile()
-local params = func.loadParamsFile(paramsFile) ---@type Method__Paint__PARAMS
+local paramsFile = func.getParamsFile(CurrentFile, true)
+local params = func.loadParamsFile(paramsFile, true) ---@type Method__Paint__PARAMS
 
 local FirstInit = true
 local options = OPTIONS
@@ -69,12 +71,15 @@ local function writeParamsFile()
         [[return {
     MATERIAL_INDEX=%d,
     SCALE=%.16g,
-    }]], params.MATERIAL_INDEX, params.SCALE))
+    }]],
+        params.MATERIAL_INDEX,
+        params.SCALE
+    ))
 
     file:close()
 end
 
-local function updateParamsFile()
+local function updateParams()
     local updateRequired = false
 
     local materialIndex = tonumber(UI.materialIndex:GetText():ToString())
@@ -103,9 +108,9 @@ local function updateParamsFile()
 end
 
 local function updateUI()
-    params = func.loadParamsFile(paramsFile)
+    params = func.loadParamsFile(paramsFile) ---@type Method__Paint__PARAMS
 
-    updateParamsFile()
+    updateParams()
 
     if materialIndexImage ~= params.MATERIAL_INDEX then
         log.debug("Update active material index image.")
@@ -122,10 +127,15 @@ local function createUI()
 
     local gameInstance = UEHelpers.GetGameInstance()
     if not gameInstance:IsValid() then
+        log.warn("Game instance is not valid.")
         return false
     end
 
     local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    if not fontObj:IsValid() then
+        log.warn("Font object is not valid.")
+        return false
+    end
 
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
@@ -181,7 +191,6 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_scale"))
     UI.scale.WidgetStyle.Font.Size = optUI.paint.font_size
     UI.scale.WidgetStyle.Font.FontObject = fontObj
-    UI.scale:SetText(FText(tostring(params.SCALE)))
 
     horizontalBox_scale:AddChildToHorizontalBox(textBlock_scale)
     horizontalBox_scale:AddChildToHorizontalBox(spacer_scale)
@@ -277,7 +286,7 @@ local function hideUI()
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
-    updateParamsFile()
+    updateParams()
 end
 
 ---@param _self RemoteUnrealParam
@@ -365,14 +374,6 @@ end
 return {
     params = params,
     hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
-    writeParamsFile = writeParamsFile,
-    onEnable = function()
-        init()
-        showUI()
-    end,
-    onDisable = function()
-        hideUI()
-    end,
     onLoad = function()
         init()
         showUI()

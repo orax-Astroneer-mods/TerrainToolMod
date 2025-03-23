@@ -12,9 +12,11 @@ local Presets, PresetNamesList = {}, {}
 local CurrentPreset ---@type Method__Auto__PRESET
 local CurrentPresetName = "" ---@type string
 
+local CurrentFile = debug.getinfo(1, "S").source
+
 -- load PARAMS global table
-local paramsFile = func.getParamsFile()
-local params = func.loadParamsFile(paramsFile) ---@type Method__Auto__PARAMS
+local paramsFile = func.getParamsFile(CurrentFile, true)
+local params = func.loadParamsFile(paramsFile, true) ---@type Method__Auto__PARAMS
 
 local utils = require("lib.lua-mods-libs.utils")
 
@@ -121,19 +123,20 @@ LATEST_PRESET="%s",
 LOOP_DELAY=%d
 }]],
         params.LATEST_PRESET,
-        params.LOOP_DELAY))
+        params.LOOP_DELAY
+    ))
 
     file:close()
 end
 
-local function updateParamsFile()
+local function updateParams()
     local updateRequired = false
 
     -- select preset from the UI
-    local currentPresetName = UI.comboBox_presets:GetSelectedOption():ToString()
+    local currentPresetName = UI.comboBox_presets.SelectedOption:ToString()
     if currentPresetName == "" then
         UI.comboBox_presets:SetSelectedIndex(0)
-        currentPresetName = UI.comboBox_presets:GetSelectedOption():ToString()
+        currentPresetName = UI.comboBox_presets.SelectedOption:ToString()
     end
     if currentPresetName ~= params.LATEST_PRESET then
         params.LATEST_PRESET = currentPresetName
@@ -172,7 +175,7 @@ local function updateGameVariables()
 end
 
 local function updateUI()
-    params = func.loadParamsFile(paramsFile)
+    params = func.loadParamsFile(paramsFile) ---@type Method__Auto__PARAMS
 
     setAngle(0)
     setExpectedAngle(mathHuge)
@@ -189,7 +192,7 @@ local function updateUI()
     for _, preset in ipairs(PresetNamesList) do
         UI.comboBox_presets:AddOption(preset)
     end
-    -- select last selected preset
+    -- select latest selected preset
     ---@diagnostic disable-next-line: param-type-mismatch
     if params.LATEST_PRESET and params.LATEST_PRESET ~= "" and UI.comboBox_presets:FindOptionIndex(params.LATEST_PRESET) ~= -1 then
         ---@diagnostic disable-next-line: param-type-mismatch
@@ -248,10 +251,15 @@ local function createUI()
 
     local gameInstance = UEHelpers.GetGameInstance()
     if not gameInstance:IsValid() then
+        log.warn("Game instance is not valid.")
         return false
     end
 
     local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    if not fontObj:IsValid() then
+        log.warn("Font object is not valid.")
+        return false
+    end
 
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
@@ -420,7 +428,7 @@ local function hideUI()
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
 
-    updateParamsFile()
+    updateParams()
 end
 
 ---@param _self RemoteUnrealParam
@@ -442,12 +450,12 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local justActivated = _justActivated:get() ---@type boolean
 
     if justActivated == true then
-        updateParamsFile()
+        updateParams()
 
         startMainLoop()
 
         -- select preset from the UI
-        CurrentPresetName = UI.comboBox_presets:GetSelectedOption():ToString()
+        CurrentPresetName = UI.comboBox_presets.SelectedOption:ToString()
         CurrentPreset = Presets[CurrentPresetName]
 
         -- Planet center is (0, 0, 0) for SYLVA.
@@ -568,31 +576,22 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     CurrentPreset.doDeformation(parameters)
 end
 
-local function init()
-    updateGameVariables()
-end
-
 ---@type Method__Auto
 return {
     params = params,
     hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
-    onEnable = function()
-        updateGameVariables()
-        showUI()
-    end,
-    onDisable = function()
-        hideUI()
-    end,
     onLoad = function()
-        init()
+        updateGameVariables()
         showUI()
     end,
     onUnload = function()
         hideUI()
     end,
-    onClientRestart = init,
     onUpdate = function()
         updateGameVariables()
         updateUI()
+    end,
+    onClientRestart = function()
+        updateGameVariables()
     end
 }

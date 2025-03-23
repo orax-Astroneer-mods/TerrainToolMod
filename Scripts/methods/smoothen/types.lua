@@ -2,7 +2,7 @@
 
 ---@class Method__Smoothen__PARAMS
 ---@field DEBUG_OBJECTS boolean
----@field LAST_PRESET string
+---@field LATEST_PRESET string
 ---@field PAINT boolean
 
 ---@class Method__Smoothen__PRESET

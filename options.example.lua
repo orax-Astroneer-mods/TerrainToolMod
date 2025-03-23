@@ -43,6 +43,9 @@ local options = {
         zOrder = 1
     },
 
+    -- Delay in milliseconds at which the main_params.lua file will be updated. You probably do not need to not change this.
+    writeMainParamsFileEvery = 30000,
+
     --
     -- Note: You can modify/translate the contents of variables that end with _text.
     --
@@ -90,6 +93,11 @@ local options = {
     set_paint_method_text = "Set \"paint\" method",
     set_paint_method_Key = Key.FIVE,
     set_paint_method_ModifierKeys = {},
+
+    -- Keybinds to turn on the "revert" method.
+    set_revert_method_text = "Set \"revert\" method",
+    set_revert_method_Key = Key.SIX,
+    set_revert_method_ModifierKeys = {},
 
     -- Brush scale/size
     -- Default size (without augment) is 350.

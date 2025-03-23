@@ -9,6 +9,7 @@ local format = string.format
 
 local huge = math.huge -- inf
 
+local CurrentFile = debug.getinfo(1, "S").source
 local options = OPTIONS
 local optUI = OPTIONS_UI
 local UI = {
@@ -21,12 +22,12 @@ local UI = {
 }
 
 -- load PARAMS global table
-local paramsFile = func.getParamsFile()
-local params = func.loadParamsFile(paramsFile) ---@type Method__Tangent__PARAMS
+local paramsFile = func.getParamsFile(CurrentFile, true)
+local params = func.loadParamsFile(paramsFile, true) ---@type Method__Tangent__PARAMS
 
 -- load PARAMS from "paint" method
-local paramsFile_paint = func.getParamsFile("paint")
-local params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
+local paramsFile_paint = func.getParamsFile(CurrentFile, true, "paint")
+local params_paint = func.loadParamsFile(paramsFile_paint, true) ---@type Method__Paint__PARAMS
 
 local PaintTerrain = false
 local RoundedAltitude = 0
@@ -109,7 +110,7 @@ SELECTED_ALTITUDE_INDEX=%d,
     file:close()
 end
 
-local function updateParamsFile()
+local function updateParams()
     local updateRequired = false
 
     -- get the selected altitude index from the altitude list (ComboBox)
@@ -120,10 +121,9 @@ local function updateParamsFile()
     end
 
     -- get altitude round
-    local round = tonumber(UI.altitudeRound:GetText():ToString())
+    local round = tonumber(UI.altitudeRound.Text:ToString())
     if round == nil then
         round = params.ALTITUDE_ROUND
-        UI.altitudeRound:SetText(FText(tostring(round)))
     end
     if params.ALTITUDE_ROUND ~= round then
         params.ALTITUDE_ROUND = round
@@ -164,7 +164,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local controller = _controller:get() ---@type APlayController
 
     if _justActivated:get() == true then
-        updateParamsFile()
+        updateParams()
 
         -- Planet center is (0, 0, 0) for SYLVA.
         PlanetCenter = controller:GetLocalSolarBody():GetCenter()
@@ -212,7 +212,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local operation = deformTool.Operation
 
     if startedInteraction then
-        PaintTerrain = UI.paintCheckBox:GetCheckedState() == ECheckBoxState.Checked
+        PaintTerrain = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
     end
 
     -- paint terrain
@@ -370,8 +370,8 @@ local function updateAltitudeList()
 end
 
 local function updateUI()
-    params = func.loadParamsFile(paramsFile)
-    params_paint = func.loadParamsFile(paramsFile_paint)
+    params = func.loadParamsFile(paramsFile) ---@type Method__Tangent__PARAMS
+    params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
 
     updateAltitudeList()
 
@@ -398,10 +398,15 @@ local function createUI()
 
     local gameInstance = UEHelpers.GetGameInstance()
     if not gameInstance:IsValid() then
+        log.warn("Game instance is not valid.")
         return false
     end
 
     local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    if not fontObj:IsValid() then
+        log.warn("Font object is not valid.")
+        return false
+    end
 
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
@@ -578,7 +583,7 @@ local function hideUI()
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
-    updateParamsFile()
+    updateParams()
     UI.showed = false
 end
 
@@ -594,12 +599,6 @@ end
 return {
     params = params,
     hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
-    onEnable = function()
-        showUI()
-    end,
-    onDisable = function()
-        hideUI()
-    end,
     onLoad = function()
         showUI()
     end,

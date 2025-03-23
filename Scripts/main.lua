@@ -51,11 +51,14 @@ inf = math.huge ---@diagnostic disable-line: lowercase-global
 -- functions implemented in the method file
 local Methods = {} ---@type TerrainToolMod_Method[]
 local MethodNamesList = {}
+local CurrenMethod = ""
 
 local IsModEnabled = false
 local CachedTerrainTool = CreateInvalidObject() ---@cast CachedTerrainTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
 local HelpUI = { showed = false }
-local PreId_HandleTerrainTool, PostId_HandleTerrainTool
+local PreId_DeformTool_HandleTerrainTool, PostId_DeformTool_HandleTerrainTool
+local PreId_DeformTool_Deactivated, PostId_DeformTool_Deactivated
+local WriteMainParamsFileRequired = false
 
 local UEHelpers = require("UEHelpers")
 local logging = require("lib.lua-mods-libs.logging")
@@ -70,7 +73,7 @@ local sqrt = math.sqrt
 local format = string.format
 
 local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
-local mainParamsFile = currentModDirectory .. [[\main_params.lua]]
+local mainParamsFile = func.getParamsFileByName("main_params", currentModDirectory, true)
 local mainParams = {}
 
 ---@param filename string
@@ -148,25 +151,37 @@ LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR = nil, nil
 --#region hooks
 ---@param callback function
 local function registerHook_DeformTool_HandleTerrainTool(callback)
-    PreId_HandleTerrainTool, PostId_HandleTerrainTool = RegisterHook("/Script/Astro.DeformTool:HandleTerrainTool",
-        callback)
+    if type(PreId_DeformTool_HandleTerrainTool) == "number" or type(PostId_DeformTool_HandleTerrainTool) == "number" then
+        log.warn("DeformTool_HandleTerrainTool is already hooked.")
+        return
+    end
+    PreId_DeformTool_HandleTerrainTool, PostId_DeformTool_HandleTerrainTool = RegisterHook(
+        "/Script/Astro.DeformTool:HandleTerrainTool", callback)
 end
 local function unregisterHookFor_handleTerrainTool()
-    if type(PreId_HandleTerrainTool) == "number" and type(PostId_HandleTerrainTool) == "number" then
-        UnregisterHook("/Script/Astro.DeformTool:HandleTerrainTool", PreId_HandleTerrainTool,
-            PostId_HandleTerrainTool)
+    if type(PreId_DeformTool_HandleTerrainTool) == "number" and type(PostId_DeformTool_HandleTerrainTool) == "number" then
+        UnregisterHook("/Script/Astro.DeformTool:HandleTerrainTool", PreId_DeformTool_HandleTerrainTool,
+            PostId_DeformTool_HandleTerrainTool)
+        PreId_DeformTool_HandleTerrainTool = nil
+        PostId_DeformTool_HandleTerrainTool = nil
     end
 end
 
 ---@param callback function
 local function registerHook_DeformTool_Deactivated(callback)
-    PreId_DeformTool_Deactivated, PostId_DeformTool_Deactivated = RegisterHook("/Script/Astro.DeformTool:Deactivated",
-        callback)
+    if type(PreId_DeformTool_Deactivated) == "number" or type(PostId_DeformTool_Deactivated) == "number" then
+        log.warn("DeformTool_Deactivated is already hooked.")
+        return
+    end
+    PreId_DeformTool_Deactivated, PostId_DeformTool_Deactivated = RegisterHook(
+        "/Script/Astro.DeformTool:Deactivated", callback)
 end
 local function unregisterHookFor_DeformTool_Deactivated()
     if type(PreId_DeformTool_Deactivated) == "number" and type(PostId_DeformTool_Deactivated) == "number" then
         UnregisterHook("/Script/Astro.DeformTool:Deactivated", PreId_DeformTool_Deactivated,
             PostId_DeformTool_Deactivated)
+        PreId_DeformTool_Deactivated = nil
+        PostId_DeformTool_Deactivated = nil
     end
 end
 --#endregion hooks
@@ -178,13 +193,13 @@ local function writeMainParamsFile()
     assert(file, format("\nUnable to open the main params file %q.", mainParamsFile))
 
     -- defaults
-    if mainParams.METHOD == nil then mainParams.METHOD = "tangent" end
+    if mainParams.LATEST_METHOD == nil then mainParams.LATEST_METHOD = "tangent" end
 
     file:write(format(
         [[return { ---@type TerrainToolMod_Main_PARAMS
-METHOD="%s"
+LATEST_METHOD="%s"
 }]],
-        mainParams.METHOD))
+        mainParams.LATEST_METHOD))
 
     file:close()
 end
@@ -226,73 +241,9 @@ local function loadAllMethods()
     return methods, methodNamesList
 end
 
-local function enableMod(silent)
-    if IsModEnabled == false then
-        -- hook HandleTerrainTool (main hook)
-        if type(Methods[mainParams.METHOD].hook_DeformTool_HandleTerrainTool) ~= "function" then
-            log.debug("hook_HandleTerrainTool is not implemented in the current method.")
-            return
-        end
-        registerHook_DeformTool_HandleTerrainTool(Methods[mainParams.METHOD].hook_DeformTool_HandleTerrainTool)
-        IsModEnabled = true
-
-        -- hook on Terrain Tool deactivated
-        if type(Methods[mainParams.METHOD].hook_DeformTool_Deactivated) == "function" then
-            registerHook_DeformTool_Deactivated(Methods[mainParams.METHOD].hook_DeformTool_Deactivated)
-        end
-
-        -- execute onEnable event for the method
-        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onEnable) == "function" then
-            log.debug("Execute onEnable event for the current method %q.", mainParams.METHOD)
-            Methods[mainParams.METHOD].onEnable()
-        end
-
-        if not silent then
-            log.debug(format("Terrain Tool Mod is ENABLED. Method enabled: %q.", mainParams.METHOD))
-        end
-    else
-        -- execute onUpdate event for the (updated) method
-        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onUpdate) == "function" then
-            log.debug("Execute onUpdate event for the current method %q.", mainParams.METHOD)
-            Methods[mainParams.METHOD].onUpdate()
-        end
-
-        if not silent then
-            log.debug(format("Terrain Tool Mod is already ENABLED. Method updated: %q.", mainParams.METHOD))
-        end
-    end
-end
-
-local function disableMod()
-    if IsModEnabled == true then
-        unregisterHookFor_handleTerrainTool()
-        unregisterHookFor_DeformTool_Deactivated()
-        IsModEnabled = false
-
-        -- execute onDisable event for the unloaded (old) method
-        if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onDisable) == "function" then
-            log.debug("Execute onDisable event for the current method %q.", mainParams.METHOD)
-            Methods[mainParams.METHOD].onDisable()
-        end
-    end
-
-    log.debug("Terrain Tool Mod is DISABLED.")
-end
-
-local function toggleModStatus()
-    if IsModEnabled == true then
-        disableMod()
-    else
-        enableMod()
-    end
-
-    log.debug("Terrain Tool Mod is %s.", IsModEnabled and "ENABLED" or "DISABLED")
-end
-
 ---Set current method.
 ---@param method string|integer
----@param firstInit boolean?
-local function setMethod(method, firstInit)
+local function setMethod(method)
     local newMethod
 
     if type(tonumber(method)) == "number" then
@@ -308,14 +259,10 @@ local function setMethod(method, firstInit)
         newMethod = MethodNamesList[0]
     end
 
-    if not firstInit and IsModEnabled == false then
-        enableMod(true)
-    end
-
     log.debug(format("Set method: %q.", newMethod))
 
     -- if same method; no change
-    if newMethod == mainParams.METHOD then
+    if newMethod == CurrenMethod then
         log.debug("The newMethod == Method. No change.")
         return method
     end
@@ -327,32 +274,76 @@ local function setMethod(method, firstInit)
     --
     -- hook HandleTerrainTool (main hook)
     if type(Methods[newMethod].hook_DeformTool_HandleTerrainTool) == "function" then
-        if IsModEnabled == true then
-            registerHook_DeformTool_HandleTerrainTool(Methods[newMethod].hook_DeformTool_HandleTerrainTool)
-        end
+        registerHook_DeformTool_HandleTerrainTool(Methods[newMethod].hook_DeformTool_HandleTerrainTool)
     end
     -- hook on Terrain Tool deactivated
-    if type(Methods[mainParams.METHOD].hook_DeformTool_Deactivated) == "function" then
-        registerHook_DeformTool_Deactivated(Methods[mainParams.METHOD].hook_DeformTool_Deactivated)
+    if type(Methods[newMethod].hook_DeformTool_Deactivated) == "function" then
+        registerHook_DeformTool_Deactivated(Methods[newMethod].hook_DeformTool_Deactivated)
     end
 
     -- execute onUnload event for the unloaded (old) method
-    if mainParams.METHOD ~= "" and type(Methods[mainParams.METHOD].onUnload) == "function" then
-        log.debug("Execute onUnload event for the old method %q.", mainParams.METHOD)
-        Methods[mainParams.METHOD].onUnload()
+    if CurrenMethod ~= "" and type(Methods[CurrenMethod].onUnload) == "function" then
+        log.debug("Execute onUnload event for the old method %q.", CurrenMethod)
+        Methods[CurrenMethod].onUnload()
     end
 
     -- execute onLoad event for the loaded (new) method
     if type(Methods[newMethod].onLoad) == "function" then
         log.debug("Execute onLoad event for the new method %q.", newMethod)
-        Methods[newMethod].onLoad(firstInit)
+        Methods[newMethod].onLoad()
     end
 
-    mainParams.METHOD = newMethod
+    if mainParams.LATEST_METHOD ~= newMethod then
+        WriteMainParamsFileRequired = true
+    end
 
-    writeMainParamsFile()
+    CurrenMethod = newMethod
+    mainParams.LATEST_METHOD = newMethod
 
     return newMethod
+end
+
+local function enableMod()
+    if IsModEnabled == false then
+        IsModEnabled = true
+        setMethod(mainParams.LATEST_METHOD)
+
+        log.debug("Terrain Tool Mod is ENABLED.")
+        return
+    end
+
+    -- execute onUpdate event for the (updated) method
+    if mainParams.LATEST_METHOD ~= "" and type(Methods[mainParams.LATEST_METHOD].onUpdate) == "function" then
+        log.debug("Execute onUpdate event for the current method %q.", mainParams.LATEST_METHOD)
+        Methods[mainParams.LATEST_METHOD].onUpdate()
+    end
+
+    log.debug(format("Terrain Tool Mod is already ENABLED. Method updated: %q.", mainParams.LATEST_METHOD))
+end
+
+local function disableMod()
+    unregisterHookFor_handleTerrainTool()
+    unregisterHookFor_DeformTool_Deactivated()
+    -- execute onUnload event for the unloaded method
+    if CurrenMethod ~= "" and type(Methods[CurrenMethod].onUnload) == "function" then
+        log.debug("Execute onUnload event for the method %q.", CurrenMethod)
+        Methods[CurrenMethod].onUnload()
+        CurrenMethod = ""
+    end
+
+    IsModEnabled = false
+
+    log.debug("Terrain Tool Mod is DISABLED.")
+end
+
+local function toggleModStatus()
+    if IsModEnabled == true then
+        disableMod()
+    else
+        enableMod()
+    end
+
+    log.debug("Terrain Tool Mod is %s.", IsModEnabled and "ENABLED" or "DISABLED")
 end
 
 --#region Custom properties
@@ -457,22 +448,28 @@ RegisterCustomProperty({
 mainParams = loadMainParams()
 
 Methods, MethodNamesList = loadAllMethods()
-MethodNamesList[0] = mainParams.METHOD -- default method
-log.info("Current method: " .. setMethod(mainParams.METHOD, true) .. ".")
+MethodNamesList[0] = mainParams.LATEST_METHOD -- default method
 
 -- On client restart
 ExecuteWithDelay(5000, function()
     ---@param self RemoteUnrealParam
     ---@param NewPawn RemoteUnrealParam
     RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
-        -- execute onClientRestart event for the methods
-        for key, method in pairs(Methods) do
-            if type(method.onClientRestart) == "function" then
-                log.debug("Execute onClientRestart event for method %q.", key)
-                method.onClientRestart(self, NewPawn)
-            end
+        -- execute onClientRestart event for the current method
+        if CurrenMethod ~= "" and type(Methods[CurrenMethod].onClientRestart) == "function" then
+            log.debug("Execute onClientRestart event for method %q.", CurrenMethod)
+            Methods[CurrenMethod].onClientRestart(self, NewPawn)
         end
     end)
+end)
+
+LoopAsync(options.writeMainParamsFileEvery or 10000, function()
+    if WriteMainParamsFileRequired == true then
+        WriteMainParamsFileRequired = false
+        writeMainParamsFile()
+    end
+
+    return false
 end)
 
 --#endregion
@@ -526,11 +523,11 @@ end
 ---@param outputDevice FOutputDevice
 ---@return boolean
 local function checkIfPropertyExists(property, outputDevice)
-    if Methods[mainParams.METHOD].params[property] == nil then
+    if Methods[mainParams.LATEST_METHOD].params[property] == nil then
         if outputDevice then
             outputDevice:Log(format(
                 "This property does not exist for the method %q. Use the \"method\" command to change the method.",
-                mainParams.METHOD))
+                mainParams.LATEST_METHOD))
         end
 
         return false

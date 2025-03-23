@@ -8,15 +8,17 @@ local vec3 = Vec3
 local sqrt, rad = math.sqrt, math.rad
 local format = string.format
 
--- load PARAMS from "paint" method
-local paramsFile_paint = func.getParamsFile("paint")
-local params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
-
-local PaintTerrain = false
+local CurrentFile = debug.getinfo(1, "S").source
 
 -- load PARAMS global table
-local paramsFile = func.getParamsFile()
-local params = func.loadParamsFile(paramsFile) ---@type Method__Slope__PARAMS
+local paramsFile = func.getParamsFile(CurrentFile, true)
+local params = func.loadParamsFile(paramsFile, true) ---@type Method__Slope__PARAMS
+
+-- load PARAMS from "paint" method
+local paramsFile_paint = func.getParamsFile(CurrentFile, true, "paint")
+local params_paint = func.loadParamsFile(paramsFile_paint, true) ---@type Method__Paint__PARAMS
+
+local PaintTerrain = false
 
 local huge = math.huge
 local SlopeDirection = vec3(huge, huge, huge)
@@ -111,12 +113,13 @@ PAINT=%s,
 SLOPE_ANGLE=%.16g
 }]],
         params.PAINT,
-        params.SLOPE_ANGLE))
+        params.SLOPE_ANGLE
+    ))
 
     file:close()
 end
 
-local function updateParamsFile()
+local function updateParams()
     local updateRequired = false
 
     -- get paint CheckBox state
@@ -127,7 +130,7 @@ local function updateParamsFile()
     end
 
     -- get slope angle
-    local slopeAngle = tonumber(UI.angleTextBox:GetText():ToString())
+    local slopeAngle = tonumber(UI.angleTextBox.Text:ToString())
     if slopeAngle ~= nil and params.SLOPE_ANGLE ~= slopeAngle then
         params.SLOPE_ANGLE = slopeAngle
         updateRequired = true
@@ -139,8 +142,8 @@ local function updateParamsFile()
 end
 
 local function updateUI()
-    params = func.loadParamsFile(paramsFile)
-    params_paint = func.loadParamsFile(paramsFile_paint)
+    params = func.loadParamsFile(paramsFile) ---@type Method__Slope__PARAMS
+    params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
 
     UI.angleTextBox:SetText(FText(tostring(params.SLOPE_ANGLE)))
 
@@ -162,7 +165,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local controller = _controller:get() ---@type APlayController
 
     if _justActivated:get() == true then
-        updateParamsFile()
+        updateParams()
         -- Planet center is (0, 0, 0) for SYLVA.
         PlanetCenter = controller:GetLocalSolarBody():GetCenter()
     end
@@ -178,7 +181,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local operation = deformTool.Operation
 
     if startedInteraction then
-        PaintTerrain = UI.paintCheckBox:GetCheckedState() == ECheckBoxState.Checked
+        PaintTerrain = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
     end
 
     -- paint terrain
@@ -312,6 +315,13 @@ local function createUI()
 
     local gameInstance = UEHelpers.GetGameInstance()
     if not gameInstance:IsValid() then
+        log.warn("Game instance is not valid.")
+        return false
+    end
+
+    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    if not fontObj:IsValid() then
+        log.warn("Font object is not valid.")
         return false
     end
 
@@ -322,8 +332,6 @@ local function createUI()
         options.set_slope_direction_from_camera_KeyName, options.set_slope_direction_from_camera_text,
         options.set_slope_direction_from_camera_KeyName, options.set_slope_direction_from_camera_reversed_text,
         options.set_slope_direction_from_camera_reversed_KeyName, options.set_slope_direction_from_slope_text)
-
-    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
 
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
@@ -445,7 +453,7 @@ local function hideUI()
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
-    updateParamsFile()
+    updateParams()
     UI.showed = false
 end
 
@@ -461,12 +469,6 @@ end
 return {
     params = params,
     hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
-    onEnable = function()
-        showUI()
-    end,
-    onDisable = function()
-        hideUI()
-    end,
     onLoad = function()
         showUI()
     end,
