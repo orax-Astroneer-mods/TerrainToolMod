@@ -141,7 +141,8 @@ local ui = {
                 "- The hardness of the terrain may be modified.",
             scale = "Scale",
             scale_tip = "The brush scale.\n" ..
-                "Valid value: a positive float number (example: 2.5).",
+                "Valid value: a positive float number (examples: 2.5, 0.4, .4).\n" ..
+                "Note: For example, the values ​​0.4 and 0.4 are the same. You can omit the zero.",
             material_index = "Material index",
             material_index_tip = "A material index of the current planet.\n" ..
                 "Click on a color below to change the current material index.\n" ..
@@ -154,6 +155,43 @@ local ui = {
         creativeMenu_position = { X = -500, Y = 120 }, ---@type FVector2D
         activeColorImage_translation = { X = 217, Y = -239 }, ---@type FVector2D
         colorPicker_padding = { Bottom = 0, Left = 500, Right = 0, Top = 0 },
+    },
+
+    revert = {
+        txt = {
+            title = "revert",
+            description_tip = modName ..
+                "The \"revert\" method reverts modifications of the terrain.\n" ..
+                "Usage: Equip your Terrain Tool and click somewhere on a terraformed terrain.",
+            scale = "Scale",
+            scale_tip = "Scale of the revert modifications.",
+            intensity = "Intensity",
+            intensity_tip = "The intensity of the revert.\n" ..
+                "Valid value: a positive float number (examples: 2.5, 0.4, .4).\n" ..
+                "Recommended value range: between 0.01 and 5.\n" ..
+                "Note: For example, the values ​0.4 and 0.4 are the same. You can omit the zero.",
+            revertOnce = "Revert once",
+            revertOnce_tip =
+            "If checked, the \"Revert modifications\" action will only be performed once when you click on the terrain.",
+            revertColorOnly = "Revert color only",
+            revertColorOnly_tip = "If checked, only the color of the terrain will be reverted.\n" ..
+                "Intensity is ignored.",
+            debug = "Debug",
+            debug_tip = "Show a debug sphere.",
+            wireframe = "Wireframe",
+            wireframe_tip = "The debug sphere will be rendered in wireframe.",
+            rgba = "RGBA",
+            rgba_tip = "Color values (RED, GREEN, BLUE, ALPHA).\n" ..
+                "Valid values for colors are between 0 to 1 (examples: 1, 0.4, .4).\n" ..
+                "Notes:\n" ..
+                "- For example, the values ​​0.4 and 0.4 are the same. You can omit the zero.\n" ..
+                "- The wireframe material has no alpha color.",
+        },
+        font_size = default.font_size,
+        positionInViewport = default.positionInViewport,
+        spacer_size = default.spacer_size,
+        spacer2_size = { X = 1, Y = 1 }, ---@type FVector2D
+        zOrder = default.zOrder,
     },
 }
 
