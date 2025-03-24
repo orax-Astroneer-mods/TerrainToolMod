@@ -708,7 +708,6 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
 
     local intensity = params.REVERT_COLOR_ONLY == true and SmallestNumber or params.INTENSITY
 
-    -- if startedInteraction:get() then
     controller:ClientDoDeformation({
         AutoCreateResourceEfficiency = 0,
         CreativeModeNoResourceCollection = false,
