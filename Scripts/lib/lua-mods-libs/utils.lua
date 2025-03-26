@@ -361,10 +361,14 @@ end
 function M.getFileList(directory, filter)
   local fileList = {}
 
-  for fileName in io.popen(string.format('dir "%s" /B /D /S', directory)):lines() do
-    if fileName:match(filter) then
-      table.insert(fileList, fileName)
+  local handle = io.popen(string.format('dir "%s" /B /D /S', directory))
+  if handle then
+    for fileName in handle:lines() do
+      if fileName:match(filter) then
+        table.insert(fileList, fileName)
+      end
     end
+    handle:close()
   end
 
   return fileList
