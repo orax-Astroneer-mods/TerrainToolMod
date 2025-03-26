@@ -450,17 +450,16 @@ mainParams = loadMainParams()
 Methods, MethodNamesList = loadAllMethods()
 MethodNamesList[0] = mainParams.LATEST_METHOD -- default method
 
--- On client restart
-ExecuteWithDelay(5000, function()
-    ---@param self RemoteUnrealParam
-    ---@param NewPawn RemoteUnrealParam
-    RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
-        -- execute onClientRestart event for the current method
-        if CurrenMethod ~= "" and type(Methods[CurrenMethod].onClientRestart) == "function" then
-            log.debug("Execute onClientRestart event for method %q.", CurrenMethod)
-            Methods[CurrenMethod].onClientRestart(self, NewPawn)
-        end
-    end)
+---@param self RemoteUnrealParam
+---@param newPawn RemoteUnrealParam
+RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, newPawn)
+    -- execute onClientRestart event for the current method
+    if CurrenMethod ~= "" and
+        type(Methods[CurrenMethod].onClientRestart) == "function" and
+        newPawn:get():IsA("/Game/Character/DesignAstro.DesignAstro_C") then
+        log.debug("Execute onClientRestart event for method %q.", CurrenMethod)
+        Methods[CurrenMethod].onClientRestart(self, newPawn)
+    end
 end)
 
 LoopAsync(options.writeMainParamsFileEvery or 10000, function()
