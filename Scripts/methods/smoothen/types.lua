@@ -3,7 +3,6 @@
 ---@class Method__Smoothen__PARAMS
 ---@field DEBUG_OBJECTS boolean
 ---@field LATEST_PRESET string
----@field PAINT boolean
 
 ---@class Method__Smoothen__PRESET
 ---@field CIRCLES Method__Smoothen__PARAMS__CIRCLE[]

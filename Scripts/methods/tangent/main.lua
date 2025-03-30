@@ -8,6 +8,7 @@ local sqrt = math.sqrt
 local format = string.format
 
 local huge = math.huge -- inf
+local SmallestNumber = 2 ^ -149
 
 local CurrentFile = debug.getinfo(1, "S").source
 local options = OPTIONS
@@ -25,11 +26,6 @@ local UI = {
 local paramsFile = func.getParamsFile(CurrentFile, true)
 local params = func.loadParamsFile(paramsFile, true) ---@type Method__Tangent__PARAMS
 
--- load PARAMS from "paint" method
-local paramsFile_paint = func.getParamsFile(CurrentFile, true, "paint")
-local params_paint = func.loadParamsFile(paramsFile_paint, true) ---@type Method__Paint__PARAMS
-
-local PaintTerrain = false
 local RoundedAltitude = 0
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
 
@@ -90,20 +86,17 @@ local function writeParamsFile()
     if params.ALTITUDES == nil then params.ALTITUDES = {} end
     if params.ALTITUDE_ROUND == nil then params.ALTITUDE_ROUND = 50 end
     if params.FORCE_ALTITUDE == nil then params.FORCE_ALTITUDE = false end
-    if params.PAINT == nil then params.PAINT = false end
     if params.SELECTED_ALTITUDE_INDEX == nil then params.SELECTED_ALTITUDE_INDEX = 0 end
     file:write(format(
         [[return {
 ALTITUDES=%s,
 ALTITUDE_ROUND=%.16g,
 FORCE_ALTITUDE=%s,
-PAINT=%s,
 SELECTED_ALTITUDE_INDEX=%d,
 }]],
         numberTableToString(params.ALTITUDES),
         params.ALTITUDE_ROUND,
         params.FORCE_ALTITUDE,
-        params.PAINT,
         params.SELECTED_ALTITUDE_INDEX
     ))
 
@@ -130,18 +123,10 @@ local function updateParams()
         updateRequired = true
     end
 
-
     -- get force altitude CheckBox state
     local forceAltitude = UI.forceAltitudeCheckBox.CheckedState == ECheckBoxState.Checked
     if params.FORCE_ALTITUDE ~= forceAltitude then
         params.FORCE_ALTITUDE = forceAltitude
-        updateRequired = true
-    end
-
-    -- get paint CheckBox state
-    local paint = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
-    if params.PAINT ~= paint then
-        params.PAINT = paint
         updateRequired = true
     end
 
@@ -210,36 +195,6 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     end
 
     local operation = deformTool.Operation
-
-    if startedInteraction then
-        PaintTerrain = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
-    end
-
-    -- paint terrain
-    if PaintTerrain == true and
-        operation ~= EDeformType.Subtract and
-        operation ~= EDeformType.ColorPick and
-        operation ~= EDeformType.Crater and
-        operation ~= EDeformType.RevertModifications then
-        controller:ClientDoDeformation({
-            AutoCreateResourceEfficiency = 0,
-            CreativeModeNoResourceCollection = false,
-            DeltaTime = 0.03299999982118, -- ???
-            ForceRemoveDecorators = false,
-            HardnessPenetration = 0,
-            Instigator = nil,
-            Intensity = 0,
-            Location = { X = toolHit.Location.X, Y = toolHit.Location.Y, Z = toolHit.Location.Z },
-            MaterialIndex = params_paint.MATERIAL_INDEX,
-            Normal = { X = toolHit.Normal.X, Y = toolHit.Normal.Y, Z = toolHit.Normal.Z },
-            Operation = EDeformType.ColorPaint,
-            Scale = deformTool.BaseBrushIndicatorScale * deformTool.BaseBrushDeformationScale * params_paint.SCALE,
-            SequenceNumber = 0,
-            Shape = 0,
-            bEasyUnbury = false,
-            bUseAlternatePolygonization = true
-        })
-    end
 
     -- check if a flatten operation is selected
     if operation ~= EDeformType.Flatten and
@@ -371,7 +326,6 @@ end
 
 local function updateUI()
     params = func.loadParamsFile(paramsFile) ---@type Method__Tangent__PARAMS
-    params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
 
     updateAltitudeList()
 
@@ -381,11 +335,6 @@ local function updateUI()
 
     if UI.forceAltitudeCheckBox:IsValid() then
         UI.forceAltitudeCheckBox:SetCheckedState(params.FORCE_ALTITUDE == true and
-            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
-    end
-
-    if UI.paintCheckBox:IsValid() then
-        UI.paintCheckBox:SetCheckedState(params.PAINT == true and
             ECheckBoxState.Checked or ECheckBoxState.Unchecked)
     end
 end
@@ -454,6 +403,7 @@ local function createUI()
     UI.altitudeTextBox.WidgetStyle.Font.FontObject = fontObj
     UI.altitudeTextBox.HintText = FText(optUI.tangent.txt.temporaryAltitude)
     UI.altitudeTextBox:SetToolTipText(FText(optUI.tangent.txt.temporaryAltitude_tip))
+    UI.altitudeTextBox.SelectAllTextWhenFocused = true
 
     ---@type UEditableTextBox
     UI.roundedAltitude = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
@@ -462,6 +412,7 @@ local function createUI()
     UI.roundedAltitude.WidgetStyle.Font.FontObject = fontObj
     UI.roundedAltitude.IsReadOnly = true
     UI.roundedAltitude:SetToolTipText(FText(optUI.tangent.txt.roundedAltitude_tip))
+    UI.roundedAltitude.SelectAllTextWhenFocused = true
 
     --#region force altitude
     ---@type UHorizontalBox
@@ -513,38 +464,11 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_altitudeRound"))
     UI.altitudeRound.WidgetStyle.Font.Size = optUI.tangent.font_size
     UI.altitudeRound.WidgetStyle.Font.FontObject = fontObj
+    UI.altitudeRound.SelectAllTextWhenFocused = true
 
     horizontalBox_altitudeRound:AddChildToHorizontalBox(textBlock_altitudeRound)
     horizontalBox_altitudeRound:AddChildToHorizontalBox(spacer2)
     horizontalBox_altitudeRound:AddChildToHorizontalBox(UI.altitudeRound)
-    --#endregion
-
-    --#region paint
-    ---@type UHorizontalBox
-    local horizontalBox_paint = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_paint"))
-    horizontalBox_paint:SetToolTipText(FText(format(optUI["*"].txt.paint_tip,
-        func.getKeybindName(options.set_paint_method_Key, options.set_paint_method_ModifierKeys))))
-
-    ---@type UTextBlock
-    local textBlock_paint = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_paint"))
-    textBlock_paint.Font.Size = optUI.tangent.font_size
-    textBlock_paint.Font.FontObject = fontObj
-    textBlock_paint:SetText(FText(optUI.tangent.txt.paint))
-
-    ---@type USpacer
-    local spacer_paint = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_paint"))
-    spacer_paint:SetSize(optUI.tangent.spacer_size)
-
-    ---@type UCheckBox
-    UI.paintCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_paint"))
-
-    horizontalBox_paint:AddChildToHorizontalBox(textBlock_paint)
-    horizontalBox_paint:AddChildToHorizontalBox(spacer_paint)
-    horizontalBox_paint:AddChildToHorizontalBox(UI.paintCheckBox)
     --#endregion
 
     verticalBox:AddChildToVerticalBox(textBlock_title)
@@ -553,15 +477,16 @@ local function createUI()
     verticalBox:AddChildToVerticalBox(horizontalBox)
     verticalBox:AddChildToVerticalBox(horizontalBox_altitudeRound)
     verticalBox:AddChildToVerticalBox(UI.roundedAltitude)
-    verticalBox:AddChildToVerticalBox(horizontalBox_paint)
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 
     local slot = UI.canvas:AddChildToCanvas(verticalBox)
     slot:SetAutoSize(true)
 
-    UI.userWidget:SetPositionInViewport(optUI.tangent.positionInViewport, false)
-    UI.userWidget:AddToViewport(optUI.tangent.zOrder)
+    UI.userWidget:SetAnchorsInViewport(optUI._generic.AnchorsInViewport)
+    UI.userWidget:SetAlignmentInViewport(optUI._generic.AlignmentInViewport)
+    UI.userWidget:SetPadding(optUI._generic.Padding)
+    UI.userWidget:AddToViewport(optUI._generic.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
     log.debug(format("UI created (%s).", MethodName))

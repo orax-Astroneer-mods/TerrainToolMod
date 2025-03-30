@@ -1,31 +1,48 @@
 local default = {
     font_size = 14,
-    positionInViewport = { X = 0, Y = 0 }, ---@type FVector2D
     spacer_size = { X = 5, Y = 1 }, ---@type FVector2D
-    zOrder = 0,
+    spacer_size2 = { X = 10, Y = 1 }, ---@type FVector2D
 }
 
 local modName = "[TerrainToolMod]\n"
 
 ---@class TerrainToolMod_Options_UI
 local ui = {
-    ["*"] = {
+    _generic = {
+        -- top, left
+        AnchorsInViewport = { Minimum = { X = 0, Y = 0 }, Maximum = { X = 0, Y = 0 } }, ---@type FAnchors
+        -- bottom, left
+        AnchorsInViewport2 = { Minimum = { X = 0, Y = 1 }, Maximum = { X = 0, Y = 1 } }, ---@type FAnchors
+        AlignmentInViewport = { X = 0, Y = 0 }, ---@type FVector2D
+        AlignmentInViewport2 = { X = 0, Y = 1 }, ---@type FVector2D
+        -- top, left
+        Padding = { Left = 5, Top = 0, Right = 0, Bottom = 0 }, ---@type FMargin
+        -- bottom, left
+        Padding2 = { Left = 5, Top = 0, Right = 0, Bottom = 5 }, ---@type FMargin
+        zOrder = 0, ---@type number
+        zOrder2 = 1, ---@type number
+
         txt = {
             paint_tip =
                 "In addition to what this \"method\" does, it paints the terrain when this CheckBox is checked.\n" ..
                 "Press %s to configure the color and the scale.\n" ..
                 "Notes:\n" ..
                 "- The \"paint\" operation is not similar to the one in Creative mode. It doesn't work as well and can cause lag.\n" ..
-                "- The hardness of the terrain may be modified."
+                "- The hardness of the terrain may be modified.",
+            paint_scale_tip = "The brush scale.\n" ..
+                "Valid value: a positive float number (examples: 2.5, 0.4, .4).\n" ..
+                "Note: For example, the values ​​0.4 and 0.4 are the same. You can omit the zero.",
         }
     },
-    ["*main*"] = {
+
+    _main = {
         helpText_bottom =
             "Commands: deform_type, get_altitude, ttmod, look.\n" ..
             "Notes:\n" ..
             "- Method-specific shortcuts only work when your terrain tool is equipped.\n" ..
             "- Some features do not work in Creative mode."
     },
+
     tangent = {
         txt = {
             title = "tangent",
@@ -48,12 +65,10 @@ local ui = {
             altitudeRound_tip = "The altitude will be rounded to this value.\n" ..
                 [[For example, if the value is "100": "120124" will be rounded to "120100"; "100165" will be rounded to "100200.]],
             roundedAltitude_tip = "Last altitude used (read only).",
-            paint = "Paint",
         },
         font_size = default.font_size,
-        positionInViewport = default.positionInViewport,
         spacer_size = default.spacer_size,
-        zOrder = default.zOrder,
+        spacer_size2 = default.spacer_size2,
     },
 
     slope = {
@@ -66,12 +81,9 @@ local ui = {
                 "%s", -- shortcuts
             angle = "Angle",
             angle_tip = "Desired angle (in degrees) for the terraformed slope.",
-            paint = "Paint",
         },
         font_size = default.font_size,
-        positionInViewport = default.positionInViewport,
         spacer_size = default.spacer_size,
-        zOrder = default.zOrder,
     },
 
     smoothen = {
@@ -88,12 +100,9 @@ local ui = {
             presetsComboBox_tip = "Avalaible presets.\n" ..
                 [[You can add/modify prests in the "methods\smoothen\presets\" folder.]] .. "\n" ..
                 "After editing a preset file, press %s to update the list/data.",
-            paint = "Paint",
         },
         font_size = default.font_size,
-        positionInViewport = default.positionInViewport,
         spacer_size = default.spacer_size,
-        zOrder = default.zOrder,
     },
 
     auto = {
@@ -125,9 +134,7 @@ local ui = {
                 "After editing a preset file, press %s to update the list/data and unequip (if necessary) and equip your Terrain Tool.",
         },
         font_size = default.font_size,
-        positionInViewport = default.positionInViewport,
         spacer_size = default.spacer_size,
-        zOrder = default.zOrder,
     },
 
     paint = {
@@ -144,17 +151,14 @@ local ui = {
                 "Valid value: a positive float number (examples: 2.5, 0.4, .4).\n" ..
                 "Note: For example, the values ​​0.4 and 0.4 are the same. You can omit the zero.",
             material_index = "Material index",
-            material_index_tip = "A material index of the current planet.\n" ..
-                "Click on a color below to change the current material index.\n" ..
-                "You can also manually change the material index, then press %s to update the color preview below.",
+            material_index_tip = "Selected material index (read only).",
         },
         font_size = default.font_size,
-        positionInViewport = default.positionInViewport,
         spacer_size = default.spacer_size,
-        zOrder = default.zOrder,
-        creativeMenu_position = { X = -500, Y = 120 }, ---@type FVector2D
-        activeColorImage_translation = { X = 217, Y = -239 }, ---@type FVector2D
-        colorPicker_padding = { Bottom = 0, Left = 500, Right = 0, Top = 0 },
+        spacer_size2 = default.spacer_size2,
+        ActiveColorImage_RenderTransformPivot = { X = 0, Y = 1 }, ---@type FVector2D
+        ActiveColorImage_RenderTransform_Scale = { X = 0.65, Y = 0.8 }, ---@type FVector2D
+        CreativeTerrainPlanetColorPicker_Padding = { Left = 0, Top = 0, Right = 60, Bottom = 0 }, ---@type FMargin
     },
 
     revert = {
@@ -188,11 +192,43 @@ local ui = {
                 "- The wireframe material has no alpha color.",
         },
         font_size = default.font_size,
-        positionInViewport = default.positionInViewport,
         spacer_size = default.spacer_size,
-        spacer2_size = { X = 1, Y = 1 }, ---@type FVector2D
-        zOrder = default.zOrder,
+        spacer_size2 = { X = 1, Y = 1 }, ---@type FVector2D
     },
+
+    onDeform_color = {
+        txt = {
+            title = "color",
+            description_tip = modName ..
+                "Change the color of the terrain when you terraform it.\n" ..
+                "Press %s to toggle the visibility of this UI.\n" ..
+                "Notes:\n" ..
+                "- This feature ONLY works with the Add or Flatten modes of your Terrain Tool.\n" ..
+                "- This feature does NOT work properly in Creative mode.",
+            scale = "Scale",
+            scale_tip = "Scale of the area that will be colored.\n" ..
+                "Valid value: a positive float number (examples: 2.5, 0.4, .4).\n" ..
+                "Notes:\n" ..
+                "- For example, the values ​​0.4 and 0.4 are the same. You can omit the zero.\n" ..
+                "- This feature may cause lag when enabled.\n" ..
+                "- The hardness of the terrain may be modified.",
+            material_index = "Material index",
+            material_index_tip = "Selected material index (read only).",
+            enable = "Enable",
+            enable_tip = "Check to enable this feature.",
+            revertColor = "Original color",
+            revertColor_tip =
+            "If checked, the brush will use the original terrain color instead of the selected color below.",
+        },
+        font_size = default.font_size,
+        positionInViewport = { X = 0, Y = 0 }, ---@type FVector2D
+
+        spacer_size = default.spacer_size,
+        zOrder = 1,
+        ActiveColorImage_RenderTransformPivot = { X = 0, Y = 1 }, ---@type FVector2D
+        ActiveColorImage_RenderTransform_Scale = { X = 0.65, Y = 0.8 }, ---@type FVector2D
+        CreativeTerrainPlanetColorPicker_Padding = { Left = 0, Top = 0, Right = 60, Bottom = 0 }, ---@type FMargin
+    }
 }
 
 return ui

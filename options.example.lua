@@ -12,7 +12,8 @@ https://docs.ue4ss.com/lua-api/table-definitions/key.html
 https://docs.ue4ss.com/lua-api/table-definitions/modifierkey.html
 --]]
 
-local DeformType = {
+---@type EDeformType
+local EDeformType = {
     Subtract = 0,
     Add = 1,
     Flatten = 2,
@@ -43,7 +44,7 @@ local options = {
         zOrder = 1
     },
 
-    -- Delay in milliseconds at which the main_params.lua file will be updated. You probably do not need to not change this.
+    -- Delay in milliseconds at which the main_params.lua file will be updated. You should not change this.
     writeMainParamsFileEvery = 30000,
 
     --
@@ -99,6 +100,10 @@ local options = {
     set_revert_method_Key = Key.SIX,
     set_revert_method_ModifierKeys = {},
 
+    toggle_colorDeform_ui_text = "Toggle the visibility of the \"color\" UI",
+    toggle_colorDeform_ui_Key = Key.ONE,
+    toggle_colorDeform_ui_ModifierKeys = { ModifierKey.SHIFT },
+
     -- Brush scale/size
     -- Default size (without augment) is 350.
     -- 120 is the minimum size in Creative mode.
@@ -116,7 +121,7 @@ local options = {
     increase_BaseBrushDeformationScale_ModifierKeys = { ModifierKey.SHIFT },
 
     -- DeformType to use when you press the "set_deformType_Key" key below.
-    deformType = DeformType.RevertModifications,
+    deformType = EDeformType.RevertModifications,
     -- Keybinds to set a deform type.
     set_deformType_text = "Set \"Revert modifications\" mode",
     set_deformType_Key = Key.R,

@@ -46,13 +46,15 @@ local ESlateVisibility = {
     ESlateVisibility_MAX = 5
 }
 
-inf = math.huge ---@diagnostic disable-line: lowercase-global
+-- Global shared variable between onDeform_color and Paint method.
+_G.MaterialIndexImage = 0 ---@type integer
 
 -- functions implemented in the method file
 local Methods = {} ---@type TerrainToolMod_Method[]
 local MethodNamesList = {}
 local CurrenMethod = ""
 
+local FirstInit = true
 local IsModEnabled = false
 local CachedTerrainTool = CreateInvalidObject() ---@cast CachedTerrainTool ASmallDeform_TERRAIN_EXPERIMENTAL_C
 local HelpUI = { showed = false }
@@ -146,6 +148,8 @@ Log = logging.new(LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR)
 local log = Log
 LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR = nil, nil
 
+local onDeform_color = require("onDeform.color.main")
+
 --------------------------------------------------------------------------------
 
 --#region hooks
@@ -158,7 +162,7 @@ local function registerHook_DeformTool_HandleTerrainTool(callback)
     PreId_DeformTool_HandleTerrainTool, PostId_DeformTool_HandleTerrainTool = RegisterHook(
         "/Script/Astro.DeformTool:HandleTerrainTool", callback)
 end
-local function unregisterHookFor_handleTerrainTool()
+local function unregisterHook_handleTerrainTool()
     if type(PreId_DeformTool_HandleTerrainTool) == "number" and type(PostId_DeformTool_HandleTerrainTool) == "number" then
         UnregisterHook("/Script/Astro.DeformTool:HandleTerrainTool", PreId_DeformTool_HandleTerrainTool,
             PostId_DeformTool_HandleTerrainTool)
@@ -176,7 +180,7 @@ local function registerHook_DeformTool_Deactivated(callback)
     PreId_DeformTool_Deactivated, PostId_DeformTool_Deactivated = RegisterHook(
         "/Script/Astro.DeformTool:Deactivated", callback)
 end
-local function unregisterHookFor_DeformTool_Deactivated()
+local function unregisterHook_DeformTool_Deactivated()
     if type(PreId_DeformTool_Deactivated) == "number" and type(PostId_DeformTool_Deactivated) == "number" then
         UnregisterHook("/Script/Astro.DeformTool:Deactivated", PreId_DeformTool_Deactivated,
             PostId_DeformTool_Deactivated)
@@ -245,6 +249,7 @@ end
 ---@param method string|integer
 local function setMethod(method)
     local newMethod
+    local oldMethod = CurrenMethod
 
     if type(tonumber(method)) == "number" then
         newMethod = MethodNamesList[tonumber(method)]
@@ -267,8 +272,14 @@ local function setMethod(method)
         return method
     end
 
-    unregisterHookFor_handleTerrainTool()
-    unregisterHookFor_DeformTool_Deactivated()
+    unregisterHook_handleTerrainTool()
+    unregisterHook_DeformTool_Deactivated()
+
+    if mainParams.LATEST_METHOD ~= newMethod then
+        WriteMainParamsFileRequired = true
+    end
+    mainParams.LATEST_METHOD = newMethod
+    CurrenMethod = newMethod
 
     -- register the hooks with the new method
     --
@@ -282,9 +293,9 @@ local function setMethod(method)
     end
 
     -- execute onUnload event for the unloaded (old) method
-    if CurrenMethod ~= "" and type(Methods[CurrenMethod].onUnload) == "function" then
-        log.debug("Execute onUnload event for the old method %q.", CurrenMethod)
-        Methods[CurrenMethod].onUnload()
+    if oldMethod ~= "" and type(Methods[oldMethod].onUnload) == "function" then
+        log.debug("Execute onUnload event for the old method %q.", oldMethod)
+        Methods[oldMethod].onUnload()
     end
 
     -- execute onLoad event for the loaded (new) method
@@ -292,13 +303,6 @@ local function setMethod(method)
         log.debug("Execute onLoad event for the new method %q.", newMethod)
         Methods[newMethod].onLoad()
     end
-
-    if mainParams.LATEST_METHOD ~= newMethod then
-        WriteMainParamsFileRequired = true
-    end
-
-    CurrenMethod = newMethod
-    mainParams.LATEST_METHOD = newMethod
 
     return newMethod
 end
@@ -322,8 +326,8 @@ local function enableMod()
 end
 
 local function disableMod()
-    unregisterHookFor_handleTerrainTool()
-    unregisterHookFor_DeformTool_Deactivated()
+    unregisterHook_handleTerrainTool()
+    unregisterHook_DeformTool_Deactivated()
     -- execute onUnload event for the unloaded method
     if CurrenMethod ~= "" and type(Methods[CurrenMethod].onUnload) == "function" then
         log.debug("Execute onUnload event for the method %q.", CurrenMethod)
@@ -450,17 +454,76 @@ mainParams = loadMainParams()
 Methods, MethodNamesList = loadAllMethods()
 MethodNamesList[0] = mainParams.LATEST_METHOD -- default method
 
+local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
+    RegisterHook("/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C:OnColorAndTypePicked",
+        ---@param TerrainToolCreativeMenu RemoteUnrealParam
+        ---@param SelectedColor RemoteUnrealParam
+        ---@param SelectedColorIndex RemoteUnrealParam
+        ---@param PaintType RemoteUnrealParam
+        function(TerrainToolCreativeMenu, SelectedColor, SelectedColorIndex, PaintType)
+            local menu = TerrainToolCreativeMenu:get() ---@type UTerrainToolCreativeMenu_C
+            local menuName = menu:GetFName():ToString()
+
+            log.debug("Menu name: %q.", menuName)
+
+            if CurrenMethod ~= "" and type(Methods[CurrenMethod].hook_TerrainToolCreativeMenu_OnColorAndTypePicked) == "function" then
+                Methods[CurrenMethod].hook_TerrainToolCreativeMenu_OnColorAndTypePicked(menu, SelectedColor:get(),
+                    SelectedColorIndex:get(), PaintType:get())
+            end
+
+            onDeform_color.hook_TerrainToolCreativeMenu_OnColorAndTypePicked(menu, SelectedColor:get(),
+                SelectedColorIndex:get(), PaintType:get())
+        end)
+end
+
 ---@param self RemoteUnrealParam
----@param newPawn RemoteUnrealParam
-RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, newPawn)
-    -- execute onClientRestart event for the current method
-    if CurrenMethod ~= "" and
-        type(Methods[CurrenMethod].onClientRestart) == "function" and
-        newPawn:get():IsA("/Game/Character/DesignAstro.DesignAstro_C") then
-        log.debug("Execute onClientRestart event for method %q.", CurrenMethod)
-        Methods[CurrenMethod].onClientRestart(self, newPawn)
+---@param NewPawn RemoteUnrealParam
+RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
+    local newPawn = NewPawn:get() ---@type ADesignAstro_C
+
+    if newPawn:IsA("/Game/Character/DesignAstro.DesignAstro_C") and newPawn.LocalSolarBody:IsValid() then
+        local firstInitialization = FirstInit
+
+        if firstInitialization == true then
+            FirstInit = false
+            hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
+        end
+
+        -- execute onClientRestart event for the current method
+        if CurrenMethod ~= "" and
+            type(Methods[CurrenMethod].onClientRestart) == "function" then
+            log.debug("Execute onClientRestart event for method %q.", CurrenMethod)
+            Methods[CurrenMethod].onClientRestart(self, newPawn, firstInitialization)
+        end
+
+        -- execute onClientRestart event for onDeform_color
+        if type(onDeform_color.hook_PlayerController_ClientRestart) == "function" then
+            log.debug("Execute PlayerController ClientRestart event for onDeform_color.")
+            onDeform_color.hook_PlayerController_ClientRestart(self, newPawn, firstInitialization)
+        end
     end
 end)
+
+-- Manage "UE4SS Restart mods" or when the script is injected manually.
+if UEHelpers:GetPlayer():IsValid() then
+    local player = UEHelpers:GetPlayer() ---@cast player ADesignAstro_C
+
+    if player:IsA("/Game/Character/DesignAstro.DesignAstro_C") and player.LocalSolarBody:IsValid() then
+        hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
+
+        -- execute onModRestartedOrStartedManually event for the current method
+        if CurrenMethod ~= "" and
+            type(Methods[CurrenMethod].onModRestartedOrStartedManually) == "function" then
+            log.debug("Execute onModRestartedOrStartedManually event for method %q.", CurrenMethod)
+            Methods[CurrenMethod].onModRestartedOrStartedManually(FirstInit)
+        end
+
+        if type(onDeform_color.onModRestartedOrStartedManually) == "function" then
+            log.debug("Execute onModRestartedOrStartedManually event for onDeform_color.")
+            onDeform_color.onModRestartedOrStartedManually(FirstInit)
+        end
+    end
+end
 
 LoopAsync(options.writeMainParamsFileEvery or 10000, function()
     if WriteMainParamsFileRequired == true then
@@ -600,6 +663,7 @@ local function createHelpUI()
     add("enable_handleTerrainTool")
     add("disable_handleTerrainTool")
     add("toggle_handleTerrainTool")
+    add("toggle_colorDeform_ui")
     add("set_tangent_method")
     add("set_slope_method")
     add("set_smoothen_method")
@@ -645,7 +709,7 @@ local function createHelpUI()
     textLeft = textLeft:sub(1, -2)
     textRight = textRight:sub(1, -2)
 
-    text = text .. "\n" .. optUI["*main*"].helpText_bottom
+    text = text .. "\n" .. optUI._main.helpText_bottom
 
     local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
 
@@ -698,7 +762,7 @@ local function createHelpUI()
     multiLineEditableTextBox_bottom.WidgetStyle.Font.FontObject = fontObj
     multiLineEditableTextBox_bottom.WidgetStyle.Font.Size = options.help_ui.font_size
     multiLineEditableTextBox_bottom.bIsReadOnly = true
-    multiLineEditableTextBox_bottom:SetText(FText(optUI["*main*"].helpText_bottom))
+    multiLineEditableTextBox_bottom:SetText(FText(optUI._main.helpText_bottom))
 
     verticalBox:AddChildToVerticalBox(horizontalBox)
     verticalBox:AddChildToVerticalBox(multiLineEditableTextBox_bottom)
@@ -784,6 +848,12 @@ registerKeyBind(options.set_paint_method_Key,
 registerKeyBind(options.set_revert_method_Key,
     options.set_revert_method_ModifierKeys,
     function() setMethod("revert") end)
+
+registerKeyBind(options.toggle_colorDeform_ui_Key,
+    options.toggle_colorDeform_ui_ModifierKeys,
+    function()
+        onDeform_color.toggleUI()
+    end)
 
 registerKeyBind(options.set_Flatten_mode_Key,
     options.set_Flatten_mode_ModifierKeys,

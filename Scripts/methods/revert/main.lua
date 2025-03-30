@@ -402,6 +402,7 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_scale"))
     UI.scale.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.scale.WidgetStyle.Font.FontObject = fontObj
+    UI.scale.SelectAllTextWhenFocused = true
 
     horizontalBox_scale:AddChildToHorizontalBox(textBlock_scale)
     horizontalBox_scale:AddChildToHorizontalBox(spacer_scale)
@@ -431,6 +432,7 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_intensity"))
     UI.intensity.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.intensity.WidgetStyle.Font.FontObject = fontObj
+    UI.intensity.SelectAllTextWhenFocused = true
 
     horizontalBox_intensity:AddChildToHorizontalBox(textBlock_intensity)
     horizontalBox_intensity:AddChildToHorizontalBox(spacer_intensity)
@@ -569,6 +571,7 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_r"))
     UI.r.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.r.WidgetStyle.Font.FontObject = fontObj
+    UI.r.SelectAllTextWhenFocused = true
     horizontalBox_rgba:AddChildToHorizontalBox(textBlock_r)
     horizontalBox_rgba:AddChildToHorizontalBox(spacer_1)
     horizontalBox_rgba:AddChildToHorizontalBox(UI.r)
@@ -577,12 +580,13 @@ local function createUI()
     ---@type USpacer
     local spacer_2 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
         rootWidget, FName(prefix .. "Spacer_2"))
-    spacer_2:SetSize(optUI.revert.spacer2_size)
+    spacer_2:SetSize(optUI.revert.spacer_size2)
     ---@type UEditableTextBox
     UI.g = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
         rootWidget, FName(prefix .. "EditableTextBox_g"))
     UI.g.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.g.WidgetStyle.Font.FontObject = fontObj
+    UI.g.SelectAllTextWhenFocused = true
     horizontalBox_rgba:AddChildToHorizontalBox(spacer_2)
     horizontalBox_rgba:AddChildToHorizontalBox(UI.g)
 
@@ -590,12 +594,13 @@ local function createUI()
     ---@type USpacer
     local spacer_3 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
         rootWidget, FName(prefix .. "Spacer_3"))
-    spacer_3:SetSize(optUI.revert.spacer2_size)
+    spacer_3:SetSize(optUI.revert.spacer_size2)
     ---@type UEditableTextBox
     UI.b = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
         rootWidget, FName(prefix .. "EditableTextBox_b"))
     UI.b.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.b.WidgetStyle.Font.FontObject = fontObj
+    UI.b.SelectAllTextWhenFocused = true
     horizontalBox_rgba:AddChildToHorizontalBox(spacer_3)
     horizontalBox_rgba:AddChildToHorizontalBox(UI.b)
 
@@ -603,12 +608,13 @@ local function createUI()
     ---@type USpacer
     local spacer_4 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
         rootWidget, FName(prefix .. "Spacer_4"))
-    spacer_4:SetSize(optUI.revert.spacer2_size)
+    spacer_4:SetSize(optUI.revert.spacer_size2)
     ---@type UEditableTextBox
     UI.a = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
         rootWidget, FName(prefix .. "EditableTextBox_a"))
     UI.a.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.a.WidgetStyle.Font.FontObject = fontObj
+    UI.a.SelectAllTextWhenFocused = true
     horizontalBox_rgba:AddChildToHorizontalBox(spacer_4)
     horizontalBox_rgba:AddChildToHorizontalBox(UI.a)
     --#endregion
@@ -627,8 +633,10 @@ local function createUI()
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 
-    UI.userWidget:SetPositionInViewport(optUI.revert.positionInViewport, false)
-    UI.userWidget:AddToViewport(optUI.revert.zOrder)
+    UI.userWidget:SetAnchorsInViewport(optUI._generic.AnchorsInViewport)
+    UI.userWidget:SetAlignmentInViewport(optUI._generic.AlignmentInViewport)
+    UI.userWidget:SetPadding(optUI._generic.Padding)
+    UI.userWidget:AddToViewport(optUI._generic.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
     log.debug(format("UI created (%s).", MethodName))

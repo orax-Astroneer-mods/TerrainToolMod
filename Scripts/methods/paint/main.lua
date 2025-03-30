@@ -17,11 +17,10 @@ local CurrentFile = debug.getinfo(1, "S").source
 local paramsFile = func.getParamsFile(CurrentFile, true)
 local params = func.loadParamsFile(paramsFile, true) ---@type Method__Paint__PARAMS
 
-local FirstInit = true
 local options = OPTIONS
 local optUI = OPTIONS_UI
 local UI = {}
-local materialIndexImage = 0
+local MaterialIndexImage = 0
 
 ---@type ESlateVisibility
 local ESlateVisibility = {
@@ -65,14 +64,11 @@ local function writeParamsFile()
     assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
     if params.SCALE == nil then params.SCALE = 2.0 end
-    if params.MATERIAL_INDEX == nil then params.MATERIAL_INDEX = 0 end
 
     file:write(format(
         [[return {
-    MATERIAL_INDEX=%d,
-    SCALE=%.16g,
-    }]],
-        params.MATERIAL_INDEX,
+SCALE=%.16g,
+}]],
         params.SCALE
     ))
 
@@ -82,20 +78,9 @@ end
 local function updateParams()
     local updateRequired = false
 
-    local materialIndex = tonumber(UI.materialIndex:GetText():ToString())
-    if materialIndex == nil then
-        materialIndex = params.MATERIAL_INDEX
-        UI.materialIndex:SetText(FText(tostring(materialIndex)))
-    end
-    if materialIndex ~= params.MATERIAL_INDEX then
-        params.MATERIAL_INDEX = materialIndex
-        updateRequired = true
-    end
-
     local scale = tonumber(UI.scale:GetText():ToString())
     if scale == nil then
         scale = params.SCALE
-        UI.scale:SetText(FText(tostring(scale)))
     end
     if scale ~= params.SCALE then
         params.SCALE = scale
@@ -110,12 +95,12 @@ end
 local function updateUI()
     params = func.loadParamsFile(paramsFile) ---@type Method__Paint__PARAMS
 
-    updateParams()
+    if UI.scale:IsValid() then
+        UI.scale:SetText(FText(tostring(params.SCALE)))
+    end
 
-    if materialIndexImage ~= params.MATERIAL_INDEX then
-        log.debug("Update active material index image.")
-        UI.menu:OnColorAndTypePicked({ R = 0, G = 0, B = 0, A = 0 }, params.MATERIAL_INDEX, EPaintIndexType
-            .PlanetPalette)
+    if UI.materialIndex:IsValid() then
+        UI.materialIndex:SetText(FText(tostring(_G.MaterialIndexImage)))
     end
 end
 
@@ -191,6 +176,7 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_scale"))
     UI.scale.WidgetStyle.Font.Size = optUI.paint.font_size
     UI.scale.WidgetStyle.Font.FontObject = fontObj
+    UI.scale.SelectAllTextWhenFocused = true
 
     horizontalBox_scale:AddChildToHorizontalBox(textBlock_scale)
     horizontalBox_scale:AddChildToHorizontalBox(spacer_scale)
@@ -221,6 +207,8 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_material_index"))
     UI.materialIndex.WidgetStyle.Font.Size = optUI.paint.font_size
     UI.materialIndex.WidgetStyle.Font.FontObject = fontObj
+    UI.materialIndex.SelectAllTextWhenFocused = true
+    UI.materialIndex:SetIsReadOnly(true)
 
     horizontalBox_material_index:AddChildToHorizontalBox(textBlock_materialIndex)
     horizontalBox_material_index:AddChildToHorizontalBox(spacer_material_index)
@@ -240,32 +228,23 @@ local function createUI()
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 
     local slot = UI.canvas:AddChildToCanvas(verticalBox)
-    local slot_menu = UI.canvas:AddChildToCanvas(UI.menu)
     slot:SetAutoSize(true)
 
-    UI.userWidget:SetPositionInViewport(optUI.paint.positionInViewport, true)
-    UI.userWidget:AddToViewport(optUI.paint.zOrder)
+    UI.userWidget:SetAnchorsInViewport(optUI._generic.AnchorsInViewport)
+    UI.userWidget:SetAlignmentInViewport(optUI._generic.AlignmentInViewport)
+    UI.userWidget:SetPadding(optUI._generic.Padding)
+    UI.userWidget:AddToViewport(optUI._generic.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
-    UI.menu.TerrainToolCreativeQuitButton:RemoveFromParent()
-    UI.menu.FakeTabBarButtonBG:RemoveFromParent()
-    UI.menu.FakeTabBarSeparator:RemoveFromParent()
-    UI.menu.ToolStrengthSlider:RemoveFromParent()
-    UI.menu.ToolSizeSlider:RemoveFromParent()
-    UI.menu.ToolRangeSlider:RemoveFromParent()
-    UI.menu.IgnoreHardnessCheckbox:RemoveFromParent()
-    UI.menu.ActiveColorText:RemoveFromParent()
-    UI.menu.CreativeTerrainColorPicker:RemoveFromParent()
-    UI.menu.CreativeTerrainSpecialColorPicker:RemoveFromParent()
-    UI.menu.ClickOutOfMenuButton:RemoveFromParent()
-    UI.menu.Image_0:RemoveFromParent()
-    UI.menu.MenuBackingButton:RemoveFromParent()
-    UI.menu.TerrainToolCreativeQuitButton:RemoveFromParent()
+    UI.canvas:AddChildToCanvas(UI.menu)
+    UI.menu.ActiveColorImage.RenderTransformPivot = optUI.paint.ActiveColorImage_RenderTransformPivot
+    UI.menu.ActiveColorImage.RenderTransform.Scale = optUI.paint.ActiveColorImage_RenderTransform_Scale
+    verticalBox:AddChildToVerticalBox(UI.menu.ActiveColorImage)
 
-    slot_menu:SetAutoSize(true)
-    slot_menu:SetPosition(optUI.paint.creativeMenu_position)
-    UI.menu.ActiveColorImage:SetRenderTranslation(optUI.paint.activeColorImage_translation)
-    UI.menu.CreativeTerrainPlanetColorPicker:SetPadding(optUI.paint.colorPicker_padding)
+    UI.menu.CreativeTerrainPlanetColorPicker.Padding = optUI.paint.CreativeTerrainPlanetColorPicker_Padding
+    verticalBox:AddChildToVerticalBox(UI.menu.CreativeTerrainPlanetColorPicker)
+
+    UI.menu:RemoveFromParent()
 
     log.debug("UI created (paint).")
 
@@ -303,9 +282,12 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local deformTool = _self:get() ---@type ASmallDeform_TERRAIN_EXPERIMENTAL_C
 
     if _justActivated:get() == true then
+        -- change current mode to ColorPaint
         deformTool.Operation = EDeformType.ColorPaint
 
-        updateUI()
+        MaterialIndexImage = _G.MaterialIndexImage
+
+        updateParams()
     end
 
     if _isUsingTool:get() == false then
@@ -317,10 +299,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
 
     if deformTool.Operation == EDeformType.ColorPaint then
         _isUsingTool:set(false)
-    elseif deformTool.Operation == EDeformType.Subtract or
-        deformTool.Operation == EDeformType.ColorPick or
-        deformTool.Operation == EDeformType.Crater or
-        deformTool.Operation == EDeformType.RevertModifications then
+    else
         return
     end
 
@@ -333,7 +312,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         Instigator = nil,
         Intensity = 0,
         Location = { X = toolHit.Location.X, Y = toolHit.Location.Y, Z = toolHit.Location.Z },
-        MaterialIndex = params.MATERIAL_INDEX,
+        MaterialIndex = MaterialIndexImage,
         Normal = { X = toolHit.Normal.X, Y = toolHit.Normal.Y, Z = toolHit.Normal.Z },
         Operation = EDeformType.ColorPaint,
         Scale = deformTool.BaseBrushIndicatorScale * deformTool.BaseBrushDeformationScale * params.SCALE,
@@ -344,38 +323,24 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     })
 end
 
-local function init()
-    if FirstInit == true then
-        RegisterHook("/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C:OnColorAndTypePicked",
-            function(self, SelectedColor, SelectedColorIndex, PaintType)
-                SelectedColor = SelectedColor:get()
-                SelectedColorIndex = SelectedColorIndex:get()
-                PaintType = PaintType:get()
+---@param self UTerrainToolCreativeMenu_C
+---@param SelectedColor FLinearColor
+---@param SelectedColorIndex int32
+---@param PaintType EPaintIndexType
+local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked(self, SelectedColor, SelectedColorIndex, PaintType)
+    MaterialIndexImage = SelectedColorIndex
 
-                ---@cast SelectedColor FLinearColor
-                ---@cast SelectedColorIndex int32
-                ---@cast PaintType EPaintIndexType
-
-                if PaintType == EPaintIndexType.PlanetPalette then
-                    if params.MATERIAL_INDEX ~= SelectedColorIndex then
-                        params.MATERIAL_INDEX = SelectedColorIndex
-                    end
-                    UI.materialIndex:SetText(FText(tostring(SelectedColorIndex)))
-                end
-
-                materialIndexImage = SelectedColorIndex
-            end)
+    if UI.materialIndex:IsValid() then
+        UI.materialIndex:SetText(FText(tostring(SelectedColorIndex)))
     end
-
-    FirstInit = false
 end
 
 ---@type Method__Paint
 return {
     params = params,
     hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
+    hook_TerrainToolCreativeMenu_OnColorAndTypePicked = hook_TerrainToolCreativeMenu_OnColorAndTypePicked,
     onLoad = function()
-        init()
         showUI()
     end,
     onUnload = function()
@@ -384,5 +349,4 @@ return {
     onUpdate = function()
         updateUI()
     end,
-    onClientRestart = init,
 }

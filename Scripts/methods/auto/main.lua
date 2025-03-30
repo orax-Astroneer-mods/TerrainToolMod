@@ -315,6 +315,7 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_loop_delay"))
     UI.loop_delay.WidgetStyle.Font.Size = optUI.auto.font_size
     UI.loop_delay.WidgetStyle.Font.FontObject = fontObj
+    UI.loop_delay.SelectAllTextWhenFocused = true
 
     horizontalBox_loop_delay:AddChildToHorizontalBox(UI.textBlock_loop_delay)
     horizontalBox_loop_delay:AddChildToHorizontalBox(spacer_loop_delay)
@@ -345,6 +346,7 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_angle"))
     UI.angle.WidgetStyle.Font.Size = optUI.auto.font_size
     UI.angle.WidgetStyle.Font.FontObject = fontObj
+    UI.angle.SelectAllTextWhenFocused = true
 
     horizontalBox_angle:AddChildToHorizontalBox(textBlock_angle)
     horizontalBox_angle:AddChildToHorizontalBox(spacer_angle)
@@ -374,6 +376,7 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_expected_angle"))
     UI.expected_angle.WidgetStyle.Font.Size = optUI.auto.font_size
     UI.expected_angle.WidgetStyle.Font.FontObject = fontObj
+    UI.expected_angle.SelectAllTextWhenFocused = true
 
     horizontalBox_expected_angle:AddChildToHorizontalBox(textBlock_expected_angle)
     horizontalBox_expected_angle:AddChildToHorizontalBox(spacer_expected_angle)
@@ -400,8 +403,10 @@ local function createUI()
     verticalBox:AddChildToVerticalBox(horizontalBox_expected_angle)
     verticalBox:AddChildToVerticalBox(UI.comboBox_presets)
 
-    UI.userWidget:SetPositionInViewport(optUI.auto.positionInViewport, true)
-    UI.userWidget:AddToViewport(optUI.auto.zOrder)
+    UI.userWidget:SetAnchorsInViewport(optUI._generic.AnchorsInViewport)
+    UI.userWidget:SetAlignmentInViewport(optUI._generic.AlignmentInViewport)
+    UI.userWidget:SetPadding(optUI._generic.Padding)
+    UI.userWidget:AddToViewport(optUI._generic.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
     log.debug(format("UI created (%s).", MethodName))

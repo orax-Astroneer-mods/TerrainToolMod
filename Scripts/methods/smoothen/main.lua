@@ -11,7 +11,6 @@ local format = string.format
 local CurrentFile = debug.getinfo(1, "S").source
 
 local DebugObjects = {} ---@type table<UObject|AStaticMeshActor|nil>
-local PaintTerrain = false
 
 ---@type TerrainToolMod_Debug
 local dbg = {
@@ -53,10 +52,6 @@ local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\
 -- load PARAMS global table
 local paramsFile = func.getParamsFile(CurrentFile, true)
 local params = func.loadParamsFile(paramsFile, true) ---@type Method__Smoothen__PARAMS
-
--- load PARAMS from "paint" method
-local paramsFile_paint = func.getParamsFile(CurrentFile, true, "paint")
-local params_paint = func.loadParamsFile(paramsFile_paint, true) ---@type Method__Paint__PARAMS
 
 local sys = UEHelpers.GetKismetSystemLibrary()
 local LineTraceSingleForObjects = sys.LineTraceSingleForObjects
@@ -140,7 +135,6 @@ end
 
 local function updateUI()
     params = func.loadParamsFile(paramsFile) ---@type Method__Smoothen__PARAMS
-    params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
 
     -- update prests list
     if UI.presetsComboBox:IsValid() then
@@ -166,11 +160,6 @@ local function updateUI()
         UI.debugCheckBox:SetCheckedState(params.DEBUG_OBJECTS == true and
             ECheckBoxState.Checked or ECheckBoxState.Unchecked)
     end
-
-    if UI.paintCheckBox:IsValid() then
-        UI.paintCheckBox:SetCheckedState(params.PAINT == true and
-            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
-    end
 end
 
 local function writeParamsFile()
@@ -183,16 +172,13 @@ local function writeParamsFile()
     -- defaults
     if params.DEBUG_OBJECTS == nil then params.DEBUG_OBJECTS = false end
     if params.LATEST_PRESET == nil then params.LATEST_PRESET = "" end
-    if params.PAINT == nil then params.PAINT = false end
     file:write(format(
         [[return {
 DEBUG_OBJECTS=%s,
 LATEST_PRESET="%s",
-PAINT=%s
 }]],
         params.DEBUG_OBJECTS,
-        params.LATEST_PRESET,
-        params.PAINT
+        params.LATEST_PRESET
     ))
 
     file:close()
@@ -217,13 +203,6 @@ local function updateParams()
     local isDebugChecked = UI.debugCheckBox.CheckedState == ECheckBoxState.Checked
     if params.DEBUG_OBJECTS ~= isDebugChecked then
         params.DEBUG_OBJECTS = isDebugChecked
-        updateRequired = true
-    end
-
-    -- get paint CheckBox state
-    local paint = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
-    if params.PAINT ~= paint then
-        params.PAINT = paint
         updateRequired = true
     end
 
@@ -293,36 +272,6 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local startedInteraction = _startedInteraction:get() ---@type boolean
 
     local operation = deformTool.Operation
-
-    if startedInteraction then
-        PaintTerrain = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
-    end
-
-    -- paint terrain
-    if PaintTerrain == true and
-        operation ~= EDeformType.Subtract and
-        operation ~= EDeformType.ColorPick and
-        operation ~= EDeformType.Crater and
-        operation ~= EDeformType.RevertModifications then
-        controller:ClientDoDeformation({
-            AutoCreateResourceEfficiency = 0,
-            CreativeModeNoResourceCollection = false,
-            DeltaTime = 0.03299999982118, -- ???
-            ForceRemoveDecorators = false,
-            HardnessPenetration = 0,
-            Instigator = nil,
-            Intensity = 0,
-            Location = { X = toolHit.Location.X, Y = toolHit.Location.Y, Z = toolHit.Location.Z },
-            MaterialIndex = params_paint.MATERIAL_INDEX,
-            Normal = { X = toolHit.Normal.X, Y = toolHit.Normal.Y, Z = toolHit.Normal.Z },
-            Operation = EDeformType.ColorPaint,
-            Scale = deformTool.BaseBrushIndicatorScale * deformTool.BaseBrushDeformationScale * params_paint.SCALE,
-            SequenceNumber = 0,
-            Shape = 0,
-            bEasyUnbury = false,
-            bUseAlternatePolygonization = true
-        })
-    end
 
     -- check if a flatten operation is selected
     if operation ~= EDeformType.Flatten and
@@ -639,46 +588,19 @@ local function createUI()
     horizontalBox_debug:AddChildToHorizontalBox(UI.debugCheckBox)
     --#endregion
 
-    --#region paint
-    ---@type UHorizontalBox
-    local horizontalBox_paint = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_paint"))
-    horizontalBox_paint:SetToolTipText(FText(format(optUI["*"].txt.paint_tip,
-        func.getKeybindName(options.set_paint_method_Key, options.set_paint_method_ModifierKeys))))
-
-    ---@type UTextBlock
-    local textBlock_paint = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_paint"))
-    textBlock_paint.Font.Size = optUI.smoothen.font_size
-    textBlock_paint.Font.FontObject = fontObj
-    textBlock_paint:SetText(FText(optUI.smoothen.txt.paint))
-
-    ---@type USpacer
-    local spacer_paint = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_paint"))
-    spacer_paint:SetSize(optUI.smoothen.spacer_size)
-
-    ---@type UCheckBox
-    UI.paintCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_paint"))
-
-    horizontalBox_paint:AddChildToHorizontalBox(textBlock_paint)
-    horizontalBox_paint:AddChildToHorizontalBox(spacer_paint)
-    horizontalBox_paint:AddChildToHorizontalBox(UI.paintCheckBox)
-    --#endregion
-
     verticalBox:AddChildToVerticalBox(textBlock_title)
     verticalBox:AddChildToVerticalBox(UI.presetsComboBox)
     verticalBox:AddChildToVerticalBox(horizontalBox_debug)
-    verticalBox:AddChildToVerticalBox(horizontalBox_paint)
 
     local slot = UI.canvas:AddChildToCanvas(verticalBox)
     slot:SetAutoSize(true)
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 
-    UI.userWidget:SetPositionInViewport(optUI.smoothen.positionInViewport, false)
-    UI.userWidget:AddToViewport(optUI.smoothen.zOrder)
+    UI.userWidget:SetAnchorsInViewport(optUI._generic.AnchorsInViewport)
+    UI.userWidget:SetAlignmentInViewport(optUI._generic.AlignmentInViewport)
+    UI.userWidget:SetPadding(optUI._generic.Padding)
+    UI.userWidget:AddToViewport(optUI._generic.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
     log.debug(format("UI created (%s).", MethodName))

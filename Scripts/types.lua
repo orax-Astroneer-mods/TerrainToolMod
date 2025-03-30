@@ -4,10 +4,12 @@
 ---@field params table
 ---@field hook_DeformTool_HandleTerrainTool fun(self: RemoteUnrealParam, controller: RemoteUnrealParam, toolHit: RemoteUnrealParam, clickResult: RemoteUnrealParam, startedInteraction: RemoteUnrealParam, endedInteraction: RemoteUnrealParam, isUsingTool: RemoteUnrealParam, justActivated: RemoteUnrealParam, canUse): boolean
 ---@field hook_DeformTool_Deactivated fun(self: RemoteUnrealParam)?
+---@field hook_TerrainToolCreativeMenu_OnColorAndTypePicked fun(self: UTerrainToolCreativeMenu_C, SelectedColor: FLinearColor, SelectedColorIndex: int32, PaintType: EPaintIndexType)?
 ---@field onLoad fun()?
 ---@field onUnload fun()?
 ---@field onUpdate fun()?
----@field onClientRestart fun(self: RemoteUnrealParam, NewPawn: RemoteUnrealParam)?
+---@field onClientRestart fun(self: RemoteUnrealParam, newPawn: ADesignAstro_C, firstInitialization: boolean)?
+---@field onModRestartedOrStartedManually fun(firstInitialization: boolean)?
 
 ---@class TerrainToolMod_Main_PARAMS
 ---@field LATEST_METHOD string

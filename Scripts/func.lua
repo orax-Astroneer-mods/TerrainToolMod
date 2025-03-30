@@ -1,6 +1,6 @@
 local utils = require("lib.lua-mods-libs.utils")
 
-local floor, sqrt = math.floor, math.sqrt
+local format, floor, sqrt = string.format, math.floor, math.sqrt
 
 local m = {}
 
@@ -37,19 +37,19 @@ function m.getParamsFileByName(name, directory, checkFile)
         for key, value in pairs(params) do
             if ex[key] == nil then
                 -- this key does not exist in the example file
-                print(string.format("WARN: The key %q in the %s.lua file is unknown. You should delete it.", key, name))
+                print(format("WARN: The key %q in the %s.lua file is unknown. You should delete it.", key, name))
                 break
             end
         end
     end
 
-    local file = string.format([[%s\\%s.lua]], directory, name)
+    local file = format([[%s\\%s.lua]], directory, name)
 
     if checkFile == true then
-        local exampleFile = string.format([[%s\\%s.example.lua]], directory, name)
+        local exampleFile = format([[%s\\%s.example.lua]], directory, name)
         local _, fileSize = m.isFileExists(file)
         if fileSize == 0 or check(file, exampleFile) == false then
-            local cmd = string.format([[copy /Y "%s" "%s"]], exampleFile, file)
+            local cmd = format([[copy /Y "%s" "%s"]], exampleFile, file)
             print("Copy example params to params.lua. Execute command: " .. cmd .. "\n")
             os.execute(cmd)
         end
@@ -77,7 +77,7 @@ function m.getParamsFile(sourceFile, checkFile, method)
         for key, value in pairs(params) do
             if ex[key] == nil then
                 -- this key does not exist in the example file
-                print(string.format("WARN: The key %q in the params.lua file is unknown. You should delete it.", key))
+                print(format("WARN: The key %q in the params.lua file is unknown. You should delete it.", key))
                 break
             end
         end
@@ -97,7 +97,7 @@ function m.getParamsFile(sourceFile, checkFile, method)
         local exampleFile = methodDirectory .. "\\params.example.lua"
         local _, fileSize = m.isFileExists(file)
         if fileSize == 0 or check(file, exampleFile) == false then
-            local cmd = string.format([[copy /Y "%s" "%s"]], exampleFile, file)
+            local cmd = format([[copy /Y "%s" "%s"]], exampleFile, file)
             print("Copy example params to params.lua. Execute command: " .. cmd .. "\n")
             os.execute(cmd)
         end
@@ -111,13 +111,13 @@ end
 ---@return table
 function m.loadParamsFile(paramsFile, checkFile)
     local params = dofile(paramsFile)
-    assert(type(params) == "table", string.format("\nInvalid parameters file: %q.", paramsFile))
+    assert(type(params) == "table", format("\nInvalid parameters file: %q.", paramsFile))
 
     if checkFile == true then
         -- load example file and set defaults if needed
         local exampleParamsFile = paramsFile:gsub("params.lua", "params.example.lua")
         local exParams = dofile(exampleParamsFile)
-        assert(type(exParams) == "table", string.format("\nInvalid parameters file: %q.", exampleParamsFile))
+        assert(type(exParams) == "table", format("\nInvalid parameters file: %q.", exampleParamsFile))
         for key, defaultValue in pairs(exParams) do
             if params[key] == nil then
                 params[key] = defaultValue
@@ -126,12 +126,12 @@ function m.loadParamsFile(paramsFile, checkFile)
 
         local i, str = 0, ""
         for key, value in pairs(params) do
-            str = str .. string.format("%s=%s\n", key, value)
+            str = str .. format("%s=%s\n", key, value)
             i = i + 1
         end
 
         if i == 0 then
-            print(string.format("WARN: No parameters were loaded from the file %q.", paramsFile))
+            print(format("WARN: No parameters were loaded from the file %q.", paramsFile))
         end
     end
 
@@ -241,6 +241,98 @@ end
 ---Return true if the mod has been restarted.
 function m.isModRestarted()
     return ModRef:GetSharedVariable(utils.mod.name)
+end
+
+function m.createPaintUI(rootWidget, prefix, options, optUI, fontObj)
+    ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
+
+    local UI = {}
+
+    --#region paint
+    ---@type UHorizontalBox
+    local horizontalBox_paint = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_paint"))
+    horizontalBox_paint:SetToolTipText(FText(format(optUI["*"].txt.paint_tip,
+        m.getKeybindName(options.set_paint_method_Key, options.set_paint_method_ModifierKeys))))
+
+    ---@type UTextBlock
+    local textBlock_paint = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_paint"))
+    textBlock_paint.Font.Size = optUI.tangent.font_size
+    textBlock_paint.Font.FontObject = fontObj
+    textBlock_paint:SetText(FText(optUI.tangent.txt.paint))
+
+    ---@type USpacer
+    local spacer_paint = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_paint"))
+    spacer_paint:SetSize(optUI.tangent.spacer_size)
+
+    ---@type UCheckBox
+    UI.paintCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget, FName(prefix .. "CheckBox_paint"))
+
+    ---@type USpacer
+    local spacer_paint2 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_paint2"))
+    spacer_paint2:SetSize(optUI.tangent.spacer_size2)
+
+    ---@type UCheckBox
+    UI.paintCheckBox2 = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget, FName(prefix .. "CheckBox_paint2"))
+
+    ---@type USpacer
+    local spacer_paint3 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_paint3"))
+    spacer_paint3:SetSize(optUI.tangent.spacer_size)
+
+    ---@type UTextBlock
+    local textBlock_paint2 = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_paint2"))
+    textBlock_paint2.Font.Size = optUI.tangent.font_size
+    textBlock_paint2.Font.FontObject = fontObj
+    textBlock_paint2:SetText(FText(optUI.tangent.txt.paintOriginal))
+
+    horizontalBox_paint:AddChildToHorizontalBox(textBlock_paint)
+    horizontalBox_paint:AddChildToHorizontalBox(spacer_paint)
+    horizontalBox_paint:AddChildToHorizontalBox(UI.paintCheckBox)
+    horizontalBox_paint:AddChildToHorizontalBox(spacer_paint2)
+    horizontalBox_paint:AddChildToHorizontalBox(textBlock_paint2)
+    horizontalBox_paint:AddChildToHorizontalBox(spacer_paint3)
+    horizontalBox_paint:AddChildToHorizontalBox(UI.paintCheckBox2)
+    --#endregion
+
+    --#region paint scale
+    ---@type UHorizontalBox
+    local horizontalBox_paint_scale = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_paint_scale"))
+    horizontalBox_paint_scale:SetToolTipText(FText(optUI["*"].txt.paint_scale_tip))
+
+    ---@type UTextBlock
+    local textBlock_paint_scale = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_paint_scale"))
+    textBlock_paint_scale.Font.Size = optUI.tangent.font_size
+    textBlock_paint_scale.Font.FontObject = fontObj
+    textBlock_paint_scale:SetText(FText(optUI.tangent.txt.paint_scale))
+
+    ---@type USpacer
+    local spacer_paint_scale = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_paint_scale"))
+    spacer_paint_scale:SetSize(optUI.tangent.spacer_size)
+
+    ---@type UEditableTextBox
+    UI.paint_scale = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget, FName(prefix .. "EditableTextBox_paint_scale"))
+    UI.paint_scale.WidgetStyle.Font.Size = optUI.tangent.font_size
+    UI.paint_scale.WidgetStyle.Font.FontObject = fontObj
+
+    horizontalBox_paint_scale:AddChildToHorizontalBox(textBlock_paint_scale)
+    horizontalBox_paint_scale:AddChildToHorizontalBox(spacer_paint_scale)
+    horizontalBox_paint_scale:AddChildToHorizontalBox(UI.paint_scale)
+    --#endregion
+
+    ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
+
+    return horizontalBox_paint, horizontalBox_paint_scale, UI.paintCheckBox, UI.paintCheckBox2, UI.paint_scale
 end
 
 ---Sort a table.

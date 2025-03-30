@@ -14,12 +14,6 @@ local CurrentFile = debug.getinfo(1, "S").source
 local paramsFile = func.getParamsFile(CurrentFile, true)
 local params = func.loadParamsFile(paramsFile, true) ---@type Method__Slope__PARAMS
 
--- load PARAMS from "paint" method
-local paramsFile_paint = func.getParamsFile(CurrentFile, true, "paint")
-local params_paint = func.loadParamsFile(paramsFile_paint, true) ---@type Method__Paint__PARAMS
-
-local PaintTerrain = false
-
 local huge = math.huge
 local SlopeDirection = vec3(huge, huge, huge)
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
@@ -104,15 +98,12 @@ local function writeParamsFile()
     assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
     -- defaults
-    if params.PAINT == nil then params.PAINT = false end
     if params.SLOPE_ANGLE == nil then params.SLOPE_ANGLE = 45 end
 
     file:write(format(
         [[return {
-PAINT=%s,
 SLOPE_ANGLE=%.16g
 }]],
-        params.PAINT,
         params.SLOPE_ANGLE
     ))
 
@@ -121,13 +112,6 @@ end
 
 local function updateParams()
     local updateRequired = false
-
-    -- get paint CheckBox state
-    local paint = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
-    if params.PAINT ~= paint then
-        params.PAINT = paint
-        updateRequired = true
-    end
 
     -- get slope angle
     local slopeAngle = tonumber(UI.angleTextBox.Text:ToString())
@@ -143,12 +127,8 @@ end
 
 local function updateUI()
     params = func.loadParamsFile(paramsFile) ---@type Method__Slope__PARAMS
-    params_paint = func.loadParamsFile(paramsFile_paint) ---@type Method__Paint__PARAMS
 
     UI.angleTextBox:SetText(FText(tostring(params.SLOPE_ANGLE)))
-
-    UI.paintCheckBox:SetCheckedState(params.PAINT == true and
-        ECheckBoxState.Checked or ECheckBoxState.Unchecked)
 end
 
 ---@param _self RemoteUnrealParam
@@ -179,36 +159,6 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local startedInteraction = _startedInteraction:get() ---@type boolean
 
     local operation = deformTool.Operation
-
-    if startedInteraction then
-        PaintTerrain = UI.paintCheckBox.CheckedState == ECheckBoxState.Checked
-    end
-
-    -- paint terrain
-    if PaintTerrain == true and
-        operation ~= EDeformType.Subtract and
-        operation ~= EDeformType.ColorPick and
-        operation ~= EDeformType.Crater and
-        operation ~= EDeformType.RevertModifications then
-        controller:ClientDoDeformation({
-            AutoCreateResourceEfficiency = 0,
-            CreativeModeNoResourceCollection = false,
-            DeltaTime = 0.03299999982118, -- ???
-            ForceRemoveDecorators = false,
-            HardnessPenetration = 0,
-            Instigator = nil,
-            Intensity = 0,
-            Location = { X = toolHit.Location.X, Y = toolHit.Location.Y, Z = toolHit.Location.Z },
-            MaterialIndex = params_paint.MATERIAL_INDEX,
-            Normal = { X = toolHit.Normal.X, Y = toolHit.Normal.Y, Z = toolHit.Normal.Z },
-            Operation = EDeformType.ColorPaint,
-            Scale = deformTool.BaseBrushIndicatorScale * deformTool.BaseBrushDeformationScale * params_paint.SCALE,
-            SequenceNumber = 0,
-            Shape = 0,
-            bEasyUnbury = false,
-            bUseAlternatePolygonization = true
-        })
-    end
 
     -- check if a flatten operation is selected
     if operation ~= EDeformType.Flatten and
@@ -387,51 +337,25 @@ local function createUI()
         rootWidget, FName(prefix .. "EditableTextBox_angle"))
     UI.angleTextBox.WidgetStyle.Font.Size = optUI.slope.font_size
     UI.angleTextBox.WidgetStyle.Font.FontObject = fontObj
+    UI.angleTextBox.SelectAllTextWhenFocused = true
 
     horizontalBox_angle:AddChildToHorizontalBox(textBlock_angle)
     horizontalBox_angle:AddChildToHorizontalBox(spacer_angle)
     horizontalBox_angle:AddChildToHorizontalBox(UI.angleTextBox)
     --#endregion
 
-    --#region paint
-    ---@type UHorizontalBox
-    local horizontalBox_paint = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_paint"))
-    horizontalBox_paint:SetToolTipText(FText(format(optUI["*"].txt.paint_tip,
-        func.getKeybindName(options.set_paint_method_Key, options.set_paint_method_ModifierKeys))))
-
-    ---@type UTextBlock
-    local textBlock_paint = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_paint"))
-    textBlock_paint.Font.Size = optUI.slope.font_size
-    textBlock_paint.Font.FontObject = fontObj
-    textBlock_paint:SetText(FText(optUI.slope.txt.paint))
-
-    ---@type USpacer
-    local spacer_paint = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_paint"))
-    spacer_paint:SetSize(optUI.slope.spacer_size)
-
-    ---@type UCheckBox
-    UI.paintCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_paint"))
-
-    horizontalBox_paint:AddChildToHorizontalBox(textBlock_paint)
-    horizontalBox_paint:AddChildToHorizontalBox(spacer_paint)
-    horizontalBox_paint:AddChildToHorizontalBox(UI.paintCheckBox)
-    --#endregion
-
     verticalBox:AddChildToVerticalBox(textBlock_title)
     verticalBox:AddChildToVerticalBox(horizontalBox_angle)
-    verticalBox:AddChildToVerticalBox(horizontalBox_paint)
 
     local slot = UI.canvas:AddChildToCanvas(verticalBox)
     slot:SetAutoSize(true)
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 
-    UI.userWidget:SetPositionInViewport(optUI.slope.positionInViewport, false)
-    UI.userWidget:AddToViewport(optUI.slope.zOrder)
+    UI.userWidget:SetAnchorsInViewport(optUI._generic.AnchorsInViewport)
+    UI.userWidget:SetAlignmentInViewport(optUI._generic.AlignmentInViewport)
+    UI.userWidget:SetPadding(optUI._generic.Padding)
+    UI.userWidget:AddToViewport(optUI._generic.zOrder)
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
     log.debug(format("UI created (%s).", MethodName))
