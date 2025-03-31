@@ -23,6 +23,7 @@ local optUI = OPTIONS_UI
 local PreId_AstroPlanet_OnDeformationComplete, PostId_AstroPlanet_OnDeformationComplete
 local SmallestNumber = 2 ^ -149
 local Controller = CreateInvalidObject() ---@cast Controller APlayControllerInstance_C
+local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
 
 local deform = {
     Intensity = 0,
@@ -488,7 +489,6 @@ local function hook_AstroPlanet_OnDeformationComplete(self, _deformParams)
             deformParams.Operation == EDeformType.FlattenSubtractOnly or
             deformParams.Operation == EDeformType.PlatformSurface)
     then
-        print(deform.MaterialIndex, deform.Intensity, deformParams.Scale * params.SCALE)
         Controller:ClientDoDeformation({
             AutoCreateResourceEfficiency = 0,
             CreativeModeNoResourceCollection = false,
@@ -497,7 +497,11 @@ local function hook_AstroPlanet_OnDeformationComplete(self, _deformParams)
             HardnessPenetration = 0,
             Instigator = nil,
             Intensity = deform.Intensity,
-            Location = { X = deformParams.Location.X, Y = deformParams.Location.Y, Z = deformParams.Location.Z },
+            Location = {
+                X = deformParams.Location.X + PlanetCenter.X,
+                Y = deformParams.Location.Y + PlanetCenter.Y,
+                Z = deformParams.Location.Z + PlanetCenter.Z,
+            },
             MaterialIndex = deform.MaterialIndex,
             Normal = { X = deformParams.Normal.X, Y = deformParams.Normal.Y, Z = deformParams.Normal.Z },
             Operation = deform.Operation,
@@ -554,7 +558,8 @@ local function init(firstInitialization)
 end
 
 RegisterHook("/Script/Astro.DeformTool:Activated", function()
-    Controller = UEHelpers:GetPlayerController()
+    Controller = UEHelpers:GetPlayerController() ---@cast Controller APlayControllerInstance_C
+    PlanetCenter = Controller:GetLocalSolarBody():GetCenter()
     update()
     manageHook()
     updateParams()
