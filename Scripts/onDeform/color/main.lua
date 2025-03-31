@@ -447,7 +447,7 @@ local function createUI()
 end
 
 local function showUI()
-    if UICreated == true and UI.userWidget and UI.userWidget:IsValid() then
+    if UICreated == true and UI.userWidget and UI.userWidget:IsValid() and UI.userWidget:IsInViewport() then
         UI.userWidget:SetVisibility(ESlateVisibility.Visible)
     else
         UICreated = createUI()
@@ -545,7 +545,7 @@ end
 local function init()
     Controller = UEHelpers:GetPlayerController() ---@cast Controller APlayControllerInstance_C
     PlanetCenter = Controller:GetLocalSolarBody():GetCenter()
-    if UI.userWidget:IsValid() == false or UICreated == false then
+    if UI.userWidget:IsValid() == false or UI.userWidget:IsInViewport() == false or UICreated == false then
         UICreated = createUI()
         if UICreated == false then
             log.warn("Unable to create UI.")
