@@ -525,6 +525,22 @@ RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, New
     end
 end)
 
+RegisterHook("/Script/Engine.PlayerController:ClientReceiveLocalizedMessage",
+    function(...)
+        -- execute event for the current method
+        if CurrenMethod ~= "" and
+            type(Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage) == "function" then
+            log.debug("Execute PlayerController_ClientReceiveLocalizedMessage event for method %q.", CurrenMethod)
+            Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage(...)
+        end
+
+        -- execute event for onDeform_color
+        if type(onDeform_color.PlayerController_ClientReceiveLocalizedMessage) == "function" then
+            log.debug("Execute PlayerController_ClientReceiveLocalizedMessage event for onDeform_color.")
+            onDeform_color.PlayerController_ClientReceiveLocalizedMessage(...)
+        end
+    end)
+
 -- Manage "UE4SS Restart mods" or when the script is injected manually.
 if UEHelpers:GetPlayer():IsValid() then
     local player = UEHelpers:GetPlayer() ---@cast player ADesignAstro_C

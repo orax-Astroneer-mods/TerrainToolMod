@@ -542,24 +542,20 @@ local function manageHook()
     end
 end
 
----@param firstInitialization boolean?
-local function init(firstInitialization)
-    Controller = UEHelpers:GetPlayerController()
-
+local function init()
+    Controller = UEHelpers:GetPlayerController() ---@cast Controller APlayControllerInstance_C
+    PlanetCenter = Controller:GetLocalSolarBody():GetCenter()
     if UI.userWidget:IsValid() == false or UICreated == false then
         UICreated = createUI()
         if UICreated == false then
             log.warn("Unable to create UI.")
             return
         end
-
         updateUI()
     end
 end
 
 RegisterHook("/Script/Astro.DeformTool:Activated", function()
-    Controller = UEHelpers:GetPlayerController() ---@cast Controller APlayControllerInstance_C
-    PlanetCenter = Controller:GetLocalSolarBody():GetCenter()
     update()
     manageHook()
     updateParams()
@@ -591,21 +587,28 @@ end
 ---@param newPawn ADesignAstro_C
 ---@param firstInitialization boolean
 function m.hook_PlayerController_ClientRestart(self, newPawn, firstInitialization)
-    init(firstInitialization)
+    Controller = UEHelpers:GetPlayerController() ---@cast Controller APlayControllerInstance_C
+    PlanetCenter = Controller:GetLocalSolarBody():GetCenter()
 end
 
 ---@param self RemoteUnrealParam
 function m.hook_Planet_Marker_HandlePlanetMarkerSelected(self)
+    PlanetCenter = Controller:GetLocalSolarBody():GetCenter()
+
     UI.menu:Destruct()
     UI.menu:Construct()
 end
 
-params = func.loadParamsFile(paramsFile) ---@type TerrainToolMod__onDeform_color__PARAMS
+function m.PlayerController_ClientReceiveLocalizedMessage(...)
+    init()
+end
 
 --Manage "UE4SS Restart mods" or when the script is injected manually.
 ---@param firstInitialization boolean?
 function m.onModRestartedOrStartedManually(firstInitialization)
-    init(firstInitialization)
+    init()
 end
+
+params = func.loadParamsFile(paramsFile) ---@type TerrainToolMod__onDeform_color__PARAMS
 
 return m
