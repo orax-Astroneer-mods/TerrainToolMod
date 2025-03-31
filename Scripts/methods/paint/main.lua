@@ -335,11 +335,18 @@ local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked(self, SelectedC
     end
 end
 
+---@param self RemoteUnrealParam
+local function hook_Planet_Marker_HandlePlanetMarkerSelected(self)
+    UI.menu:Destruct()
+    UI.menu:Construct()
+end
+
 ---@type Method__Paint
 return {
     params = params,
     hook_DeformTool_HandleTerrainTool = hook_HandleTerrainTool,
     hook_TerrainToolCreativeMenu_OnColorAndTypePicked = hook_TerrainToolCreativeMenu_OnColorAndTypePicked,
+    hook_Planet_Marker_HandlePlanetMarkerSelected = hook_Planet_Marker_HandlePlanetMarkerSelected,
     onLoad = function()
         showUI()
     end,

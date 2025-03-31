@@ -64,17 +64,6 @@ local ECheckBoxState = {
     Undetermined = 2,
 }
 
----@param t table
-local function numberTableToString(t)
-    local str = "{"
-    for key, value in pairs(t) do
-        str = str .. format("[\"%s\"]=%.16g,", key, value)
-    end
-    str = str .. "}"
-
-    return str
-end
-
 local function writeParamsFile()
     log.debug("Write params file.")
 
@@ -94,7 +83,7 @@ ALTITUDE_ROUND=%.16g,
 FORCE_ALTITUDE=%s,
 SELECTED_ALTITUDE_INDEX=%d,
 }]],
-        numberTableToString(params.ALTITUDES),
+        func.tableToString(params.ALTITUDES, "%.16g"),
         params.ALTITUDE_ROUND,
         params.FORCE_ALTITUDE,
         params.SELECTED_ALTITUDE_INDEX

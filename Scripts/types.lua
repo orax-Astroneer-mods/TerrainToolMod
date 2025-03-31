@@ -10,6 +10,7 @@
 ---@field onUpdate fun()?
 ---@field onClientRestart fun(self: RemoteUnrealParam, newPawn: ADesignAstro_C, firstInitialization: boolean)?
 ---@field onModRestartedOrStartedManually fun(firstInitialization: boolean)?
+---@field hook_Planet_Marker_HandlePlanetMarkerSelected fun(self: RemoteUnrealParam)?
 
 ---@class TerrainToolMod_Main_PARAMS
 ---@field LATEST_METHOD string

@@ -18,6 +18,18 @@ function m.isFileExists(filename)
     end
 end
 
+---@param t table
+---@param fmt string
+function m.tableToString(t, fmt)
+    local str = "{"
+    for key, value in pairs(t) do
+        str = str .. format("[\"%s\"]=" .. fmt .. ",", key, value)
+    end
+    str = str .. "}"
+
+    return str
+end
+
 ---@param name string
 ---@param directory string
 ---@param checkFile? boolean

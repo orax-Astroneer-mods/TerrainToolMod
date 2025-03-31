@@ -105,22 +105,22 @@ local function writeParamsFile()
 
     assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
+    if params.PLANET_MATERIAL_INDEX == nil then params.PLANET_MATERIAL_INDEX = {} end
     if params.ENABLE == nil then params.ENABLE = false end
-    if params.MATERIAL_INDEX == nil then params.MATERIAL_INDEX = 0 end
     if params.REVERT_COLOR == nil then params.REVERT_COLOR = false end
     if params.SCALE == nil then params.SCALE = 1.25 end
     if params.VISIBILITY == nil then params.VISIBILITY = ESlateVisibility.Visible end
 
     file:write(format(
         [[return {
+PLANET_MATERIAL_INDEX=%s,
 ENABLE=%s,
-MATERIAL_INDEX=%d,
 REVERT_COLOR=%s,
 SCALE=%.16g,
 VISIBILITY=%d,
 }]],
+        func.tableToString(params.PLANET_MATERIAL_INDEX, "%d"),
         params.ENABLE,
-        params.MATERIAL_INDEX,
         params.REVERT_COLOR,
         params.SCALE,
         params.VISIBILITY
@@ -143,14 +143,6 @@ local function updateParams()
         updateRequired = true
     end
 
-    local materialIndex = MaterialIndexImage
-    if materialIndex == nil then
-        materialIndex = params.MATERIAL_INDEX
-    end
-    if materialIndex ~= params.MATERIAL_INDEX then
-        params.MATERIAL_INDEX = materialIndex
-        updateRequired = true
-    end
 
     local scale = tonumber(UI.scale.Text:ToString())
     if scale == nil then
@@ -172,6 +164,20 @@ local function updateParams()
     if visibility ~= params.VISIBILITY then
         params.VISIBILITY = visibility
         updateRequired = true
+    end
+
+    local designAstro = UEHelpers:GetPlayer()
+    if designAstro:IsValid() then ---@cast designAstro ADesignAstro_C
+        local planetName = designAstro:GetLocalSolarBody().Name:ToString()
+
+        local materialIndex = MaterialIndexImage
+        if materialIndex == nil then
+            materialIndex = params.PLANET_MATERIAL_INDEX[planetName]
+        end
+        if materialIndex ~= nil and materialIndex ~= params.PLANET_MATERIAL_INDEX[planetName] then
+            params.PLANET_MATERIAL_INDEX[planetName] = materialIndex
+            updateRequired = true
+        end
     end
 
     if updateRequired then
@@ -200,10 +206,20 @@ local function updateUI()
         UI.scale:SetText(FText(tostring(params.SCALE)))
     end
 
+    local materialIndex = 0
     if UI.menu:IsValid() then
+        local designAstro = UEHelpers:GetPlayer()
+        if designAstro:IsValid() then ---@cast designAstro ADesignAstro_C
+            local planetName = designAstro:GetLocalSolarBody().Name:ToString()
+            materialIndex = params.PLANET_MATERIAL_INDEX[planetName]
+            if materialIndex == nil then materialIndex = 0 end
+        end
+
         UI.menu:OnColorAndTypePicked({ R = 0, G = 0, B = 0, A = 0 },
-            params.MATERIAL_INDEX, EPaintIndexType.PlanetPalette)
+            materialIndex, EPaintIndexType.PlanetPalette)
     end
+    MaterialIndexImage = materialIndex
+    _G.MaterialIndexImage = materialIndex
 end
 
 local function update()
@@ -434,13 +450,12 @@ local function showUI()
         UI.userWidget:SetVisibility(ESlateVisibility.Visible)
     else
         UICreated = createUI()
-        updateUI()
-        MaterialIndexImage = params.MATERIAL_INDEX
-        _G.MaterialIndexImage = params.MATERIAL_INDEX
-        UI.userWidget:SetVisibility(ESlateVisibility.Visible)
     end
 
     updateUI()
+
+    UI.userWidget:SetVisibility(ESlateVisibility.Visible)
+
     updateParams()
 end
 
@@ -473,6 +488,7 @@ local function hook_AstroPlanet_OnDeformationComplete(self, _deformParams)
             deformParams.Operation == EDeformType.FlattenSubtractOnly or
             deformParams.Operation == EDeformType.PlatformSurface)
     then
+        print(deform.MaterialIndex, deform.Intensity, deformParams.Scale * params.SCALE)
         Controller:ClientDoDeformation({
             AutoCreateResourceEfficiency = 0,
             CreativeModeNoResourceCollection = false,
@@ -522,7 +538,7 @@ local function manageHook()
     end
 end
 
----@param firstInitialization boolean
+---@param firstInitialization boolean?
 local function init(firstInitialization)
     Controller = UEHelpers:GetPlayerController()
 
@@ -534,13 +550,11 @@ local function init(firstInitialization)
         end
 
         updateUI()
-
-        MaterialIndexImage = params.MATERIAL_INDEX
-        _G.MaterialIndexImage = params.MATERIAL_INDEX
     end
 end
 
 RegisterHook("/Script/Astro.DeformTool:Activated", function()
+    Controller = UEHelpers:GetPlayerController()
     update()
     manageHook()
     updateParams()
@@ -575,9 +589,16 @@ function m.hook_PlayerController_ClientRestart(self, newPawn, firstInitializatio
     init(firstInitialization)
 end
 
+---@param self RemoteUnrealParam
+function m.hook_Planet_Marker_HandlePlanetMarkerSelected(self)
+    UI.menu:Destruct()
+    UI.menu:Construct()
+end
+
 params = func.loadParamsFile(paramsFile) ---@type TerrainToolMod__onDeform_color__PARAMS
 
 --Manage "UE4SS Restart mods" or when the script is injected manually.
+---@param firstInitialization boolean?
 function m.onModRestartedOrStartedManually(firstInitialization)
     init(firstInitialization)
 end

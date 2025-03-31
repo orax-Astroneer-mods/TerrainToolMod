@@ -1,6 +1,6 @@
 ---@class TerrainToolMod__onDeform_color__PARAMS
+---@field PLANET_MATERIAL_INDEX table
 ---@field ENABLE boolean
----@field MATERIAL_INDEX number
 ---@field REVERT_COLOR boolean
 ---@field SCALE float
 ---@field VISIBILITY number

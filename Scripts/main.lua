@@ -462,9 +462,6 @@ local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
         ---@param PaintType RemoteUnrealParam
         function(TerrainToolCreativeMenu, SelectedColor, SelectedColorIndex, PaintType)
             local menu = TerrainToolCreativeMenu:get() ---@type UTerrainToolCreativeMenu_C
-            local menuName = menu:GetFName():ToString()
-
-            log.debug("Menu name: %q.", menuName)
 
             if CurrenMethod ~= "" and type(Methods[CurrenMethod].hook_TerrainToolCreativeMenu_OnColorAndTypePicked) == "function" then
                 Methods[CurrenMethod].hook_TerrainToolCreativeMenu_OnColorAndTypePicked(menu, SelectedColor:get(),
@@ -473,6 +470,25 @@ local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
 
             onDeform_color.hook_TerrainToolCreativeMenu_OnColorAndTypePicked(menu, SelectedColor:get(),
                 SelectedColorIndex:get(), PaintType:get())
+        end)
+end
+
+local function hook_Planet_Marker_HandlePlanetMarkerSelected()
+    RegisterHook("/Game/Exploration/Planet_Marker.Planet_Marker_C:HandlePlanetMarkerSelected",
+        ---@param self RemoteUnrealParam
+        function(self)
+            -- execute HandlePlanetMarkerSelected event for the current method
+            if CurrenMethod ~= "" and
+                type(Methods[CurrenMethod].hook_Planet_Marker_HandlePlanetMarkerSelected) == "function" then
+                log.debug("Execute HandlePlanetMarkerSelected event for method %q.", CurrenMethod)
+                Methods[CurrenMethod].hook_Planet_Marker_HandlePlanetMarkerSelected(self)
+            end
+
+            -- execute HandlePlanetMarkerSelected event for onDeform_color
+            if type(onDeform_color.hook_Planet_Marker_HandlePlanetMarkerSelected) == "function" then
+                log.debug("Execute HandlePlanetMarkerSelected event for onDeform_color.")
+                onDeform_color.hook_Planet_Marker_HandlePlanetMarkerSelected(self)
+            end
         end)
 end
 
@@ -485,8 +501,11 @@ RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, New
         local firstInitialization = FirstInit
 
         if firstInitialization == true then
-            FirstInit = false
+            -- Hooks to register BEFORE the ClientRestart hook is registered.
             hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
+
+            -- Hooks to register BEFORE or AFTER the ClientRestart hook is registered.
+            hook_Planet_Marker_HandlePlanetMarkerSelected()
         end
 
         -- execute onClientRestart event for the current method
@@ -501,6 +520,8 @@ RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, New
             log.debug("Execute PlayerController ClientRestart event for onDeform_color.")
             onDeform_color.hook_PlayerController_ClientRestart(self, newPawn, firstInitialization)
         end
+
+        FirstInit = false
     end
 end)
 
@@ -510,6 +531,7 @@ if UEHelpers:GetPlayer():IsValid() then
 
     if player:IsA("/Game/Character/DesignAstro.DesignAstro_C") and player.LocalSolarBody:IsValid() then
         hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
+        hook_Planet_Marker_HandlePlanetMarkerSelected()
 
         -- execute onModRestartedOrStartedManually event for the current method
         if CurrenMethod ~= "" and
