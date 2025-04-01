@@ -581,6 +581,14 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     CurrentPreset.doDeformation(parameters)
 end
 
+local function isUIFocused()
+    if not UI.userWidget or not UI.userWidget:IsValid() then
+        return false
+    end
+
+    return UI.userWidget:HasFocusedDescendants()
+end
+
 ---@type Method__Auto
 return {
     params = params,
@@ -598,5 +606,6 @@ return {
     end,
     onClientRestart = function()
         updateGameVariables()
-    end
+    end,
+    isUIFocused = isUIFocused,
 }

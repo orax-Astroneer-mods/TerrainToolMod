@@ -341,6 +341,17 @@ local function hook_Planet_Marker_HandlePlanetMarkerSelected(self)
     UI.menu:Construct()
 end
 
+local function isUIFocused()
+    if not UI.userWidget or not UI.userWidget:IsValid() then
+        return false
+    end
+    if not UI.menu or not UI.menu:IsValid() then
+        return false
+    end
+
+    return UI.userWidget:HasFocusedDescendants() or UI.menu:HasFocusedDescendants()
+end
+
 ---@type Method__Paint
 return {
     params = params,
@@ -356,4 +367,5 @@ return {
     onUpdate = function()
         updateUI()
     end,
+    isUIFocused = isUIFocused,
 }

@@ -12,6 +12,7 @@
 ---@field onModRestartedOrStartedManually fun(firstInitialization: boolean)?
 ---@field hook_Planet_Marker_HandlePlanetMarkerSelected fun(self: RemoteUnrealParam)?
 ---@field PlayerController_ClientReceiveLocalizedMessage fun(...)?
+---@field isUIFocused fun()
 
 ---@class TerrainToolMod_Main_PARAMS
 ---@field LATEST_METHOD string

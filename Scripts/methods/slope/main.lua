@@ -389,6 +389,14 @@ local function toogleUI()
     end
 end
 
+local function isUIFocused()
+    if not UI.userWidget or not UI.userWidget:IsValid() then
+        return false
+    end
+
+    return UI.userWidget:HasFocusedDescendants()
+end
+
 ---@type Method__Slope
 return {
     params = params,
@@ -401,5 +409,6 @@ return {
     end,
     onUpdate = function()
         updateUI()
-    end
+    end,
+    isUIFocused = isUIFocused,
 }

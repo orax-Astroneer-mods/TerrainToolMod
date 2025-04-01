@@ -609,6 +609,17 @@ function m.onModRestartedOrStartedManually(firstInitialization)
     init()
 end
 
+function m.isUIFocused()
+    if not UI.userWidget or not UI.userWidget:IsValid() then
+        return false
+    end
+    if not UI.menu or not UI.menu:IsValid() then
+        return false
+    end
+
+    return UI.userWidget:HasFocusedDescendants() or UI.menu:HasFocusedDescendants()
+end
+
 params = func.loadParamsFile(paramsFile) ---@type TerrainToolMod__onDeform_color__PARAMS
 
 return m

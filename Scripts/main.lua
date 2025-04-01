@@ -636,6 +636,22 @@ local function checkIfPropertyExists(property, outputDevice)
     return true
 end
 
+local function isUIFocused()
+    if CurrenMethod ~= "" and type(Methods[CurrenMethod].isUIFocused) == "function" then
+        if Methods[CurrenMethod].isUIFocused() == true then
+            return true
+        end
+    end
+
+    if type(onDeform_color.isUIFocused) == "function" then
+        if onDeform_color.isUIFocused() == true then
+            return true
+        end
+    end
+
+    return false
+end
+
 local function registerKeyBind(key, modifierKeys, callback)
     if key ~= nil then
         if IsKeyBindRegistered(key, modifierKeys or {}) then
@@ -660,9 +676,17 @@ local function registerKeyBind(key, modifierKeys, callback)
         end
 
         if modifierKeys ~= nil and type(modifierKeys) == "table" and #modifierKeys > 0 then
-            RegisterKeyBind(key, modifierKeys, callback)
+            RegisterKeyBind(key, modifierKeys, function()
+                if not isUIFocused() then
+                    callback()
+                end
+            end)
         else
-            RegisterKeyBind(key, callback)
+            RegisterKeyBind(key, function()
+                if not isUIFocused() then
+                    callback()
+                end
+            end)
         end
     end
 end
