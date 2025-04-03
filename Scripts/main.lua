@@ -725,6 +725,7 @@ local function createHelpUI()
     add("enable_handleTerrainTool")
     add("disable_handleTerrainTool")
     add("toggle_handleTerrainTool")
+    add("create_tangent_terrain")
     add("toggle_colorDeform_ui")
     add("set_tangent_method")
     add("set_slope_method")
@@ -869,6 +870,94 @@ local function toogleHelpUI()
     end
 end
 
+local function createTangentTerrain()
+    local baseArcLength = options.TangentTerrain.ALC_LENGTH
+    local iterations = options.TangentTerrain.ITERATIONS
+    local scale = options.TangentTerrain.SCALE
+    local materialIndex = options.TangentTerrain.MATERIAL_INDEX -- Color. Default: 128. Valid values: 0 to ...
+
+    ExecuteInGameThread(function()
+        local designAstro = UEHelpers:GetPlayer() ---@cast designAstro ADesignAstro_C
+        local controller = UEHelpers:GetPlayerController() ---@cast controller APlayControllerInstance_C
+
+
+        local loc = designAstro:K2_GetActorLocation()
+        local fw = designAstro:GetActorForwardVector()
+        local right = designAstro:GetActorRightVector()
+        local up = designAstro:GetActorUpVector()
+
+        local planetCenter = designAstro:GetLocalSolarBody():GetCenter()
+
+        local capsule = designAstro:K2_GetRootComponent() ---@cast capsule UCapsuleComponent
+        local capsuleHalfHeight = capsule:GetScaledCapsuleHalfHeight()
+
+        local floor1 = {
+            X = loc.X - (up.X * capsuleHalfHeight),
+            Y = loc.Y - (up.Y * capsuleHalfHeight),
+            Z = loc.Z - (up.Z * capsuleHalfHeight)
+        }
+
+        local relativeFloor = {
+            X = floor1.X - planetCenter.X,
+            Y = floor1.Y - planetCenter.Y,
+            Z = floor1.Z - planetCenter.Z
+        }
+
+        local altitude = getVectorLen(relativeFloor)
+        local floor2 = { X = relativeFloor.X, Y = relativeFloor.Y, Z = relativeFloor.Z }
+
+        for i = -iterations, iterations, 1 do
+            for j = -iterations, iterations, 1 do
+                local arcLength1 = baseArcLength * i
+                local arcLength2 = baseArcLength * j
+
+                local theta1 = arcLength1 / altitude
+                local theta2 = arcLength2 / altitude
+
+                -- to left
+                local u = vec3.rotate(
+                    vec3.new(relativeFloor.X, relativeFloor.Y, relativeFloor.Z),
+                    theta2,
+                    vec3.new(fw.X, fw.Y, fw.Z))
+
+                floor2 = { X = u.x, Y = u.y, Z = u.z }
+
+                -- to forward
+                local v = vec3.rotate(
+                    vec3.new(floor2.X, floor2.Y, floor2.Z),
+                    theta1,
+                    vec3.new(right.X, right.Y, right.Z))
+
+                local normal = vec3.normalize(v)
+                local v_absolute = vec3.new(v.x + planetCenter.X, v.y + planetCenter.Y, v.z + planetCenter.Z)
+
+                controller:ClientDoDeformation({
+                    AutoCreateResourceEfficiency = 0,
+                    CreativeModeNoResourceCollection = false,
+                    DeltaTime = 1000, -- ???
+                    ForceRemoveDecorators = false,
+                    HardnessPenetration = 10,
+                    Instigator = nil,
+                    Intensity = 10,
+                    Location = {
+                        X = v_absolute.x,
+                        Y = v_absolute.y,
+                        Z = v_absolute.z,
+                    },
+                    MaterialIndex = materialIndex,
+                    Normal = { X = normal.x, Y = normal.y, Z = normal.z },
+                    Operation = 2,
+                    Scale = scale, -- min: 120, max: 700, default: 350
+                    SequenceNumber = 0,
+                    Shape = 0,
+                    bEasyUnbury = false,
+                    bUseAlternatePolygonization = true
+                })
+            end
+        end
+    end)
+end
+
 registerKeyBind(options.toggle_help_ui_Key, options.toggle_help_ui_ModifierKeys, toogleHelpUI)
 
 registerKeyBind(options.enable_handleTerrainTool_Key,
@@ -882,6 +971,10 @@ registerKeyBind(options.disable_handleTerrainTool_Key,
 registerKeyBind(options.toggle_handleTerrainTool_Key,
     options.toggle_handleTerrainTool_ModifierKeys,
     toggleModStatus)
+
+registerKeyBind(options.create_tangent_terrain_Key,
+    options.create_tangent_terrain_ModifierKeys,
+    createTangentTerrain)
 
 registerKeyBind(options.set_deformType_Key,
     options.set_deformType_ModifierKeys,

@@ -104,6 +104,17 @@ local options = {
     toggle_colorDeform_ui_Key = Key.ONE,
     toggle_colorDeform_ui_ModifierKeys = { ModifierKey.SHIFT },
 
+    -- Create tangent terrain to the planet at player position.
+    create_tangent_terrain_text = "Create tangent terrain at player position",
+    create_tangent_terrain_Key = Key.F9,
+    create_tangent_terrain_ModifierKeys = {},
+    TangentTerrain = {
+        ALC_LENGTH = 350,
+        ITERATIONS = 10,
+        SCALE = 350,
+        MATERIAL_INDEX = 128 -- Color. Default: 128. Valid values: 0 to ...
+    },
+
     -- Brush scale/size
     -- Default size (without augment) is 350.
     -- 120 is the minimum size in Creative mode.
