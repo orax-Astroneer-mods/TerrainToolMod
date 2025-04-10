@@ -361,7 +361,7 @@ end
 function M.getFileList(directory, filter)
   local fileList = {}
 
-  local handle = io.popen(string.format('dir "%s" /B /D /S', directory))
+  local handle = io.popen(string.format('dir "%s" /B /S', directory))
   if handle then
     for fileName in handle:lines() do
       if fileName:match(filter) then
