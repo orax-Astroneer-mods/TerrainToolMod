@@ -200,11 +200,23 @@ local options = {
 
     auto__set_angle_to_expectedAngle_KeyName = "Delete",
     auto__set_angle_to_expectedAngle_Modifier_KeyName = "LeftAlt",
-    auto__set_angle_to_expectedAngle_text = "Set angle equal to expected angle"
+    auto__set_angle_to_expectedAngle_text = "Set angle equal to expected angle",
     --#endregion Method "auto".
 
     --#region Method "paint". These options ONLY work in the "paint" method.
     --#endregion
+
+    -- "Methods" that will be loaded. ** For advanced users. **
+    -- For some reasons, you may choose not to load all methods.
+    -- This list overrides the mod's default list.
+    -- methodsToLoad = {
+    --     "tangent",
+    --     "slope",
+    --     "smoothen",
+    --     "auto",
+    --     "paint",
+    --     "revert",
+    -- },
 }
 
 ----------------------------------------

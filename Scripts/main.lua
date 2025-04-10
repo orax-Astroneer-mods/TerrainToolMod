@@ -1,3 +1,14 @@
+-- This list can be overwritten in the options file.
+---@type string[]
+local MethodsToLoad = {
+    "tangent",
+    "slope",
+    "smoothen",
+    "auto",
+    "paint",
+    "revert",
+}
+
 ---@class FOutputDevice
 ---@field Log function
 
@@ -219,20 +230,17 @@ end
 
 ---Retrieve functions from method files.
 ---@return TerrainToolMod_Method[], table
-local function loadAllMethods()
-    ---@type string[]
-    local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\", "main.lua")
+local function loadMethods()
     local methods = {}
-    local methodNamesList = {}
+    local methodNamesList = type(options.methodsToLoad) == "table" and options.methodsToLoad or MethodsToLoad
 
-    for index, file in ipairs(fileList) do
-        local methodName = file:match("([^\\]+)\\main.lua")
-        table.insert(methodNamesList, methodName)
-
+    for index, methodName in ipairs(methodNamesList) do
         local methodTable = {
             index = index
         }
 
+        local file = format([[%s\Scripts\methods\%s\main.lua]], currentModDirectory, methodName)
+        log.debug("Load method file: %q.", file)
         local method = dofile(file)
 
         for key, value in pairs(method) do
@@ -247,12 +255,19 @@ end
 
 ---Set current method.
 ---@param method string|integer
+---@return string|nil
 local function setMethod(method)
+    if #MethodNamesList == 0 then
+        log.info("No method found.")
+        return
+    end
+
     local newMethod
     local oldMethod = CurrenMethod
+    local number = tonumber(method)
 
-    if type(tonumber(method)) == "number" then
-        newMethod = MethodNamesList[tonumber(method)]
+    if type(number) == "number" then
+        newMethod = MethodNamesList[math.min(number, #MethodNamesList)]
     elseif type(method) == "string" then
         newMethod = method
     else
@@ -261,16 +276,18 @@ local function setMethod(method)
 
     -- set default method if nil or incorrect
     if newMethod == nil or Methods[newMethod] == nil then
-        newMethod = MethodNamesList[0]
+        log.info(format("Method %q is not found or not loaded.", newMethod))
+        return
+    end
+
+    -- if same method; no change
+    if newMethod == CurrenMethod then
+        log.debug(format("The newMethod == CurrenMethod (%q). No change.", newMethod))
+        return newMethod
     end
 
     log.debug(format("Set method: %q.", newMethod))
 
-    -- if same method; no change
-    if newMethod == CurrenMethod then
-        log.debug("The newMethod == Method. No change.")
-        return method
-    end
 
     unregisterHook_handleTerrainTool()
     unregisterHook_DeformTool_Deactivated()
@@ -309,9 +326,19 @@ end
 
 local function enableMod()
     if IsModEnabled == false then
-        IsModEnabled = true
-        setMethod(mainParams.LATEST_METHOD)
+        if #MethodNamesList == 0 then
+            log.info("No method found.")
+            return
+        end
 
+        if setMethod(mainParams.LATEST_METHOD) == nil then
+            log.debug("Try to set the first method from the list.")
+            if setMethod(1) == nil then
+                return
+            end
+        end
+
+        IsModEnabled = true
         log.debug("Terrain Tool Mod is ENABLED.")
         return
     end
@@ -451,8 +478,10 @@ RegisterCustomProperty({
 
 mainParams = loadMainParams()
 
-Methods, MethodNamesList = loadAllMethods()
-MethodNamesList[0] = mainParams.LATEST_METHOD -- default method
+Methods, MethodNamesList = loadMethods()
+if #MethodNamesList == 0 then
+    log.warn("No method found.")
+end
 
 local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
     RegisterHook("/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C:OnColorAndTypePicked",
