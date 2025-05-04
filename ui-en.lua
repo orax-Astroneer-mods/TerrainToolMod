@@ -132,6 +132,13 @@ local ui = {
             presetsComboBox_tip = "Avalaible presets.\n" ..
                 [[You can add/modify prests in the "methods\auto\presets\" folder.]] .. "\n" ..
                 "After editing a preset file, press %s to update the list/data and unequip (if necessary) and equip your Terrain Tool.",
+            speed_limit = "Speed limit",
+            speed_limit_tip = "Limit your maximum speed.\n" ..
+                "Game defaults are 1360.0 (sprinting), 850.0 (walking).\n" ..
+                "Open you Terrain Tool to apply the speed limit.",
+            no_sliding = "No sliding",
+            no_sliding_tip = "Prevents sliding.\n" ..
+                "Open you Terrain Tool to apply the change.",
         },
         font_size = default.font_size,
         spacer_size = default.spacer_size,
@@ -180,6 +187,12 @@ local ui = {
             revertColorOnly = "Revert color only",
             revertColorOnly_tip = "If checked, only the color of the terrain will be reverted.\n" ..
                 "Intensity is ignored.",
+            offset = "Offset (up/down)",
+            offset_tip = "Offset (up/down) of the sphere.",
+            altitude = "Altitude",
+            altitude_tip = "Alitude.",
+            freezeAltitude = "Freeze altitude",
+            freezeAltitude_tip = "Freeze altitude of the sphere.",
             debug = "Debug",
             debug_tip = "Show a debug sphere.",
             wireframe = "Wireframe",

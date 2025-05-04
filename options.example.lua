@@ -34,6 +34,8 @@ local EDeformType = {
 LOG_LEVEL = "INFO" ---@type _LogLevel
 MIN_LEVEL_OF_FATAL_ERROR = "ERROR" ---@type _LogLevel
 
+UI_FILE = "ui-en.lua"
+
 ---@class TerrainToolMod_Options
 local options = {
     help_ui = {
