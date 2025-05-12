@@ -135,7 +135,8 @@ local ui = {
             speed_limit = "Speed limit",
             speed_limit_tip = "Limit your maximum speed.\n" ..
                 "Game defaults are 1360.0 (sprinting), 850.0 (walking).\n" ..
-                "Open you Terrain Tool to apply the speed limit.",
+                "Open you Terrain Tool to apply the speed limit.\n" ..
+                "Disable this \"method\" (press F3, by default) to restore the original speed limit.",
             no_sliding = "No sliding",
             no_sliding_tip = "Prevents sliding.\n" ..
                 "Open you Terrain Tool to apply the change.",
@@ -188,13 +189,17 @@ local ui = {
             revertColorOnly_tip = "If checked, only the color of the terrain will be reverted.\n" ..
                 "Intensity is ignored.",
             offset = "Offset (up/down)",
-            offset_tip = "Offset (up/down) of the sphere.",
+            offset_tip = "Offset (up/down) of the sphere. Check `debug` to see the sphere.",
             altitude = "Altitude",
-            altitude_tip = "Alitude.",
+            altitude_tip = "Alitude of the sphere. Check `debug` to see the sphere.\n" ..
+                "The altitude is automatically taken under the cursor when you open your Terrain tool (unless `Freeze altitude` is checked).",
+            keybinds = "\nKeybinds (while the Terrain tool is open):\n",
             freezeAltitude = "Freeze altitude",
-            freezeAltitude_tip = "Freeze altitude of the sphere.",
+            freezeAltitude_tip = "Freeze altitude of the sphere. Check `debug` to see the sphere.\n" ..
+                "If checked, the terrain modification will only be reverted at the given altitude (above).",
             debug = "Debug",
-            debug_tip = "Show a debug sphere.",
+            debug_tip = "Show a debug sphere.\n" ..
+                "The debug sphere shows you which area of ​​the terrain will be restored.",
             wireframe = "Wireframe",
             wireframe_tip = "The debug sphere will be rendered in wireframe.",
             rgba = "RGBA",
