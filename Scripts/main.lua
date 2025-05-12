@@ -128,17 +128,7 @@ end
 
 ---@return TerrainToolMod_Options_UI
 local function loadOptionsUI()
-    local file = format([[%s\ui.lua]], currentModDirectory)
-
-    if not isFileExists(file) then
-        local cmd = format([[copy "%s\ui.example.lua" "%s\ui.lua"]],
-            currentModDirectory,
-            currentModDirectory)
-
-        print("Copy example UI to ui.lua. Execute command: " .. cmd .. "\n")
-
-        os.execute(cmd)
-    end
+    local file = format([[%s\%s]], currentModDirectory, UI_FILE)
 
     return dofile(file)
 end
@@ -151,9 +141,9 @@ MIN_LEVEL_OF_FATAL_ERROR = "ERROR" ---@type _LogLevel
 
 local options = loadOptions()
 OPTIONS = options
+loadDevOptions()
 local optUI = loadOptionsUI()
 OPTIONS_UI = optUI
-loadDevOptions()
 
 Log = logging.new(LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR)
 local log = Log
