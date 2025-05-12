@@ -5,6 +5,7 @@ local func = require("func")
 
 local log = Log
 local format = string.format
+local floor, sqrt = math.floor, math.sqrt
 
 local CurrentFile = debug.getinfo(1, "S").source
 
@@ -21,6 +22,9 @@ local UI = {}
 local SmallestNumber = 2 ^ -149
 
 local IsDebugSphereCreated = false
+local Revertoffset = 0
+local Altitude
+local FreezeAltitude = false
 
 ---@type TerrainToolMod__Revert_Debug
 local dbg = {
@@ -328,6 +332,7 @@ local function updateUI()
     UI.g:SetText(FText(tostring(params.G)))
     UI.b:SetText(FText(tostring(params.B)))
     UI.a:SetText(FText(tostring(params.A)))
+    UI.offset:SetText(FText("0"))
 end
 
 -- Sources:
@@ -493,6 +498,113 @@ local function createUI()
     horizontalBox_revertColorOnly:AddChildToHorizontalBox(UI.revertColorOnlyCheckBox)
     --#endregion
 
+    --#region Offset (up/down)
+    ---@type UHorizontalBox
+    local horizontalBox_offset = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_offset"))
+    local sp = "   "
+    local nl = "\n"
+    local v1_offset_p = format("(+ %d)", options.revert_offset_location_value)
+    local v1_offset_m = format("(- %d)", options.revert_offset_location_value)
+    local v2_offset_p = format("(+ %d)", options.revert_offset_location_value_with_modifier)
+    local v2_offset_m = format("(- %d)", options.revert_offset_location_value_with_modifier)
+    local helpText_offset =
+        optUI.revert.txt.keybinds ..
+        options.revert_offset_location_down_text ..
+        sp .. options.revert_offset_location_down_KeyName .. v1_offset_m .. nl ..
+        options.revert_offset_location_up_text ..
+        sp .. options.revert_offset_location_up_KeyName .. v1_offset_p .. nl ..
+        options.revert_offset_location_down_text ..
+        sp ..
+        options.revert_offset_location_down_KeyName ..
+        "+" .. options.revert_offset_location_modifier_KeyName .. v2_offset_m .. nl ..
+        options.revert_offset_location_up_text ..
+        sp ..
+        options.revert_offset_location_up_KeyName ..
+        "+" .. options.revert_offset_location_modifier_KeyName .. v2_offset_p
+    horizontalBox_offset:SetToolTipText(FText(optUI.revert.txt.offset_tip .. "\n" .. helpText_offset))
+
+    ---@type UTextBlock
+    local textBlock_offset = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_offset"))
+    textBlock_offset.Font.Size = optUI.revert.font_size
+    textBlock_offset.Font.FontObject = fontObj
+    textBlock_offset:SetText(FText(optUI.revert.txt.offset))
+
+    ---@type USpacer
+    local spacer_offset = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_offset"))
+    spacer_offset:SetSize(optUI.revert.spacer_size)
+
+    ---@type UEditableTextBox
+    UI.offset = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget, FName(prefix .. "EditableTextBox_offset"))
+    UI.offset.WidgetStyle.Font.Size = optUI.revert.font_size
+    UI.offset.WidgetStyle.Font.FontObject = fontObj
+    UI.offset.SelectAllTextWhenFocused = true
+
+    horizontalBox_offset:AddChildToHorizontalBox(textBlock_offset)
+    horizontalBox_offset:AddChildToHorizontalBox(spacer_offset)
+    horizontalBox_offset:AddChildToHorizontalBox(UI.offset)
+    --#endregion
+
+    --#region altitude
+    ---@type UHorizontalBox
+    local horizontalBox_altitude = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_altitude"))
+    horizontalBox_altitude:SetToolTipText(FText(optUI.revert.txt.altitude_tip))
+
+    ---@type UTextBlock
+    local textBlock_altitude = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_altitude"))
+    textBlock_altitude.Font.Size = optUI.revert.font_size
+    textBlock_altitude.Font.FontObject = fontObj
+    textBlock_altitude:SetText(FText(optUI.revert.txt.altitude))
+
+    ---@type USpacer
+    local spacer_altitude = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_altitude"))
+    spacer_altitude:SetSize(optUI.revert.spacer_size)
+
+    ---@type UEditableTextBox
+    UI.altitude = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget, FName(prefix .. "EditableTextBox_altitude"))
+    UI.altitude.WidgetStyle.Font.Size = optUI.revert.font_size
+    UI.altitude.WidgetStyle.Font.FontObject = fontObj
+    UI.altitude.SelectAllTextWhenFocused = true
+
+    horizontalBox_altitude:AddChildToHorizontalBox(textBlock_altitude)
+    horizontalBox_altitude:AddChildToHorizontalBox(spacer_altitude)
+    horizontalBox_altitude:AddChildToHorizontalBox(UI.altitude)
+    --#endregion
+
+    --#region freeze altitude
+    ---@type UHorizontalBox
+    local horizontalBox_freezeAltitude = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_freezeAltitude"))
+    horizontalBox_freezeAltitude:SetToolTipText(FText(optUI.revert.txt.freezeAltitude_tip))
+
+    ---@type UTextBlock
+    local textBlock_freezeAltitude = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_freezeAltitude"))
+    textBlock_freezeAltitude.Font.Size = optUI.revert.font_size
+    textBlock_freezeAltitude.Font.FontObject = fontObj
+    textBlock_freezeAltitude:SetText(FText(optUI.revert.txt.freezeAltitude))
+
+    ---@type USpacer
+    local spacer_freezeAltitude = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_freezeAltitude"))
+    spacer_freezeAltitude:SetSize(optUI.revert.spacer_size)
+
+    ---@type UCheckBox
+    UI.freezeAltitudeCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget, FName(prefix .. "CheckBox_freezeAltitude"))
+
+    horizontalBox_freezeAltitude:AddChildToHorizontalBox(textBlock_freezeAltitude)
+    horizontalBox_freezeAltitude:AddChildToHorizontalBox(spacer_freezeAltitude)
+    horizontalBox_freezeAltitude:AddChildToHorizontalBox(UI.freezeAltitudeCheckBox)
+    --#endregion
+
     --#region debug
     ---@type UHorizontalBox
     local horizontalBox_debug = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
@@ -624,6 +736,9 @@ local function createUI()
     verticalBox:AddChildToVerticalBox(horizontalBox_intensity)
     verticalBox:AddChildToVerticalBox(horizontalBox_revertOnce)
     verticalBox:AddChildToVerticalBox(horizontalBox_revertColorOnly)
+    verticalBox:AddChildToVerticalBox(horizontalBox_offset)
+    verticalBox:AddChildToVerticalBox(horizontalBox_altitude)
+    verticalBox:AddChildToVerticalBox(horizontalBox_freezeAltitude)
     verticalBox:AddChildToVerticalBox(horizontalBox_debug)
     verticalBox:AddChildToVerticalBox(horizontalBox_wireframe)
     verticalBox:AddChildToVerticalBox(horizontalBox_rgba)
@@ -661,6 +776,11 @@ local function hideUI()
     updateParams()
 end
 
+local function round(num, numDecimalPlaces)
+    local mult = 10 ^ (numDecimalPlaces or 4)
+    return floor(num * mult + 0.5) / mult
+end
+
 ---@param _self RemoteUnrealParam
 ---@param _controller RemoteUnrealParam
 ---@param _toolHit RemoteUnrealParam
@@ -676,12 +796,50 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local controller = _controller:get() ---@type APlayController
     local toolHit = _toolHit:get() ---@type FHitResult
 
+    local homeBody = controller.HomeBody
+    local rootComponent = homeBody.RootComponent
+    local planetCenter = rootComponent.RelativeLocation
+    local relativeLocation = {
+        X = toolHit.Location.X - planetCenter.X,
+        Y = toolHit.Location.Y - planetCenter.Y,
+        Z = toolHit.Location.Z - planetCenter.Z
+    }
+    local currentAltitude = sqrt(
+        relativeLocation.X ^ 2 +
+        relativeLocation.Y ^ 2 +
+        relativeLocation.Z ^ 2)
+    local up = {
+        X = relativeLocation.X / currentAltitude,
+        Y = relativeLocation.Y / currentAltitude,
+        Z = relativeLocation.Z / currentAltitude
+    }
+
+    local location = toolHit.Location
+
     if _justActivated:get() == true then
         deformTool.Operation = EDeformType.RevertModifications
         updateParams()
 
         if params.DEBUG == true then
             DebugSphere.create()
+        end
+
+        -- altitude
+        FreezeAltitude = UI.freezeAltitudeCheckBox.CheckedState == ECheckBoxState.Checked and true or false
+        if FreezeAltitude then
+            Altitude = tonumber(UI.altitude.Text:ToString())
+            if Altitude == nil then
+                FreezeAltitude = false
+                UI.freezeAltitudeCheckBox:SetCheckedState(ECheckBoxState.Unchecked)
+            end
+        else
+            UI.altitude:SetText(FText(tostring(round(currentAltitude, 2))))
+            Altitude = currentAltitude
+        end
+
+        local offset = tonumber(UI.offset.Text:ToString())
+        if offset ~= nil then
+            Revertoffset = offset
         end
     end
 
@@ -693,9 +851,46 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         return
     end
 
+    -- https://michaeljcole.github.io/wiki.unrealengine.com/List_of_Key/Gamepad_Input_Names/
+    if controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_down_KeyName) }) then
+        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
+            Revertoffset = Revertoffset - options.revert_offset_location_value_with_modifier
+        else
+            Revertoffset = Revertoffset - options.revert_offset_location_value
+        end
+
+        UI.offset:SetText(FText(tostring(Revertoffset)))
+    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_up_KeyName) }) then
+        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
+            Revertoffset = Revertoffset + options.revert_offset_location_value_with_modifier
+        else
+            Revertoffset = Revertoffset + options.revert_offset_location_value
+        end
+
+        UI.offset:SetText(FText(tostring(Revertoffset)))
+    end
+
+    if FreezeAltitude then
+        -- altitude will be modified
+        location = {
+            -- X = (location.X / currentAltitude) * Altitude,
+            -- Y = (location.Y / currentAltitude) * Altitude,
+            -- Z = (location.Z / currentAltitude) * Altitude
+            X = (relativeLocation.X / currentAltitude) * Altitude + (location.X - relativeLocation.X),
+            Y = (relativeLocation.Y / currentAltitude) * Altitude + (location.Y - relativeLocation.Y),
+            Z = (relativeLocation.Z / currentAltitude) * Altitude + (location.Z - relativeLocation.Z)
+        }
+    end
+
+    location = {
+        X = location.X + up.X * Revertoffset,
+        Y = location.Y + up.Y * Revertoffset,
+        Z = location.Z + up.Z * Revertoffset
+    }
+
     if IsDebugSphereCreated == true and DebugSphere.actor:IsValid() and DebugSphere.actor.bActorIsBeingDestroyed == false then
         DebugSphere.actor:K2_SetActorLocationAndRotation(
-            { X = toolHit.Location.X, Y = toolHit.Location.Y, Z = toolHit.Location.Z },
+            location,
             controller:GetCameraRotation(),
             false, {}, true) ---@diagnostic disable-line: missing-fields
     end
@@ -719,12 +914,12 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     controller:ClientDoDeformation({
         AutoCreateResourceEfficiency = 0,
         CreativeModeNoResourceCollection = false,
-        DeltaTime = 0.03299999982118, -- ???
+        DeltaTime = 0.1, -- ???
         ForceRemoveDecorators = false,
         HardnessPenetration = 0,
         Instigator = nil,
         Intensity = intensity,
-        Location = { X = toolHit.Location.X, Y = toolHit.Location.Y, Z = toolHit.Location.Z },
+        Location = { X = location.X, Y = location.Y, Z = location.Z },
         MaterialIndex = 0,
         Normal = { X = toolHit.Normal.X, Y = toolHit.Normal.Y, Z = toolHit.Normal.Z },
         Operation = EDeformType.RevertModifications,
