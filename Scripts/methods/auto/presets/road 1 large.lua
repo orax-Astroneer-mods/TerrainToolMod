@@ -34,7 +34,7 @@ return {
         -- Planets: SYLVA, DESOLO, CALIDOR, VESANIA, NOVUS, GLACIO, ATROX.
         -- Documentation: if then else | https://www.lua.org/pil/4.3.1.html
         -- material index 128 = default (gray white)
-        local materialIndex = 15
+        local materialIndex = 1
         if p.planetName == "SYLVA" then
             materialIndex = 16 -- green on Sylva
         end

@@ -27,6 +27,8 @@ local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
 local PlanetName = ""
 local DesignAstro ---@type UObject|ADesignAstro_C
 local Capsule = { halfHeight = 0, radius = 0 } ---@type Method__Auto__Capsule
+local MaxSpeed = math.huge
+local SlideStartSpeedThreshold = math.huge
 
 local UI = {}
 local options = OPTIONS
@@ -54,6 +56,13 @@ local ESlateVisibility = {
     HitTestInvisible = 3,
     SelfHitTestInvisible = 4,
     ESlateVisibility_MAX = 5
+}
+
+---@type ECheckBoxState
+local ECheckBoxState = {
+    Unchecked    = 0,
+    Checked      = 1,
+    Undetermined = 2,
 }
 
 local function setAngle(angle)
@@ -116,14 +125,20 @@ local function writeParamsFile()
 
     if params.LATEST_PRESET == nil then params.LATEST_PRESET = "" end
     if params.LOOP_DELAY == nil then params.LOOP_DELAY = 250 end
+    if params.SPEED_LIMIT == nil then params.SPEED_LIMIT = 1360.0 end
+    if params.NO_SLIDING == nil then params.NO_SLIDING = false end
 
     file:write(format(
         [[return {
 LATEST_PRESET="%s",
-LOOP_DELAY=%d
+LOOP_DELAY=%d,
+SPEED_LIMIT=%.17g,
+NO_SLIDING=%s
 }]],
         params.LATEST_PRESET,
-        params.LOOP_DELAY
+        params.LOOP_DELAY,
+        params.SPEED_LIMIT,
+        params.NO_SLIDING
     ))
 
     file:close()
@@ -154,6 +169,25 @@ local function updateParams()
         updateRequired = true
     end
 
+    -- get speed limit from the UI
+    local speedLimit = tonumber(UI.speed_limit:GetText():ToString())
+    if speedLimit == nil then
+        speedLimit = params.SPEED_LIMIT
+        UI.speed_limit:SetText(FText(tostring(speedLimit)))
+    end
+    speedLimit = math.min(1360, speedLimit) -- 1360.0 = game default
+    if speedLimit ~= params.SPEED_LIMIT then
+        params.SPEED_LIMIT = speedLimit
+        updateRequired = true
+    end
+
+    -- get no sliding CheckBox state
+    local noSliding = UI.noSlidingCheckBox.CheckedState == ECheckBoxState.Checked
+    if params.NO_SLIDING ~= noSliding then
+        params.NO_SLIDING = noSliding
+        updateRequired = true
+    end
+
     if updateRequired then
         writeParamsFile()
     end
@@ -179,27 +213,41 @@ local function updateUI()
 
     setAngle(0)
     setExpectedAngle(mathHuge)
-    UI.loop_delay:SetText(FText(tostring(params.LOOP_DELAY)))
+    if UI.loop_delay:IsValid() then
+        UI.loop_delay:SetText(FText(tostring(params.LOOP_DELAY)))
+    end
+
+    if UI.speed_limit:IsValid() then
+        params.SPEED_LIMIT = math.min(1360, params.SPEED_LIMIT) -- 1360.0 = game default
+        UI.speed_limit:SetText(FText(tostring(params.SPEED_LIMIT)))
+    end
+
+    if UI.noSlidingCheckBox:IsValid() then
+        UI.noSlidingCheckBox:SetCheckedState(params.NO_SLIDING == true and
+            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+    end
 
     local presets, presetNamesList = loadAllPresets()
 
     -- set semi-global variables
     Presets, PresetNamesList = presets, presetNamesList
 
-    UI.comboBox_presets:ClearOptions()
+    if UI.comboBox_presets:IsValid() then
+        UI.comboBox_presets:ClearOptions()
 
-    -- add presets to ComboBox
-    for _, preset in ipairs(PresetNamesList) do
-        UI.comboBox_presets:AddOption(preset)
-    end
-    -- select latest selected preset
-    ---@diagnostic disable-next-line: param-type-mismatch
-    if params.LATEST_PRESET and params.LATEST_PRESET ~= "" and UI.comboBox_presets:FindOptionIndex(params.LATEST_PRESET) ~= -1 then
+        -- add presets to ComboBox
+        for _, preset in ipairs(PresetNamesList) do
+            UI.comboBox_presets:AddOption(preset)
+        end
+        -- select latest selected preset
         ---@diagnostic disable-next-line: param-type-mismatch
-        UI.comboBox_presets:SetSelectedOption(params.LATEST_PRESET)
-    else
-        UI.comboBox_presets:SetSelectedIndex(0)
-        params.LATEST_PRESET = UI.comboBox_presets:GetOptionAtIndex(0):ToString()
+        if params.LATEST_PRESET and params.LATEST_PRESET ~= "" and UI.comboBox_presets:FindOptionIndex(params.LATEST_PRESET) ~= -1 then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            UI.comboBox_presets:SetSelectedOption(params.LATEST_PRESET)
+        else
+            UI.comboBox_presets:SetSelectedIndex(0)
+            params.LATEST_PRESET = UI.comboBox_presets:GetOptionAtIndex(0):ToString()
+        end
     end
 
     -- set semi-global variables
@@ -383,6 +431,63 @@ local function createUI()
     horizontalBox_expected_angle:AddChildToHorizontalBox(UI.expected_angle)
     --#endregion
 
+    --#region speed limit
+    ---@type UHorizontalBox
+    local horizontalBox_speed_limit = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_speed_limit"))
+    horizontalBox_speed_limit:SetToolTipText(FText(optUI.auto.txt.speed_limit_tip))
+
+    ---@type UTextBlock
+    local textBlock_speed_limit = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_speed_limit"))
+    textBlock_speed_limit.Font.Size = optUI.auto.font_size
+    textBlock_speed_limit.Font.FontObject = fontObj
+    textBlock_speed_limit:SetText(FText(optUI.auto.txt.speed_limit))
+
+    ---@type USpacer
+    local spacer_speed_limit = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_speed_limit"))
+    spacer_speed_limit:SetSize(optUI.auto.spacer_size)
+
+    ---@type UEditableTextBox
+    UI.speed_limit = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget, FName(prefix .. "EditableTextBox_speed_limit"))
+    UI.speed_limit.WidgetStyle.Font.Size = optUI.auto.font_size
+    UI.speed_limit.WidgetStyle.Font.FontObject = fontObj
+    UI.speed_limit.SelectAllTextWhenFocused = true
+
+    horizontalBox_speed_limit:AddChildToHorizontalBox(textBlock_speed_limit)
+    horizontalBox_speed_limit:AddChildToHorizontalBox(spacer_speed_limit)
+    horizontalBox_speed_limit:AddChildToHorizontalBox(UI.speed_limit)
+    --#endregion
+
+    --#region no sliding
+    ---@type UHorizontalBox
+    local horizontalBox_no_sliding = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_no_sliding"))
+    horizontalBox_no_sliding:SetToolTipText(FText(optUI.auto.txt.no_sliding_tip))
+
+    ---@type UTextBlock
+    local textBlock_no_sliding = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_no_sliding"))
+    textBlock_no_sliding.Font.Size = optUI.auto.font_size
+    textBlock_no_sliding.Font.FontObject = fontObj
+    textBlock_no_sliding:SetText(FText(optUI.auto.txt.no_sliding))
+
+    ---@type USpacer
+    local spacer_no_sliding = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_no_sliding"))
+    spacer_no_sliding:SetSize(optUI.auto.spacer_size)
+
+    ---@type UCheckBox
+    UI.noSlidingCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget, FName(prefix .. "CheckBox_no_sliding"))
+
+    horizontalBox_no_sliding:AddChildToHorizontalBox(textBlock_no_sliding)
+    horizontalBox_no_sliding:AddChildToHorizontalBox(spacer_no_sliding)
+    horizontalBox_no_sliding:AddChildToHorizontalBox(UI.noSlidingCheckBox)
+    --#endregion
+
     --#region presets
     ---@type UComboBoxString
     UI.comboBox_presets = StaticConstructObject(StaticFindObject("/Script/UMG.ComboBoxString"), verticalBox,
@@ -401,6 +506,8 @@ local function createUI()
     verticalBox:AddChildToVerticalBox(horizontalBox_loop_delay)
     verticalBox:AddChildToVerticalBox(horizontalBox_angle)
     verticalBox:AddChildToVerticalBox(horizontalBox_expected_angle)
+    verticalBox:AddChildToVerticalBox(horizontalBox_speed_limit)
+    verticalBox:AddChildToVerticalBox(horizontalBox_no_sliding)
     verticalBox:AddChildToVerticalBox(UI.comboBox_presets)
 
     UI.userWidget:SetAnchorsInViewport(optUI._generic.AnchorsInViewport)
@@ -431,6 +538,20 @@ local function hideUI()
 
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
+    end
+
+    -- restore game values
+    local designAstro = getDesignAstro()
+    if designAstro:IsValid() then
+        local moveComp = designAstro.AstroMovementComponent
+        if moveComp:IsValid() then
+            if MaxSpeed ~= mathHuge then
+                moveComp.MaxSpeed = MaxSpeed
+            end
+            if SlideStartSpeedThreshold ~= mathHuge then
+                moveComp.SlideStartSpeedThreshold = SlideStartSpeedThreshold
+            end
+        end
     end
 
     updateParams()
@@ -475,8 +596,35 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         -- get selected angle from UI
         ExpectedAngle = tonumber(UI.expected_angle:GetText():ToString()) or mathHuge
 
-        ---@diagnostic disable-next-line: cast-local-type
-        DesignAstro = controller:GetAstroCharacter() ---@cast DesignAstro ADesignAstro_C
+        DesignAstro = controller:GetAstroCharacter()
+        if not DesignAstro:IsValid() then
+            log.warn("DesignAstro is not valid.")
+            return
+        end ---@cast DesignAstro ADesignAstro_C
+
+        -- get speed limit from UI
+        local speedLimit = tonumber(UI.speed_limit:GetText():ToString())
+        if speedLimit ~= nil and speedLimit > 0 then
+            speedLimit = math.min(1360, speedLimit) -- 1360.0 = game default
+
+            if MaxSpeed == mathHuge then
+                -- save game value
+                MaxSpeed = DesignAstro.AstroMovementComponent.MaxSpeed
+            end
+
+            DesignAstro.AstroMovementComponent.MaxSpeed = speedLimit
+        end
+
+        local noSliding = UI.noSlidingCheckBox.CheckedState == ECheckBoxState.Checked
+        if noSliding then
+            if SlideStartSpeedThreshold == mathHuge then
+                -- save game value
+                SlideStartSpeedThreshold = DesignAstro.AstroCharacterMovement.SlideStartSpeedThreshold
+            end
+
+            -- This very high number should disable sliding.
+            DesignAstro.AstroCharacterMovement.SlideStartSpeedThreshold = 2 ^ 126
+        end
 
         log.debug(format("Angle: %.16g", Angle))
 
@@ -484,6 +632,8 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             log.warn("No preset found.")
             return
         end
+
+        updateUI()
     end
 
     if controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__decrease_angle_KeyName) }) then
