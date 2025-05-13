@@ -157,9 +157,6 @@ local options = {
     --#region Method "tangent". These options ONLY work in the "tangent" method.
     --#endregion
 
-    --#region Method "smoothen". These options ONLY work in the "smoothen" method.
-    --#endregion
-
     --#region Method "slope". These options ONLY work in the "slope" method.
     -- See the link below for the key names:
     -- (List of Key/Gamepad Input Names) https://michaeljcole.github.io/wiki.unrealengine.com/List_of_Key/Gamepad_Input_Names/
@@ -170,6 +167,9 @@ local options = {
     set_slope_direction_from_slope_text = "Set slope direction from slope (under cursor)",
     set_slope_direction_from_slope_KeyName = "LeftShift",
     --#endregion Method "slope".
+
+    --#region Method "smoothen". These options ONLY work in the "smoothen" method.
+    --#endregion
 
     --#region Method "auto". These options ONLY work in the "auto" method.
     -- See the link below for the key names:
@@ -206,6 +206,26 @@ local options = {
     --#endregion Method "auto".
 
     --#region Method "paint". These options ONLY work in the "paint" method.
+    --#endregion
+
+    --#region Method "revert". These options ONLY work in the "revert" method.
+    -- See the link below for the key names:
+    -- (List of Key/Gamepad Input Names) https://michaeljcole.github.io/wiki.unrealengine.com/List_of_Key/Gamepad_Input_Names/
+    revert_offset_location_down_text = "Shift the sphere down",
+    revert_offset_location_down_KeyName = "PageDown",
+    revert_offset_location_up_text = "Shift the sphere up",
+    revert_offset_location_up_KeyName = "PageUp",
+    revert_offset_location_modifier_text = "Modifier key",
+    revert_offset_location_modifier_KeyName = "LeftShift",
+    revert_offset_location_value = 100,
+    revert_offset_location_value_with_modifier = 500,
+    revert_offset_location_fixed_value_text = "Shift the sphere to the value %.16g",
+    revert_offset_location_fixed_value_1 = 0,
+    revert_offset_location_fixed_value_2 = -950,
+    revert_offset_location_fixed_value_1_KeyName = "Home",
+    revert_offset_location_fixed_value_2_KeyName = "End",
+    revert_toggle_revert_once_KeyName = "Delete",
+
     --#endregion
 
     -- "Methods" that will be loaded. ** For advanced users. **

@@ -222,6 +222,7 @@ end
 ---@return TerrainToolMod_Method[], table
 local function loadMethods()
     local methods = {}
+    ---@diagnostic disable-next-line: undefined-field
     local methodNamesList = type(options.methodsToLoad) == "table" and options.methodsToLoad or MethodsToLoad
 
     for index, methodName in ipairs(methodNamesList) do

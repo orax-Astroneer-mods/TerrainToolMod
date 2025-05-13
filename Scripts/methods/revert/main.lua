@@ -461,7 +461,8 @@ local function createUI()
     ---@type UHorizontalBox
     local horizontalBox_revertOnce = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
         rootWidget, FName(prefix .. "HorizontalBox_revertOnce"))
-    horizontalBox_revertOnce:SetToolTipText(FText(optUI.revert.txt.revertOnce_tip))
+    horizontalBox_revertOnce:SetToolTipText(FText(format(optUI.revert.txt.revertOnce_tip,
+        options.revert_toggle_revert_once_KeyName)))
 
     ---@type UTextBlock
     local textBlock_revertOnce = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
@@ -515,12 +516,12 @@ local function createUI()
     ---@type UHorizontalBox
     local horizontalBox_offset = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
         rootWidget, FName(prefix .. "HorizontalBox_offset"))
-    local sp = "   "
+    local sp = " = "
     local nl = "\n"
-    local v1_offset_p = format("(+ %d)", options.revert_offset_location_value)
-    local v1_offset_m = format("(- %d)", options.revert_offset_location_value)
-    local v2_offset_p = format("(+ %d)", options.revert_offset_location_value_with_modifier)
-    local v2_offset_m = format("(- %d)", options.revert_offset_location_value_with_modifier)
+    local v1_offset_p = format(" (+ %d)", options.revert_offset_location_value)
+    local v1_offset_m = format(" (- %d)", options.revert_offset_location_value)
+    local v2_offset_p = format(" (+ %d)", options.revert_offset_location_value_with_modifier)
+    local v2_offset_m = format(" (- %d)", options.revert_offset_location_value_with_modifier)
     local helpText_offset =
         optUI.revert.txt.keybinds ..
         options.revert_offset_location_down_text ..
@@ -534,7 +535,13 @@ local function createUI()
         options.revert_offset_location_up_text ..
         sp ..
         options.revert_offset_location_up_KeyName ..
-        "+" .. options.revert_offset_location_modifier_KeyName .. v2_offset_p
+        "+" .. options.revert_offset_location_modifier_KeyName .. v2_offset_p .. nl ..
+        format(options.revert_offset_location_fixed_value_text, options.revert_offset_location_fixed_value_1) ..
+        sp ..
+        options.revert_offset_location_fixed_value_1_KeyName .. nl ..
+        format(options.revert_offset_location_fixed_value_text, options.revert_offset_location_fixed_value_2) ..
+        sp ..
+        options.revert_offset_location_fixed_value_2_KeyName
     horizontalBox_offset:SetToolTipText(FText(optUI.revert.txt.offset_tip .. "\n" .. helpText_offset))
 
     ---@type UTextBlock
@@ -881,6 +888,20 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         end
 
         UI.offset:SetText(FText(tostring(RevertOffset)))
+    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_fixed_value_1_KeyName) }) then
+        RevertOffset = options.revert_offset_location_fixed_value_1
+
+        UI.offset:SetText(FText(tostring(RevertOffset)))
+    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_fixed_value_2_KeyName) }) then
+        RevertOffset = options.revert_offset_location_fixed_value_2
+
+        UI.offset:SetText(FText(tostring(RevertOffset)))
+    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_toggle_revert_once_KeyName) }) then
+        if UI.revertOnceCheckBox.CheckedState == ECheckBoxState.Checked then
+            UI.revertOnceCheckBox:SetCheckedState(ECheckBoxState.Unchecked)
+        else
+            UI.revertOnceCheckBox:SetCheckedState(ECheckBoxState.Checked)
+        end
     end
 
     if FreezeAltitude then

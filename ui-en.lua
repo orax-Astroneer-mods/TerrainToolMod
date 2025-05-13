@@ -184,7 +184,8 @@ local ui = {
                 "Note: For example, the values ​0.4 and 0.4 are the same. You can omit the zero.",
             revertOnce = "Revert once",
             revertOnce_tip =
-            "If checked, the \"Revert modifications\" action will only be performed once when you click on the terrain.",
+                "If checked, the \"Revert modifications\" action will only be performed once when you click on the terrain.\n\n" ..
+                "Keyboard shortcut to enable or disable the checkbox: %s",
             revertColorOnly = "Revert color only",
             revertColorOnly_tip = "If checked, only the color of the terrain will be reverted.\n" ..
                 "Intensity is ignored.",
@@ -193,7 +194,7 @@ local ui = {
             altitude = "Altitude",
             altitude_tip = "Alitude of the sphere. Check `debug` to see the sphere.\n" ..
                 "The altitude is automatically taken under the cursor when you open your Terrain tool (unless `Freeze altitude` is checked).",
-            keybinds = "\nKeybinds (while the Terrain tool is open):\n",
+            keybinds = "\nKeybinds (while the Terrain tool is OPEN):\n\n",
             freezeAltitude = "Freeze altitude",
             freezeAltitude_tip = "Freeze altitude of the sphere. Check `debug` to see the sphere.\n" ..
                 "If checked, the terrain modification will only be reverted at the given altitude (above).",
