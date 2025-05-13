@@ -66,7 +66,8 @@ local function writeParamsFile()
     if params.SCALE == nil then params.SCALE = 2.0 end
 
     file:write(format(
-        [[return {
+        [[---@type Method__Paint__PARAMS
+return {
 SCALE=%.16g,
 }]],
         params.SCALE

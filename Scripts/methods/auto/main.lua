@@ -129,7 +129,8 @@ local function writeParamsFile()
     if params.NO_SLIDING == nil then params.NO_SLIDING = false end
 
     file:write(format(
-        [[return {
+        [[---@type Method__Auto__PARAMS
+return {
 LATEST_PRESET="%s",
 LOOP_DELAY=%d,
 SPEED_LIMIT=%.17g,

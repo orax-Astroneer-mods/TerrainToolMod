@@ -198,7 +198,8 @@ local function writeParamsFile()
     if params.A == nil then params.A = 0.5 end
 
     file:write(format(
-        [[return {
+        [[---@type Method__Revert__PARAMS
+return {
 DEBUG=%s,
 INTENSITY=%.16g,
 REVERT_COLOR_ONLY=%s,
@@ -873,9 +874,6 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     if FreezeAltitude then
         -- altitude will be modified
         location = {
-            -- X = (location.X / currentAltitude) * Altitude,
-            -- Y = (location.Y / currentAltitude) * Altitude,
-            -- Z = (location.Z / currentAltitude) * Altitude
             X = (relativeLocation.X / currentAltitude) * Altitude + (location.X - relativeLocation.X),
             Y = (relativeLocation.Y / currentAltitude) * Altitude + (location.Y - relativeLocation.Y),
             Z = (relativeLocation.Z / currentAltitude) * Altitude + (location.Z - relativeLocation.Z)

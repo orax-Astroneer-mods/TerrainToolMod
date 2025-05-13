@@ -101,7 +101,8 @@ local function writeParamsFile()
     if params.SLOPE_ANGLE == nil then params.SLOPE_ANGLE = 45 end
 
     file:write(format(
-        [[return {
+        [[---@type Method__Slope__PARAMS
+return {
 SLOPE_ANGLE=%.16g
 }]],
         params.SLOPE_ANGLE

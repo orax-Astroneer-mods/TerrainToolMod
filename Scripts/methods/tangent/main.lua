@@ -77,7 +77,8 @@ local function writeParamsFile()
     if params.FORCE_ALTITUDE == nil then params.FORCE_ALTITUDE = false end
     if params.SELECTED_ALTITUDE_INDEX == nil then params.SELECTED_ALTITUDE_INDEX = 0 end
     file:write(format(
-        [[return {
+        [[---@type Method__Tangent__PARAMS
+return {
 ALTITUDES=%s,
 ALTITUDE_ROUND=%.16g,
 FORCE_ALTITUDE=%s,

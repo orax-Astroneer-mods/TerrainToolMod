@@ -173,7 +173,8 @@ local function writeParamsFile()
     if params.DEBUG_OBJECTS == nil then params.DEBUG_OBJECTS = false end
     if params.LATEST_PRESET == nil then params.LATEST_PRESET = "" end
     file:write(format(
-        [[return {
+        [[---@type Method__Smoothen__PARAMS
+return {
 DEBUG_OBJECTS=%s,
 LATEST_PRESET="%s",
 }]],
