@@ -103,7 +103,7 @@ local function writeParamsFile()
     file:write(format(
         [[---@type Method__Slope__PARAMS
 return {
-SLOPE_ANGLE=%.16g
+SLOPE_ANGLE=%.17g
 }]],
         params.SLOPE_ANGLE
     ))

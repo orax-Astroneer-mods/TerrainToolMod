@@ -201,15 +201,16 @@ local function writeParamsFile()
         [[---@type Method__Revert__PARAMS
 return {
 DEBUG=%s,
+INTENSITY=%.17g,
 INTENSITY=%.16g,
 REVERT_COLOR_ONLY=%s,
 REVERT_ONCE=%s,
-SCALE=%.16g,
+SCALE=%.17g,
 WIREFRAME=%s,
-R=%.16g,
-G=%.16g,
-B=%.16g,
-A=%.16g
+R=%.17g,
+G=%.17g,
+B=%.17g,
+A=%.17g
 }]],
         params.DEBUG,
         params.INTENSITY,

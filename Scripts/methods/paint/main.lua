@@ -68,7 +68,7 @@ local function writeParamsFile()
     file:write(format(
         [[---@type Method__Paint__PARAMS
 return {
-SCALE=%.16g,
+SCALE=%.17g,
 }]],
         params.SCALE
     ))
