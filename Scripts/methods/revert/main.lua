@@ -22,7 +22,7 @@ local UI = {}
 local SmallestNumber = 2 ^ -149
 
 local IsDebugSphereCreated = false
-local Revertoffset = 0
+local RevertOffset = 0
 local Altitude
 local FreezeAltitude = false
 
@@ -841,7 +841,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
 
         local offset = tonumber(UI.offset.Text:ToString())
         if offset ~= nil then
-            Revertoffset = offset
+            RevertOffset = offset
         end
     end
 
@@ -856,20 +856,20 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     -- https://michaeljcole.github.io/wiki.unrealengine.com/List_of_Key/Gamepad_Input_Names/
     if controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_down_KeyName) }) then
         if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
-            Revertoffset = Revertoffset - options.revert_offset_location_value_with_modifier
+            RevertOffset = RevertOffset - options.revert_offset_location_value_with_modifier
         else
-            Revertoffset = Revertoffset - options.revert_offset_location_value
+            RevertOffset = RevertOffset - options.revert_offset_location_value
         end
 
-        UI.offset:SetText(FText(tostring(Revertoffset)))
+        UI.offset:SetText(FText(tostring(RevertOffset)))
     elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_up_KeyName) }) then
         if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
-            Revertoffset = Revertoffset + options.revert_offset_location_value_with_modifier
+            RevertOffset = RevertOffset + options.revert_offset_location_value_with_modifier
         else
-            Revertoffset = Revertoffset + options.revert_offset_location_value
+            RevertOffset = RevertOffset + options.revert_offset_location_value
         end
 
-        UI.offset:SetText(FText(tostring(Revertoffset)))
+        UI.offset:SetText(FText(tostring(RevertOffset)))
     end
 
     if FreezeAltitude then
@@ -882,9 +882,9 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     end
 
     location = {
-        X = location.X + up.X * Revertoffset,
-        Y = location.Y + up.Y * Revertoffset,
-        Z = location.Z + up.Z * Revertoffset
+        X = location.X + up.X * RevertOffset,
+        Y = location.Y + up.Y * RevertOffset,
+        Z = location.Z + up.Z * RevertOffset
     }
 
     if IsDebugSphereCreated == true and DebugSphere.actor:IsValid() and DebugSphere.actor.bActorIsBeingDestroyed == false then
