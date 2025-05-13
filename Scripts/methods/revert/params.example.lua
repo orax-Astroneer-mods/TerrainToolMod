@@ -2,6 +2,7 @@
 return {
     DEBUG = true,
     INTENSITY = 5,
+    OFFSET = 0,
     REVERT_COLOR_ONLY = false,
     REVERT_ONCE = false,
     SCALE = 1000,

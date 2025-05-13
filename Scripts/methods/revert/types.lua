@@ -3,6 +3,7 @@
 ---@class Method__Revert__PARAMS
 ---@field DEBUG boolean
 ---@field INTENSITY float
+---@field OFFSET float
 ---@field REVERT_COLOR_ONLY boolean
 ---@field REVERT_ONCE boolean
 ---@field SCALE float

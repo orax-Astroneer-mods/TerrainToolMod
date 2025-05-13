@@ -188,6 +188,7 @@ local function writeParamsFile()
 
     if params.DEBUG == nil then params.DEBUG = true end
     if params.INTENSITY == nil then params.INTENSITY = 5.0 end
+    if params.OFFSET == nil then params.OFFSET = 0.0 end
     if params.REVERT_COLOR_ONLY == nil then params.REVERT_COLOR_ONLY = false end
     if params.REVERT_ONCE == nil then params.REVERT_ONCE = false end
     if params.SCALE == nil then params.SCALE = 2000.0 end
@@ -202,6 +203,7 @@ local function writeParamsFile()
 return {
 DEBUG=%s,
 INTENSITY=%.16g,
+OFFSET=%.16g,
 REVERT_COLOR_ONLY=%s,
 REVERT_ONCE=%s,
 SCALE=%.16g,
@@ -213,6 +215,7 @@ A=%.16g
 }]],
         params.DEBUG,
         params.INTENSITY,
+        params.OFFSET,
         params.REVERT_COLOR_ONLY,
         params.REVERT_ONCE,
         params.SCALE,
@@ -235,6 +238,15 @@ local function updateParams()
     end
     if intensity ~= params.INTENSITY then
         params.INTENSITY = intensity
+        updateRequired = true
+    end
+
+    local offset = tonumber(UI.offset.Text:ToString())
+    if offset == nil then
+        offset = params.OFFSET
+    end
+    if offset ~= params.OFFSET then
+        params.OFFSET = offset
         updateRequired = true
     end
 
@@ -320,6 +332,7 @@ local function updateUI()
     params = func.loadParamsFile(paramsFile) ---@type Method__Revert__PARAMS
 
     UI.intensity:SetText(FText(tostring(params.INTENSITY)))
+    UI.offset:SetText(FText(tostring(params.OFFSET)))
     UI.scale:SetText(FText(tostring(params.SCALE)))
     UI.revertOnceCheckBox:SetCheckedState(params.REVERT_ONCE == true and ECheckBoxState.Checked or
         ECheckBoxState.Unchecked)
@@ -333,7 +346,6 @@ local function updateUI()
     UI.g:SetText(FText(tostring(params.G)))
     UI.b:SetText(FText(tostring(params.B)))
     UI.a:SetText(FText(tostring(params.A)))
-    UI.offset:SetText(FText("0"))
 end
 
 -- Sources:
