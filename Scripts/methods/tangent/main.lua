@@ -80,11 +80,11 @@ local function writeParamsFile()
         [[---@type Method__Tangent__PARAMS
 return {
 ALTITUDES=%s,
-ALTITUDE_ROUND=%.17g,
+ALTITUDE_ROUND=%.16g,
 FORCE_ALTITUDE=%s,
 SELECTED_ALTITUDE_INDEX=%d,
 }]],
-        func.tableToString(params.ALTITUDES, "%.17g"),
+        func.tableToString(params.ALTITUDES, "%.16g"),
         params.ALTITUDE_ROUND,
         params.FORCE_ALTITUDE,
         params.SELECTED_ALTITUDE_INDEX
@@ -207,7 +207,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
 
             if alt ~= nil then
                 RoundedAltitude = alt
-                log.debug("Altitude is defined to %.17g.", RoundedAltitude)
+                log.debug("Altitude is defined to %.16g.", RoundedAltitude)
             else
                 log.warn("Unable to get altitude from the UI.")
                 forceAltitude = false -- altitude will be get automatically
@@ -224,7 +224,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
                 Z = toolHit.Location.Z - PlanetCenter.Z
             }), params.ALTITUDE_ROUND)
 
-            log.debug("Rounded altitude is %.17g.", RoundedAltitude)
+            log.debug("Rounded altitude is %.16g.", RoundedAltitude)
         end
 
         UI.roundedAltitude:SetText(FText(tostring(RoundedAltitude)))
@@ -305,7 +305,7 @@ local function updateAltitudeList()
 
     for key, value in func.pairsByKeys(params.ALTITUDES) do
         ---@diagnostic disable-next-line: param-type-mismatch
-        UI.altitudeComboBox:AddOption(format("%s (%.17g)", key, value))
+        UI.altitudeComboBox:AddOption(format("%s (%.16g)", key, value))
     end
 
     if index == -1 then

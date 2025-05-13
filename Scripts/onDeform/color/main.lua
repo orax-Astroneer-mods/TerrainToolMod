@@ -117,7 +117,7 @@ local function writeParamsFile()
 PLANET_MATERIAL_INDEX=%s,
 ENABLE=%s,
 REVERT_COLOR=%s,
-SCALE=%.17g,
+SCALE=%.16g,
 VISIBILITY=%d,
 }]],
         func.tableToString(params.PLANET_MATERIAL_INDEX, "%d"),

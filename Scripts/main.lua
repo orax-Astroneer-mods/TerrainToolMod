@@ -1079,7 +1079,7 @@ RegisterConsoleCommandHandler("get_altitude", function(fullCommand, parameters, 
         return true
     end
 
-    local msg = format("Altitude under cursor: %.17g", getVectorLen(hitResult.Location))
+    local msg = format("Altitude under cursor: %.16g", getVectorLen(hitResult.Location))
     outputDevice:Log(msg)
     log.info(msg)
 

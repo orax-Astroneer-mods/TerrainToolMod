@@ -133,7 +133,7 @@ local function writeParamsFile()
 return {
 LATEST_PRESET="%s",
 LOOP_DELAY=%d,
-SPEED_LIMIT=%.17g,
+SPEED_LIMIT=%.16g,
 NO_SLIDING=%s
 }]],
         params.LATEST_PRESET,
@@ -627,7 +627,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             DesignAstro.AstroCharacterMovement.SlideStartSpeedThreshold = 2 ^ 126
         end
 
-        log.debug(format("Angle: %.17g", Angle))
+        log.debug(format("Angle: %.16g", Angle))
 
         if CurrentPresetName == "" then
             log.warn("No preset found.")
@@ -646,7 +646,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             end
         else
             setAngle(Angle - 1)
-            log.debug(format("Angle: %.17g", Angle))
+            log.debug(format("Angle: %.16g", Angle))
         end
     elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__increase_angle_KeyName) }) then
         if controller:IsInputKeyDown({ KeyName = FName(options.auto__increase_or_decrease_expected_angle_KeyName) }) then
@@ -657,7 +657,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             end
         else
             setAngle(Angle + 1)
-            log.debug(format("Angle: %.17g", Angle))
+            log.debug(format("Angle: %.16g", Angle))
         end
     elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__set_angle_to_expectedAngle_KeyName) }) and
         controller:IsInputKeyDown({ KeyName = FName(options.auto__increase_or_decrease_expected_angle_KeyName) }) then
@@ -683,7 +683,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         local angle = math.deg(vec3.angle_to(
             relativeLocation,
             vec3.new(toolHit.Normal.X, toolHit.Normal.Y, toolHit.Normal.Z))) * sign
-        log.debug(format("Angle under cursor: %.17g", angle))
+        log.debug(format("Angle under cursor: %.16g", angle))
         setExpectedAngle(func.roundToBase(angle, 1))
     end
 
