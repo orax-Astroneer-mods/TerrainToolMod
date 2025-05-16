@@ -2,6 +2,6 @@
 return {
     LATEST_PRESET = "road 1",
     LOOP_DELAY = 250,
-    SPEED_LIMIT = 400,
+    SPEED_LIMIT = 850,
     NO_SLIDING = true
 }
