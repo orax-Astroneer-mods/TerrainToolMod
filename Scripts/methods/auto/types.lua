@@ -17,7 +17,7 @@
 ---@field altitude float
 ---@field angle float
 ---@field capsule Method__Auto__Capsule
----@field character ADesignAstro_C
+---@field character UObject|ADesignAstro_C
 ---@field characterLocation FVector
 ---@field controller APlayController
 ---@field floor FVector
