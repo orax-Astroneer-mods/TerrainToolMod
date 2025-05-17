@@ -129,9 +129,20 @@ local ui = {
             expected_angle = "Expected angle",
             expected_angle_tip = "Expected angle (in degrees).\n" ..
                 [["inf" means "infinite". This is a special value that indicates the current angle is the same as the expected angle.]],
-            presetsComboBox_tip = "Avalaible presets.\n" ..
+            presetsComboBox_tip = "Avalaible presets.\n\n" ..
+                "Quick start: if you don't know what to choose, select \"road\" or \"road large\".\n\n" ..
                 [[You can add/modify prests in the "methods\auto\presets\" folder.]] .. "\n" ..
-                "After editing a preset file, press %s to update the list/data and unequip (if necessary) and equip your Terrain Tool.",
+                "After editing a preset file, press %s to update the list/data and unequip (if necessary) and equip your Terrain Tool.\n\n" ..
+                "- \"crater\" means that the \"crater\" deformation is applied. This deformation digs into the terrain.\n" ..
+                "- \"small thickness\" means that the road will have a small thickness to avoid creating unwanted relief.\n" ..
+                "However, this is not suitable for digging into the terrain.\n" ..
+                "If you want to dig the terrain with a \"small thickness\" road, you can take a preset with the \"crater\" deformation (for exemple: \"road (small thickness, crater)\").\n\n" ..
+                "- \"DO NOTHING\" preset does nothing, as if the \"auto\" method is disabled.\n" ..
+                "- \"paint\" preset colors the terrain.\n" ..
+                "- \"road\" preset creates a road.\n" ..
+                "- \"road with walls\" preset creates a road with kinds of walls (left and right).\n" ..
+                "- \"road with random colors (very large)\" preset creates a very large road with random colors (use it in Creative mode).\n" ..
+                "- \"tunnel\" preset creates a kind of tunnel.",
             speed_limit = "Speed limit",
             speed_limit_tip = "Limit your maximum speed.\n" ..
                 "Game defaults are 1360.0 (sprinting), 850.0 (walking).\n" ..
