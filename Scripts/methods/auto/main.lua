@@ -633,8 +633,6 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             log.warn("No preset found.")
             return
         end
-
-        updateUI()
     end
 
     if controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__decrease_angle_KeyName) }) then
