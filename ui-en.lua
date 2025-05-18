@@ -200,8 +200,10 @@ local ui = {
             revertColorOnly = "Revert color only",
             revertColorOnly_tip = "If checked, only the color of the terrain will be reverted.\n" ..
                 "Intensity is ignored.",
-            offset = "Offset (up/down)",
-            offset_tip = "Offset (up/down) of the sphere. Check `debug` to see the sphere.",
+            offsetUpDown = "Offset (up/down)",
+            offsetUpDown_tip = "Offset (up/down) of the sphere. Check `debug` to see the sphere.",
+            offsetForwardBackward = "Offset (forward/backward)",
+            offsetForwardBackward_tip = "Offset (forward/backward) of the sphere. Check `debug` to see the sphere.",
             altitude = "Altitude",
             altitude_tip = "Alitude of the sphere. Check `debug` to see the sphere.\n" ..
                 "The altitude is automatically taken under the cursor when you open your Terrain tool (unless `Freeze altitude` is checked).",

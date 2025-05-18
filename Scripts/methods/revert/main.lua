@@ -22,7 +22,8 @@ local UI = {}
 local SmallestNumber = 2 ^ -149
 
 local IsDebugSphereCreated = false
-local RevertOffset = 0
+local RevertOffsetUpDown = 0
+local RevertOffsetForwardBackward = 0
 local Altitude
 local FreezeAltitude = false
 
@@ -188,7 +189,8 @@ local function writeParamsFile()
 
     if params.DEBUG == nil then params.DEBUG = true end
     if params.INTENSITY == nil then params.INTENSITY = 5.0 end
-    if params.OFFSET == nil then params.OFFSET = 0.0 end
+    if params.OFFSET_UP_DOWN == nil then params.OFFSET_UP_DOWN = 0.0 end
+    if params.OFFSET_FORWARD_BACKWARD == nil then params.OFFSET_FORWARD_BACKWARD = 0.0 end
     if params.REVERT_COLOR_ONLY == nil then params.REVERT_COLOR_ONLY = false end
     if params.REVERT_ONCE == nil then params.REVERT_ONCE = false end
     if params.SCALE == nil then params.SCALE = 2000.0 end
@@ -203,7 +205,8 @@ local function writeParamsFile()
 return {
 DEBUG=%s,
 INTENSITY=%.16g,
-OFFSET=%.16g,
+OFFSET_UP_DOWN=%.16g,
+OFFSET_FORWARD_BACKWARD=%.16g,
 REVERT_COLOR_ONLY=%s,
 REVERT_ONCE=%s,
 SCALE=%.16g,
@@ -215,7 +218,8 @@ A=%.16g
 }]],
         params.DEBUG,
         params.INTENSITY,
-        params.OFFSET,
+        params.OFFSET_UP_DOWN,
+        params.OFFSET_FORWARD_BACKWARD,
         params.REVERT_COLOR_ONLY,
         params.REVERT_ONCE,
         params.SCALE,
@@ -241,12 +245,21 @@ local function updateParams()
         updateRequired = true
     end
 
-    local offset = tonumber(UI.offset.Text:ToString())
-    if offset == nil then
-        offset = params.OFFSET
+    local offsetUpDown = tonumber(UI.offsetUpDown.Text:ToString())
+    if offsetUpDown == nil then
+        offsetUpDown = params.OFFSET_UP_DOWN
     end
-    if offset ~= params.OFFSET then
-        params.OFFSET = offset
+    if offsetUpDown ~= params.OFFSET_UP_DOWN then
+        params.OFFSET_UP_DOWN = offsetUpDown
+        updateRequired = true
+    end
+
+    local offsetForwardBackward = tonumber(UI.offsetForwardBackward.Text:ToString())
+    if offsetForwardBackward == nil then
+        offsetForwardBackward = params.OFFSET_FORWARD_BACKWARD
+    end
+    if offsetForwardBackward ~= params.OFFSET_FORWARD_BACKWARD then
+        params.OFFSET_FORWARD_BACKWARD = offsetForwardBackward
         updateRequired = true
     end
 
@@ -332,7 +345,8 @@ local function updateUI()
     params = func.loadParamsFile(paramsFile) ---@type Method__Revert__PARAMS
 
     UI.intensity:SetText(FText(tostring(params.INTENSITY)))
-    UI.offset:SetText(FText(tostring(params.OFFSET)))
+    UI.offsetUpDown:SetText(FText(tostring(params.OFFSET_UP_DOWN)))
+    UI.offsetForwardBackward:SetText(FText(tostring(params.OFFSET_FORWARD_BACKWARD)))
     UI.scale:SetText(FText(tostring(params.SCALE)))
     UI.revertOnceCheckBox:SetCheckedState(params.REVERT_ONCE == true and ECheckBoxState.Checked or
         ECheckBoxState.Unchecked)
@@ -514,15 +528,15 @@ local function createUI()
 
     --#region Offset (up/down)
     ---@type UHorizontalBox
-    local horizontalBox_offset = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_offset"))
+    local horizontalBox_offsetUpDown = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_offsetUpDown"))
     local sp = " = "
     local nl = "\n"
     local v1_offset_p = format(" (+ %d)", options.revert_offset_location_value)
     local v1_offset_m = format(" (- %d)", options.revert_offset_location_value)
     local v2_offset_p = format(" (+ %d)", options.revert_offset_location_value_with_modifier)
     local v2_offset_m = format(" (- %d)", options.revert_offset_location_value_with_modifier)
-    local helpText_offset =
+    local helpText_offsetUpDown =
         optUI.revert.txt.keybinds ..
         options.revert_offset_location_down_text ..
         sp .. options.revert_offset_location_down_KeyName .. v1_offset_m .. nl ..
@@ -542,30 +556,79 @@ local function createUI()
         format(options.revert_offset_location_fixed_value_text, options.revert_offset_location_fixed_value_2) ..
         sp ..
         options.revert_offset_location_fixed_value_2_KeyName
-    horizontalBox_offset:SetToolTipText(FText(optUI.revert.txt.offset_tip .. "\n" .. helpText_offset))
+    horizontalBox_offsetUpDown:SetToolTipText(FText(optUI.revert.txt.offsetUpDown_tip .. "\n" .. helpText_offsetUpDown))
 
     ---@type UTextBlock
-    local textBlock_offset = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_offset"))
-    textBlock_offset.Font.Size = optUI.revert.font_size
-    textBlock_offset.Font.FontObject = fontObj
-    textBlock_offset:SetText(FText(optUI.revert.txt.offset))
+    local textBlock_offsetUpDown = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_offsetUpDown"))
+    textBlock_offsetUpDown.Font.Size = optUI.revert.font_size
+    textBlock_offsetUpDown.Font.FontObject = fontObj
+    textBlock_offsetUpDown:SetText(FText(optUI.revert.txt.offsetUpDown))
 
     ---@type USpacer
-    local spacer_offset = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_offset"))
-    spacer_offset:SetSize(optUI.revert.spacer_size)
+    local spacer_offsetUpDown = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_offsetUpDown"))
+    spacer_offsetUpDown:SetSize(optUI.revert.spacer_size)
 
     ---@type UEditableTextBox
-    UI.offset = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_offset"))
-    UI.offset.WidgetStyle.Font.Size = optUI.revert.font_size
-    UI.offset.WidgetStyle.Font.FontObject = fontObj
-    UI.offset.SelectAllTextWhenFocused = true
+    UI.offsetUpDown = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget, FName(prefix .. "EditableTextBox_offsetUpDown"))
+    UI.offsetUpDown.WidgetStyle.Font.Size = optUI.revert.font_size
+    UI.offsetUpDown.WidgetStyle.Font.FontObject = fontObj
+    UI.offsetUpDown.SelectAllTextWhenFocused = true
 
-    horizontalBox_offset:AddChildToHorizontalBox(textBlock_offset)
-    horizontalBox_offset:AddChildToHorizontalBox(spacer_offset)
-    horizontalBox_offset:AddChildToHorizontalBox(UI.offset)
+    horizontalBox_offsetUpDown:AddChildToHorizontalBox(textBlock_offsetUpDown)
+    horizontalBox_offsetUpDown:AddChildToHorizontalBox(spacer_offsetUpDown)
+    horizontalBox_offsetUpDown:AddChildToHorizontalBox(UI.offsetUpDown)
+    --#endregion
+
+    --#region Offset (forward/backward)
+    ---@type UHorizontalBox
+    local horizontalBox_offsetForwardBackward = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_offsetForwardBackward"))
+    local helpText_offsetForwardBackward =
+        optUI.revert.txt.keybinds ..
+
+        -- SHIFT+HOME
+        format(options.revert_offset_location_fixed_forward_backward_value_text,
+            options.revert_offset_forward_backward_location_fixed_value_1) ..
+        sp ..
+        options.revert_offset_location_modifier_KeyName .. "+" ..
+        options.revert_offset_location_fixed_value_1_KeyName ..
+        nl ..
+
+        -- SHIFT+END
+        format(options.revert_offset_location_fixed_forward_backward_value_text,
+            options.revert_offset_forward_backward_location_fixed_value_2) ..
+        sp ..
+        options.revert_offset_location_modifier_KeyName .. "+" ..
+        options.revert_offset_location_fixed_value_2_KeyName
+
+    horizontalBox_offsetForwardBackward:SetToolTipText(FText(optUI.revert.txt.offsetForwardBackward_tip ..
+        "\n" .. helpText_offsetForwardBackward))
+
+    ---@type UTextBlock
+    local textBlock_offsetForwardBackward = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_offsetForwardBackward"))
+    textBlock_offsetForwardBackward.Font.Size = optUI.revert.font_size
+    textBlock_offsetForwardBackward.Font.FontObject = fontObj
+    textBlock_offsetForwardBackward:SetText(FText(optUI.revert.txt.offsetForwardBackward))
+
+    ---@type USpacer
+    local spacer_offsetForwardBackward = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer_offsetForwardBackward"))
+    spacer_offsetForwardBackward:SetSize(optUI.revert.spacer_size)
+
+    ---@type UEditableTextBox
+    UI.offsetForwardBackward = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget, FName(prefix .. "EditableTextBox_offsetForwardBackward"))
+    UI.offsetForwardBackward.WidgetStyle.Font.Size = optUI.revert.font_size
+    UI.offsetForwardBackward.WidgetStyle.Font.FontObject = fontObj
+    UI.offsetForwardBackward.SelectAllTextWhenFocused = true
+
+    horizontalBox_offsetForwardBackward:AddChildToHorizontalBox(textBlock_offsetForwardBackward)
+    horizontalBox_offsetForwardBackward:AddChildToHorizontalBox(spacer_offsetForwardBackward)
+    horizontalBox_offsetForwardBackward:AddChildToHorizontalBox(UI.offsetForwardBackward)
     --#endregion
 
     --#region altitude
@@ -756,7 +819,8 @@ local function createUI()
     verticalBox:AddChildToVerticalBox(horizontalBox_intensity)
     verticalBox:AddChildToVerticalBox(horizontalBox_revertOnce)
     verticalBox:AddChildToVerticalBox(horizontalBox_revertColorOnly)
-    verticalBox:AddChildToVerticalBox(horizontalBox_offset)
+    verticalBox:AddChildToVerticalBox(horizontalBox_offsetUpDown)
+    verticalBox:AddChildToVerticalBox(horizontalBox_offsetForwardBackward)
     verticalBox:AddChildToVerticalBox(horizontalBox_altitude)
     verticalBox:AddChildToVerticalBox(horizontalBox_freezeAltitude)
     verticalBox:AddChildToVerticalBox(horizontalBox_debug)
@@ -857,9 +921,55 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             Altitude = currentAltitude
         end
 
-        local offset = tonumber(UI.offset.Text:ToString())
-        if offset ~= nil then
-            RevertOffset = offset
+        local offsetUpDown = tonumber(UI.offsetUpDown.Text:ToString())
+        if offsetUpDown ~= nil then
+            RevertOffsetUpDown = offsetUpDown
+        end
+
+        local offsetForwardBackward = tonumber(UI.offsetForwardBackward.Text:ToString())
+        if offsetForwardBackward ~= nil then
+            RevertOffsetForwardBackward = offsetForwardBackward
+        end
+    end
+
+    -- https://michaeljcole.github.io/wiki.unrealengine.com/List_of_Key/Gamepad_Input_Names/
+    if controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_down_KeyName) }) then
+        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
+            RevertOffsetUpDown = RevertOffsetUpDown - options.revert_offset_location_value_with_modifier
+        else
+            RevertOffsetUpDown = RevertOffsetUpDown - options.revert_offset_location_value
+        end
+
+        UI.offsetUpDown:SetText(FText(tostring(RevertOffsetUpDown)))
+    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_up_KeyName) }) then
+        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
+            RevertOffsetUpDown = RevertOffsetUpDown + options.revert_offset_location_value_with_modifier
+        else
+            RevertOffsetUpDown = RevertOffsetUpDown + options.revert_offset_location_value
+        end
+
+        UI.offsetUpDown:SetText(FText(tostring(RevertOffsetUpDown)))
+    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_fixed_value_1_KeyName) }) then
+        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
+            RevertOffsetForwardBackward = options.revert_offset_forward_backward_location_fixed_value_1
+            UI.offsetForwardBackward:SetText(FText(tostring(RevertOffsetForwardBackward)))
+        else
+            RevertOffsetUpDown = options.revert_offset_location_fixed_value_1
+            UI.offsetUpDown:SetText(FText(tostring(RevertOffsetUpDown)))
+        end
+    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_fixed_value_2_KeyName) }) then
+        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
+            RevertOffsetForwardBackward = options.revert_offset_forward_backward_location_fixed_value_2
+            UI.offsetForwardBackward:SetText(FText(tostring(RevertOffsetForwardBackward)))
+        else
+            RevertOffsetUpDown = options.revert_offset_location_fixed_value_2
+            UI.offsetUpDown:SetText(FText(tostring(RevertOffsetUpDown)))
+        end
+    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_toggle_revert_once_KeyName) }) then
+        if UI.revertOnceCheckBox.CheckedState == ECheckBoxState.Checked then
+            UI.revertOnceCheckBox:SetCheckedState(ECheckBoxState.Unchecked)
+        else
+            UI.revertOnceCheckBox:SetCheckedState(ECheckBoxState.Checked)
         end
     end
 
@@ -871,39 +981,6 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         return
     end
 
-    -- https://michaeljcole.github.io/wiki.unrealengine.com/List_of_Key/Gamepad_Input_Names/
-    if controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_down_KeyName) }) then
-        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
-            RevertOffset = RevertOffset - options.revert_offset_location_value_with_modifier
-        else
-            RevertOffset = RevertOffset - options.revert_offset_location_value
-        end
-
-        UI.offset:SetText(FText(tostring(RevertOffset)))
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_up_KeyName) }) then
-        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
-            RevertOffset = RevertOffset + options.revert_offset_location_value_with_modifier
-        else
-            RevertOffset = RevertOffset + options.revert_offset_location_value
-        end
-
-        UI.offset:SetText(FText(tostring(RevertOffset)))
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_fixed_value_1_KeyName) }) then
-        RevertOffset = options.revert_offset_location_fixed_value_1
-
-        UI.offset:SetText(FText(tostring(RevertOffset)))
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_fixed_value_2_KeyName) }) then
-        RevertOffset = options.revert_offset_location_fixed_value_2
-
-        UI.offset:SetText(FText(tostring(RevertOffset)))
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_toggle_revert_once_KeyName) }) then
-        if UI.revertOnceCheckBox.CheckedState == ECheckBoxState.Checked then
-            UI.revertOnceCheckBox:SetCheckedState(ECheckBoxState.Unchecked)
-        else
-            UI.revertOnceCheckBox:SetCheckedState(ECheckBoxState.Checked)
-        end
-    end
-
     if FreezeAltitude then
         -- altitude will be modified
         location = {
@@ -913,10 +990,13 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         }
     end
 
+    -- right vector corresponds to the player forward
+    local fw = controller:GetActorRightVector()
+
     location = {
-        X = location.X + up.X * RevertOffset,
-        Y = location.Y + up.Y * RevertOffset,
-        Z = location.Z + up.Z * RevertOffset
+        X = location.X + up.X * RevertOffsetUpDown + fw.X * RevertOffsetForwardBackward,
+        Y = location.Y + up.Y * RevertOffsetUpDown + fw.Y * RevertOffsetForwardBackward,
+        Z = location.Z + up.Z * RevertOffsetUpDown + fw.Z * RevertOffsetForwardBackward
     }
 
     if IsDebugSphereCreated == true and DebugSphere.actor:IsValid() and DebugSphere.actor.bActorIsBeingDestroyed == false then

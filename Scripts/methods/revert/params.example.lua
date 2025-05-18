@@ -2,7 +2,8 @@
 return {
     DEBUG = true,
     INTENSITY = 5,
-    OFFSET = 0,
+    OFFSET_UP_DOWN = 0,
+    OFFSET_FORWARD_BACKWARD = 0,
     REVERT_COLOR_ONLY = false,
     REVERT_ONCE = false,
     SCALE = 1000,
