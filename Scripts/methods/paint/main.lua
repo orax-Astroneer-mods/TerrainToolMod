@@ -20,7 +20,7 @@ local params = func.loadParamsFile(paramsFile, true) ---@type Method__Paint__PAR
 local options = OPTIONS
 local optUI = OPTIONS_UI
 local UI = {}
-local MaterialIndexImage = 0
+local materialIndexImage = 0
 
 ---@type ESlateVisibility
 local ESlateVisibility = {
@@ -286,7 +286,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         -- change current mode to ColorPaint
         deformTool.Operation = EDeformType.ColorPaint
 
-        MaterialIndexImage = _G.MaterialIndexImage
+        materialIndexImage = _G.MaterialIndexImage
 
         updateParams()
     end
@@ -313,7 +313,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         Instigator = nil,
         Intensity = 0,
         Location = { X = toolHit.Location.X, Y = toolHit.Location.Y, Z = toolHit.Location.Z },
-        MaterialIndex = MaterialIndexImage,
+        MaterialIndex = materialIndexImage,
         Normal = { X = toolHit.Normal.X, Y = toolHit.Normal.Y, Z = toolHit.Normal.Z },
         Operation = EDeformType.ColorPaint,
         Scale = deformTool.BaseBrushIndicatorScale * deformTool.BaseBrushDeformationScale * params.SCALE,
@@ -329,7 +329,7 @@ end
 ---@param SelectedColorIndex int32
 ---@param PaintType EPaintIndexType
 local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked(self, SelectedColor, SelectedColorIndex, PaintType)
-    MaterialIndexImage = SelectedColorIndex
+    materialIndexImage = SelectedColorIndex
 
     if UI.materialIndex:IsValid() then
         UI.materialIndex:SetText(FText(tostring(SelectedColorIndex)))
