@@ -119,10 +119,12 @@ local ui = {
             loop_delay_tip =
                 "The angle will be increased/decreased every n milliseconds until it is equal to the expected angle (in degrees).\n" ..
                 "Unequip and equip your Terrain Tool to take into account the modifications.",
-            angle = "Angle",
+            angle = "Angle (−▲ +▼)",
             angle_tip =
                 "Terraforming angle.\n" ..
                 "An angle of 0° corresponds to flat terraforming.\n" ..
+                "A negative angle creates an upward slope ▲.\n" ..
+                "A positive angle creates a downward slope ▼.\n" ..
                 "Note that terraforming follows the curvature of the planet.\n" ..
                 "The angle shouldn't matter if you're just \"painting\" the surface.\n" ..
                 "Press %s to set angle to 0.",
