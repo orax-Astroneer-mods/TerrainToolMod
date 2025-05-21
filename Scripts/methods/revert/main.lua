@@ -990,8 +990,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         }
     end
 
-    -- right vector corresponds to the player forward
-    local fw = controller:GetActorRightVector()
+    local fw = controller:GetAstroCharacter():GetActorForwardVector()
 
     location = {
         X = location.X + up.X * RevertOffsetUpDown + fw.X * RevertOffsetForwardBackward,
