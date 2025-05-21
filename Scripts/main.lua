@@ -752,6 +752,7 @@ local function createHelpUI()
     add("set_smoothen_method")
     add("set_auto_method")
     add("set_paint_method")
+    add("set_revert_method")
     add("increase_BaseBrushDeformationScale")
     add("decrease_BaseBrushDeformationScale")
     add("set_deformType")
@@ -759,16 +760,16 @@ local function createHelpUI()
     add("set_FlattenSubtractOnly_mode")
     add("set_FlattenAddOnly_mode")
 
-    text = text .. "[Method: slope]\n"
-    textLeft = textLeft .. "[Method: slope]\n"
-    textRight = textRight .. "\n"
+    text = text .. "\n[Method: slope]\n"
+    textLeft = textLeft .. "\n[Method: slope]\n"
+    textRight = textRight .. "\n\n"
     add("set_slope_direction_from_camera", options.set_slope_direction_from_camera_KeyName)
     add("set_slope_direction_from_camera_reversed", options.set_slope_direction_from_camera_reversed_KeyName)
     add("set_slope_direction_from_slope", options.set_slope_direction_from_slope_KeyName)
 
-    text = text .. "[Method: auto]\n"
-    textLeft = textLeft .. "[Method: auto]\n"
-    textRight = textRight .. "\n"
+    text = text .. "\n[Method: auto]\n"
+    textLeft = textLeft .. "\n[Method: auto]\n"
+    textRight = textRight .. "\n\n"
     add("auto__increase_angle", options.auto__increase_angle_KeyName)
     add("auto__decrease_angle", options.auto__decrease_angle_KeyName)
     add("auto__increase_expected_angle",
@@ -787,6 +788,25 @@ local function createHelpUI()
     add("auto__set_angle_to_expectedAngle",
         options.auto__set_angle_to_expectedAngle_Modifier_KeyName ..
         "+" .. options.auto__set_angle_to_expectedAngle_KeyName, options.auto__set_angle_to_expectedAngle_text)
+
+    text = text .. "\n[Method: revert]\n"
+    textLeft = textLeft .. "\n[Method: revert]\n"
+    textRight = textRight .. "\n\n"
+    add("revert_offset_location_down", options.revert_offset_location_down_KeyName)
+    add("revert_offset_location_up", options.revert_offset_location_up_KeyName)
+    add("revert_offset_location_fixed_value", options.revert_offset_location_fixed_value_1_KeyName,
+        format(options.revert_offset_location_fixed_value_text, options.revert_offset_location_fixed_value_1))
+    add("revert_offset_location_fixed_value", options.revert_offset_location_fixed_value_2_KeyName,
+        format(options.revert_offset_location_fixed_value_text, options.revert_offset_location_fixed_value_2))
+    add("revert_offset_location_fixed_forward_backward_value",
+        options.revert_offset_location_modifier_KeyName .. "+" .. options.revert_offset_location_fixed_value_1_KeyName,
+        format(options.revert_offset_location_fixed_forward_backward_value_text,
+            options.revert_offset_forward_backward_location_fixed_value_1))
+    add("revert_offset_location_fixed_forward_backward_value",
+        options.revert_offset_location_modifier_KeyName .. "+" .. options.revert_offset_location_fixed_value_2_KeyName,
+        format(options.revert_offset_location_fixed_forward_backward_value_text,
+            options.revert_offset_forward_backward_location_fixed_value_2))
+    add("revert_toggle_revert_once", options.revert_toggle_revert_once_KeyName)
 
     -- remove new line (\n) at the end
     textLeft = textLeft:sub(1, -2)
@@ -813,9 +833,13 @@ local function createHelpUI()
     assert(HelpUI.canvas:IsValid())
     HelpUI.userWidget.WidgetTree.RootWidget = HelpUI.canvas
 
+    ---@type UHorizontalBox
+    local horizontalBox_main = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        HelpUI.userWidget.WidgetTree.RootWidget, FName(prefix .. "HorizontalBox_main"))
+
     ---@type UVerticalBox
     local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
-        HelpUI.userWidget.WidgetTree.RootWidget, FName(prefix .. "VerticalBox"))
+        horizontalBox_main, FName(prefix .. "VerticalBox"))
 
     ---@type UHorizontalBox
     local horizontalBox = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
@@ -848,11 +872,14 @@ local function createHelpUI()
     multiLineEditableTextBox_bottom:SetText(FText(optUI._main.helpText_bottom))
 
     verticalBox:AddChildToVerticalBox(horizontalBox)
-    verticalBox:AddChildToVerticalBox(multiLineEditableTextBox_bottom)
+    -- verticalBox:AddChildToVerticalBox(multiLineEditableTextBox_bottom)
+
+    horizontalBox_main:AddChildToHorizontalBox(verticalBox)
+    horizontalBox_main:AddChildToHorizontalBox(multiLineEditableTextBox_bottom)
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 
-    local slot = HelpUI.canvas:AddChildToCanvas(verticalBox)
+    local slot = HelpUI.canvas:AddChildToCanvas(horizontalBox_main)
     slot:SetAutoSize(true)
 
     HelpUI.userWidget:SetPositionInViewport(options.help_ui.positionInViewport, false)

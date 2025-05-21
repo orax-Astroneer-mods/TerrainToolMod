@@ -37,10 +37,11 @@ local ui = {
 
     _main = {
         helpText_bottom =
-            "Commands: deform_type, get_altitude, ttmod, look.\n" ..
+            "Commands: deform_type, get_altitude, ttmod, look.\n\n" ..
             "Notes:\n" ..
             "- Method-specific shortcuts only work when your terrain tool is equipped.\n" ..
-            "- Some features do not work in Creative mode."
+            "- Some features do not work in Creative mode.\n" ..
+            "- Move the cursor under the UI elements to display tooltips."
     },
 
     tangent = {

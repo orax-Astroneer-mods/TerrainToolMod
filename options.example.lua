@@ -39,7 +39,7 @@ UI_FILE = "ui-en.lua"
 ---@class TerrainToolMod_Options
 local options = {
     help_ui = {
-        font_size = 16,
+        font_size = 14,
         title_left = "[Terrain Tool Mod]\n",
         title_right = "\n",
         positionInViewport = { X = 0, Y = 0 },
@@ -219,13 +219,15 @@ local options = {
     revert_offset_location_modifier_KeyName = "LeftShift",
     revert_offset_location_value = 100,
     revert_offset_location_value_with_modifier = 500,
-    revert_offset_location_fixed_value_text = "Shift the sphere to the value %.16g",
+    revert_offset_location_fixed_value_text = "Shift the sphere (up/down) to the value %.16g",
     revert_offset_location_fixed_value_1 = 0,
     revert_offset_location_fixed_value_2 = -900,
+    revert_offset_location_fixed_forward_backward_value_text = "Shift the sphere (forward/backward) to the value %.16g",
     revert_offset_forward_backward_location_fixed_value_1 = 0,
     revert_offset_forward_backward_location_fixed_value_2 = 1000,
     revert_offset_location_fixed_value_1_KeyName = "Home",
     revert_offset_location_fixed_value_2_KeyName = "End",
+    revert_toggle_revert_once_text = "Toggle \"Revert once\"",
     revert_toggle_revert_once_KeyName = "Delete",
 
     --#endregion
