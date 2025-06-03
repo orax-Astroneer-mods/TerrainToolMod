@@ -66,10 +66,10 @@ function logging.new(level, levelForFatalError)
 
     ---@type Mod_ModInfo
     local mod = {
-        name = source:match("@?.+\\Mods\\([^\\]+)"),
+        name = source:match("@?.+\\([^\\]+)\\[Ss]cripts\\"),
         file = source:sub(2),
         currentDirectory = source:match("@?(.+)\\"),
-        modsDirectory = source:match("@?(.+\\Mods)\\")
+        modsDirectory = source:match("@?(.+)\\[^\\]+\\[Ss]cripts\\")
     }
 
     ---@param newlevel? _LogLevel

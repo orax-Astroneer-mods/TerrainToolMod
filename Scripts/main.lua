@@ -85,7 +85,7 @@ local vec3 = Vec3
 local sqrt = math.sqrt
 local format = string.format
 
-local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
+local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+)\\[Ss]cripts\\")
 local mainParamsFile = func.getParamsFileByName("main_params", currentModDirectory, true)
 local mainParams = {}
 

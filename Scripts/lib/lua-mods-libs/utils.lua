@@ -43,11 +43,11 @@ function M.getModInfo(info)
 
   ---@type Mod_ModInfo
   return {
-    name = source:match("@?.+\\Mods\\([^\\]+)"),
+    name = source:match("@?.+\\([^\\]+)\\[Ss]cripts\\"),
     file = source:sub(2),
     currentDirectory = source:match("@?(.+)\\"),
-    currentModDirectory = source:match("@?(.+\\Mods\\[^\\]+)"),
-    modsDirectory = source:match("@?(.+\\Mods)\\")
+    currentModDirectory = source:match("@?(.+)\\[Ss]cripts\\"),
+    modsDirectory = source:match("@?(.+)\\[^\\]+\\[Ss]cripts\\")
   }
 end
 

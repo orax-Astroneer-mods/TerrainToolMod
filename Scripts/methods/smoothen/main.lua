@@ -47,7 +47,7 @@ local CurrentPresetName = "" ---@type string
 
 local utils = require("lib.lua-mods-libs.utils")
 
-local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
+local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+)\\[Ss]cripts\\")
 
 -- load PARAMS global table
 local paramsFile = func.getParamsFile(CurrentFile, true)

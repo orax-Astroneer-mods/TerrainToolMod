@@ -20,7 +20,7 @@ local params = func.loadParamsFile(paramsFile, true) ---@type Method__Auto__PARA
 
 local utils = require("lib.lua-mods-libs.utils")
 
-local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
+local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+)\\[Ss]cripts\\")
 
 local World = UEHelpers:GetWorld()
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector

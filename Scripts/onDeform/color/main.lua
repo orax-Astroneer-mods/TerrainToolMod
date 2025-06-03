@@ -5,7 +5,7 @@ local log = Log
 local format = string.format
 
 local UICreated = false
-local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+\\Mods\\[^\\]+)")
+local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+)\\[Ss]cripts\\")
 local currentDirectory = debug.getinfo(1, "S").source:match("@(.+)\\")
 local paramsFile = func.getParamsFileByName("params", currentDirectory, true)
 local params = {} ---@cast params TerrainToolMod__onDeform_color__PARAMS

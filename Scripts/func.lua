@@ -98,9 +98,9 @@ function m.getParamsFile(sourceFile, checkFile, method)
     local methodDirectory
     if method == nil or method == "" then
         -- current directory
-        methodDirectory = sourceFile:match([[@?(.+\Mods\[^\\]+\Scripts\methods\[^\]+)]])
+        methodDirectory = sourceFile:match("@?(.+\\[Ss]cripts\\methods\\[^\\]+)")
     else
-        methodDirectory = sourceFile:match([[@?(.+\Mods\[^\\]+\Scripts\methods\)]]) .. method
+        methodDirectory = sourceFile:match("@?(.+\\[Ss]cripts\\methods\\)") .. method
     end ---@cast methodDirectory string
 
     local file = methodDirectory .. "\\params.lua"
