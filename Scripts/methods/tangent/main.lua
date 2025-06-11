@@ -1,7 +1,7 @@
 local MethodName = "tangent"
 
 local UEHelpers = require("UEHelpers")
-local func = require("func")
+local func = require("Scripts.func")
 
 local log = Log
 local sqrt = math.sqrt

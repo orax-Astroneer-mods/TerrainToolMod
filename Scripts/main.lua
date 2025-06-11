@@ -74,18 +74,18 @@ local PreId_DeformTool_Deactivated, PostId_DeformTool_Deactivated
 local WriteMainParamsFileRequired = false
 
 local UEHelpers = require("UEHelpers")
-local logging = require("lib.lua-mods-libs.logging")
-local utils = require("lib.lua-mods-libs.utils")
-local func = require("func")
+local logging = require("Scripts.lib.lua-mods-libs.logging")
+local utils = require("Scripts.lib.lua-mods-libs.utils")
+local func = require("Scripts.func")
 
-modules = "lib.LEEF-math.modules." ---@diagnostic disable-line: lowercase-global
-Vec3 = require("lib.LEEF-math.modules.vec3")
+modules = "Scripts.lib.LEEF-math.modules." ---@diagnostic disable-line: lowercase-global
+Vec3 = require("Scripts.lib.LEEF-math.modules.vec3")
 local vec3 = Vec3
 
 local sqrt = math.sqrt
 local format = string.format
 
-local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+)\\[Ss]cripts\\")
+local currentModDirectory = debug.getinfo(1, "S").source:gsub("\\", "/"):match("@?(.+)/[Ss]cripts/")
 local mainParamsFile = func.getParamsFileByName("main_params", currentModDirectory, true)
 local mainParams = {}
 
@@ -149,7 +149,7 @@ Log = logging.new(LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR)
 local log = Log
 LOG_LEVEL, MIN_LEVEL_OF_FATAL_ERROR = nil, nil
 
-local onDeform_color = require("onDeform.color.main")
+local onDeform_color = require("Scripts.onDeform.color.main")
 
 --------------------------------------------------------------------------------
 

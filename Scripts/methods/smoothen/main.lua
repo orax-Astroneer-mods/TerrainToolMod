@@ -1,7 +1,7 @@
 local MethodName = "smoothen"
 
 local UEHelpers = require("UEHelpers")
-local func = require("func")
+local func = require("Scripts.func")
 
 local log = Log
 local vec3 = Vec3
@@ -45,9 +45,9 @@ local Presets, PresetNamesList = {}, {}
 local CurrentPreset ---@type Method__Smoothen__PRESET
 local CurrentPresetName = "" ---@type string
 
-local utils = require("lib.lua-mods-libs.utils")
+local utils = require("Scripts.lib.lua-mods-libs.utils")
 
-local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+)\\[Ss]cripts\\")
+local currentModDirectory = debug.getinfo(1, "S").source:gsub("\\", "/"):match("@?(.+)/[Ss]cripts/")
 
 -- load PARAMS global table
 local paramsFile = func.getParamsFile(CurrentFile, true)
@@ -108,13 +108,13 @@ end
 ---@return table
 local function loadAllPresets()
     ---@type string[]
-    local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\" .. MethodName .. "\\presets\\",
+    local fileList = utils.getFileList(currentModDirectory .. "/Scripts/methods/" .. MethodName .. "/presets/",
         ".lua")
     local presets = {}
     local presetNamesList = {}
 
     for index, file in ipairs(fileList) do
-        local presetName = file:match("([^\\]+)[.]lua$")
+        local presetName = file:gsub("\\", "/"):match("([^/]+)[.]lua$")
         insert(presetNamesList, presetName)
 
         local presetTable = {

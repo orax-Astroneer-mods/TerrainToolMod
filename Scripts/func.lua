@@ -1,4 +1,4 @@
-local utils = require("lib.lua-mods-libs.utils")
+local utils = require("Scripts.lib.lua-mods-libs.utils")
 
 local format, floor, sqrt = string.format, math.floor, math.sqrt
 
@@ -55,10 +55,10 @@ function m.getParamsFileByName(name, directory, checkFile)
         end
     end
 
-    local file = format([[%s\\%s.lua]], directory, name)
+    local file = format([[%s\%s.lua]], directory, name)
 
     if checkFile == true then
-        local exampleFile = format([[%s\\%s.example.lua]], directory, name)
+        local exampleFile = format([[%s\%s.example.lua]], directory, name)
         local _, fileSize = m.isFileExists(file)
         if fileSize == 0 or check(file, exampleFile) == false then
             local cmd = format([[copy /Y "%s" "%s"]], exampleFile, file)
@@ -98,9 +98,9 @@ function m.getParamsFile(sourceFile, checkFile, method)
     local methodDirectory
     if method == nil or method == "" then
         -- current directory
-        methodDirectory = sourceFile:match("@?(.+\\[Ss]cripts\\methods\\[^\\]+)")
+        methodDirectory = sourceFile:gsub("\\", "/"):match("@?(.+/[Ss]cripts/methods/[^/]+)")
     else
-        methodDirectory = sourceFile:match("@?(.+\\[Ss]cripts\\methods\\)") .. method
+        methodDirectory = sourceFile:gsub("\\", "/"):match("@?(.+/[Ss]cripts/methods/)") .. method
     end ---@cast methodDirectory string
 
     local file = methodDirectory .. "\\params.lua"

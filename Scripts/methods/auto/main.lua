@@ -1,7 +1,7 @@
 local MethodName = "auto"
 
 local UEHelpers = require("UEHelpers")
-local func = require("func")
+local func = require("Scripts.func")
 
 local log = Log
 local vec3 = Vec3
@@ -18,9 +18,9 @@ local CurrentFile = debug.getinfo(1, "S").source
 local paramsFile = func.getParamsFile(CurrentFile, true)
 local params = func.loadParamsFile(paramsFile, true) ---@type Method__Auto__PARAMS
 
-local utils = require("lib.lua-mods-libs.utils")
+local utils = require("Scripts.lib.lua-mods-libs.utils")
 
-local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+)\\[Ss]cripts\\")
+local currentModDirectory = debug.getinfo(1, "S").source:gsub("\\", "/"):match("@?(.+)/[Ss]cripts/")
 
 local World = UEHelpers:GetWorld()
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
@@ -83,13 +83,13 @@ end
 ---@return table
 local function loadAllPresets()
     ---@type string[]
-    local fileList = utils.getFileList(currentModDirectory .. "\\Scripts\\methods\\" .. MethodName .. "\\presets\\",
+    local fileList = utils.getFileList(currentModDirectory .. "/Scripts/methods/" .. MethodName .. "/presets/",
         ".lua")
     local presets = {}
     local presetNamesList = {}
 
     for index, file in ipairs(fileList) do
-        local presetName = file:match("([^\\]+)[.]lua$")
+        local presetName = file:gsub("\\", "/"):match("([^/]+)[.]lua$")
         table.insert(presetNamesList, presetName)
 
         local presetTable = {

@@ -39,15 +39,15 @@ function M.getModInfo(info)
     info = debug.getinfo(2, "S")
   end
 
-  local source = info.source
+  local source = info.source:gsub("\\", "/")
 
   ---@type Mod_ModInfo
   return {
-    name = source:match("@?.+\\([^\\]+)\\[Ss]cripts\\"),
+    name = source:match("@?.+/Mods/([^/]+)"),
     file = source:sub(2),
-    currentDirectory = source:match("@?(.+)\\"),
-    currentModDirectory = source:match("@?(.+)\\[Ss]cripts\\"),
-    modsDirectory = source:match("@?(.+)\\[^\\]+\\[Ss]cripts\\")
+    currentDirectory = source:match("@?(.+)/"),
+    currentModDirectory = source:match("@?(.+/Mods/[^/]+)"),
+    modsDirectory = source:match("@?(.+/Mods)/")
   }
 end
 
@@ -117,7 +117,7 @@ end
 function M.getEnabledModsList()
   local enabledMods = {}
 
-  for line in io.lines(M.mod.modsDirectory .. "\\mods.txt") do
+  for line in io.lines(M.mod.modsDirectory .. "/mods.txt") do
     line = string.gsub(line, ";.*", "")
     line = string.gsub(line, "%s", "")
     if line ~= "" then
@@ -134,7 +134,7 @@ function M.getEnabledModsList()
   local fileList = M.getFileList(M.mod.modsDirectory, "enabled.txt")
 
   for _, v in ipairs(fileList) do
-    local modName = string.match(v, "Mods\\([^\\]+)\\enabled%.txt")
+    local modName = string.match(v, "Mods/([^/]+)/enabled%.txt")
     if modName ~= nil then
       enabledMods[modName] = true
     end
@@ -147,7 +147,7 @@ end
 ---@return string
 ---@nodiscard
 function M.getRelPathToModsDir(path)
-  local relPath, _ = path:gsub("@?.+\\Mods\\", "")
+  local relPath, _ = path:gsub("\\", "/"):gsub("@?.+/Mods/", "")
 
   return relPath
 end
@@ -222,7 +222,7 @@ function M.getOptionsFileFullPath(file)
   assert(type(file) == "string" and file ~= "",
     "Can't get the options file. type(file) is " .. type(file))
 
-  return string.format("%s\\%s\\%s", M.mod.modsDirectory, M.mod.name, file)
+  return string.format("%s/%s/%s", M.mod.modsDirectory, M.mod.name, file)
 end
 
 ---Set default parameters to each item.
@@ -427,7 +427,7 @@ function M.loadConfig(fileName)
 
   -- load config.lua if exists
   local configFromFile = {}
-  local path = M.mod.currentDirectory .. "\\" .. fileName
+  local path = M.mod.currentDirectory .. "/" .. fileName
   if M.isFileExists(path) then
     configFromFile = dofile(path)
   end

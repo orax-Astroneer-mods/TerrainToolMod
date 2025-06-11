@@ -1,12 +1,12 @@
 local UEHelpers = require("UEHelpers")
-local func = require("func")
+local func = require("Scripts.func")
 
 local log = Log
 local format = string.format
 
 local UICreated = false
-local currentModDirectory = debug.getinfo(1, "S").source:match("@?(.+)\\[Ss]cripts\\")
-local currentDirectory = debug.getinfo(1, "S").source:match("@(.+)\\")
+local currentModDirectory = debug.getinfo(1, "S").source:gsub("\\", "/"):match("@?(.+)/[Ss]cripts/")
+local currentDirectory = debug.getinfo(1, "S").source:gsub("\\", "/"):match("@(.+)/")
 local paramsFile = func.getParamsFileByName("params", currentDirectory, true)
 local params = {} ---@cast params TerrainToolMod__onDeform_color__PARAMS
 
