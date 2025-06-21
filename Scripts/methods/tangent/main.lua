@@ -266,28 +266,33 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
 
     ---@diagnostic disable: inject-field
 
-    -- LocalBrushState (0x838)
-    deformTool.LocalBrushStateNormalX = angle.X
-    deformTool.LocalBrushStateNormalY = angle.Y
-    deformTool.LocalBrushStateNormalZ = angle.Z
-    deformTool.LocalBrushStateLocationX = u.X
-    deformTool.LocalBrushStateLocationY = u.Y
-    deformTool.LocalBrushStateLocationZ = u.Z
+    deformTool.Deform_NormalX = angle.X
+    deformTool.Deform_NormalY = angle.Y
+    deformTool.Deform_NormalZ = angle.Z
 
-    -- DeformActionStartLocation (0x8C0)
-    deformTool.DeformActionStartLocationX = u.X
-    deformTool.DeformActionStartLocationY = u.Y
-    deformTool.DeformActionStartLocationZ = u.Z
+    deformTool.Deform_Normal2X = angle.X
+    deformTool.Deform_Normal2Y = angle.Y
+    deformTool.Deform_Normal2Z = angle.Z
 
-    -- DeformActionStartNormal (0x8CC)
-    deformTool.DeformActionStartNormalX = angle.X
-    deformTool.DeformActionStartNormalY = angle.Y
-    deformTool.DeformActionStartNormalZ = angle.Z
+    deformTool.Deform_Normal3X = angle.X
+    deformTool.Deform_Normal3Y = angle.Y
+    deformTool.Deform_Normal3Z = angle.Z
 
-    -- DeformLaggedLocation (0x8D8)
-    deformTool.DeformLaggedLocationX = u.X
-    deformTool.DeformLaggedLocationY = u.Y
-    deformTool.DeformLaggedLocationZ = u.Z
+    deformTool.Deform_Location1X = u.X
+    deformTool.Deform_Location1Y = u.Y
+    deformTool.Deform_Location1Z = u.Z
+
+    deformTool.Deform_Location2X = u.X
+    deformTool.Deform_Location2Y = u.Y
+    deformTool.Deform_Location2Z = u.Z
+
+    deformTool.Deform_Location3X = u.X
+    deformTool.Deform_Location3Y = u.Y
+    deformTool.Deform_Location3Z = u.Z
+
+    deformTool.Deform_Location4X = u.X
+    deformTool.Deform_Location4Y = u.Y
+    deformTool.Deform_Location4Z = u.Z
 
     deformTool.HitLocation = u
     deformTool.HitNormal = angle

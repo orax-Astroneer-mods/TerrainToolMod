@@ -423,15 +423,17 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         -- RepBrushState (0x804)
         deformTool.RepBrushState.CurrentDeformNormal = { X = x_norm, Y = y_norm, Z = z_norm }
 
-        -- LocalBrushState (0x838)
-        deformTool.LocalBrushStateNormalX = x_norm
-        deformTool.LocalBrushStateNormalY = y_norm
-        deformTool.LocalBrushStateNormalZ = z_norm
+        deformTool.Deform_NormalX = x_norm
+        deformTool.Deform_NormalY = y_norm
+        deformTool.Deform_NormalZ = z_norm
 
-        -- DeformActionStartNormal (0x8CC)
-        deformTool.DeformActionStartNormalX = x_norm
-        deformTool.DeformActionStartNormalY = y_norm
-        deformTool.DeformActionStartNormalZ = z_norm
+        deformTool.Deform_Normal2X = x_norm
+        deformTool.Deform_Normal2Y = y_norm
+        deformTool.Deform_Normal2Z = z_norm
+
+        deformTool.Deform_Normal3X = x_norm
+        deformTool.Deform_Normal3Y = y_norm
+        deformTool.Deform_Normal3Z = z_norm
 
         deformTool.HitNormal = { X = x_norm, Y = y_norm, Z = z_norm }
     end
@@ -450,20 +452,21 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         -- RepBrushState (0x804)
         deformTool.RepBrushState.CurrentDeformLocation = { X = x_loc, Y = y_loc, Z = z_loc }
 
-        -- LocalBrushState (0x838)
-        deformTool.LocalBrushStateLocationX = x_loc
-        deformTool.LocalBrushStateLocationY = y_loc
-        deformTool.LocalBrushStateLocationZ = z_loc
+        deformTool.Deform_Location1X = x_loc
+        deformTool.Deform_Location1Y = y_loc
+        deformTool.Deform_Location1Z = z_loc
 
-        -- DeformActionStartLocation (0x8C0)
-        deformTool.DeformActionStartLocationX = x_loc
-        deformTool.DeformActionStartLocationY = y_loc
-        deformTool.DeformActionStartLocationZ = z_loc
+        deformTool.Deform_Location2X = x_loc
+        deformTool.Deform_Location2Y = y_loc
+        deformTool.Deform_Location2Z = z_loc
 
-        -- DeformLaggedLocation (0x8D8)
-        deformTool.DeformLaggedLocationX = x_loc
-        deformTool.DeformLaggedLocationY = y_loc
-        deformTool.DeformLaggedLocationZ = z_loc
+        deformTool.Deform_Location3X = x_loc
+        deformTool.Deform_Location3Y = y_loc
+        deformTool.Deform_Location3Z = z_loc
+
+        deformTool.Deform_Location4X = x_loc
+        deformTool.Deform_Location4Y = y_loc
+        deformTool.Deform_Location4Z = z_loc
 
         deformTool.HitLocation = { X = x_loc, Y = y_loc, Z = z_loc }
     end

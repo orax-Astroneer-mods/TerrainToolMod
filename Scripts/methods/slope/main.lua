@@ -243,15 +243,17 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
 
     ---@diagnostic disable: inject-field
 
-    -- LocalBrushState (0x838)
-    deformTool.LocalBrushStateNormalX = u_unit.X
-    deformTool.LocalBrushStateNormalY = u_unit.Y
-    deformTool.LocalBrushStateNormalZ = u_unit.Z
+    deformTool.Deform_NormalX = u_unit.X
+    deformTool.Deform_NormalY = u_unit.Y
+    deformTool.Deform_NormalZ = u_unit.Z
 
-    -- DeformActionStartNormal (0x8CC)
-    deformTool.DeformActionStartNormalX = u_unit.X
-    deformTool.DeformActionStartNormalY = u_unit.Y
-    deformTool.DeformActionStartNormalZ = u_unit.Z
+    deformTool.Deform_Normal2X = u_unit.X
+    deformTool.Deform_Normal2Y = u_unit.Y
+    deformTool.Deform_Normal2Z = u_unit.Z
+
+    deformTool.Deform_Normal3X = u_unit.X
+    deformTool.Deform_Normal3Y = u_unit.Y
+    deformTool.Deform_Normal3Z = u_unit.Z
 
     deformTool.HitNormal = u_unit
 
