@@ -1,7 +1,7 @@
 local MethodName = "smoothen"
 
 local UEHelpers = require("UEHelpers")
-local func = require("Scripts.func")
+local func = require("func")
 
 local log = Log
 local vec3 = Vec3
@@ -45,7 +45,7 @@ local Presets, PresetNamesList = {}, {}
 local CurrentPreset ---@type Method__Smoothen__PRESET
 local CurrentPresetName = "" ---@type string
 
-local utils = require("Scripts.lib.lua-mods-libs.utils")
+local utils = require("lib.lua-mods-libs.utils")
 
 local currentModDirectory = debug.getinfo(1, "S").source:gsub("\\", "/"):match("@?(.+)/[Ss]cripts/")
 

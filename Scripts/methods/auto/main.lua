@@ -1,7 +1,7 @@
 local MethodName = "auto"
 
 local UEHelpers = require("UEHelpers")
-local func = require("Scripts.func")
+local func = require("func")
 
 local log = Log
 local vec3 = Vec3
@@ -18,7 +18,7 @@ local CurrentFile = debug.getinfo(1, "S").source
 local paramsFile = func.getParamsFile(CurrentFile, true)
 local params = func.loadParamsFile(paramsFile, true) ---@type Method__Auto__PARAMS
 
-local utils = require("Scripts.lib.lua-mods-libs.utils")
+local utils = require("lib.lua-mods-libs.utils")
 
 local currentModDirectory = debug.getinfo(1, "S").source:gsub("\\", "/"):match("@?(.+)/[Ss]cripts/")
 

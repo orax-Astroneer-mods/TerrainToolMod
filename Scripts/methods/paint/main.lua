@@ -6,7 +6,7 @@ Terrain colors
 local methodName = "paint"
 
 local UEHelpers = require("UEHelpers")
-local func = require("Scripts.func")
+local func = require("func")
 
 local log = Log
 local format = string.format

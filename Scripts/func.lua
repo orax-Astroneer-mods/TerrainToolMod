@@ -1,4 +1,4 @@
-local utils = require("Scripts.lib.lua-mods-libs.utils")
+local utils = require("lib.lua-mods-libs.utils")
 
 local format, floor, sqrt = string.format, math.floor, math.sqrt
 

@@ -1,7 +1,7 @@
 local MethodName = "slope"
 
 local UEHelpers = require("UEHelpers")
-local func = require("Scripts.func")
+local func = require("func")
 
 local log = Log
 local vec3 = Vec3
