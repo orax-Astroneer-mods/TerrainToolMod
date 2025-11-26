@@ -238,7 +238,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
 
     u_unit = { X = v.x, Y = v.y, Z = v.z }
 
-    -- RepBrushState (0x804)
+    -- RepBrushState (0x810)
     deformTool.RepBrushState.CurrentDeformNormal = u_unit
 
     ---@diagnostic disable: inject-field
