@@ -5,3 +5,4 @@
 ---@field ALTITUDE_ROUND float
 ---@field FORCE_ALTITUDE boolean
 ---@field SELECTED_ALTITUDE_INDEX number
+---@field REVERSE boolean

@@ -66,6 +66,8 @@ local ui = {
             altitudeRound_tip = "The altitude will be rounded to this value.\n" ..
                 [[For example, if the value is "100": "120124" will be rounded to "120100"; "100165" will be rounded to "100200.]],
             roundedAltitude_tip = "Last altitude used (read only).",
+            reverse = "Reverse",
+            reverse_tip = "Check the box to create a tangent ceiling rather than a tangent floor.",
         },
         font_size = default.font_size,
         spacer_size = default.spacer_size,

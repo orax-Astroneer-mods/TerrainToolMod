@@ -19,6 +19,7 @@ local UI = {
     forceAltitudeCheckBox = nil, ---@type UCheckBox
     altitudeTextBox = nil, ---@type UEditableTextBox
     roundedAltitude = nil, ---@type UEditableTextBox
+    reverseCheckBox = nil, ---@type UCheckBox
     ---@diagnostic enable: assign-type-mismatch
 }
 
@@ -76,6 +77,7 @@ local function writeParamsFile()
     if params.ALTITUDE_ROUND == nil then params.ALTITUDE_ROUND = 50 end
     if params.FORCE_ALTITUDE == nil then params.FORCE_ALTITUDE = false end
     if params.SELECTED_ALTITUDE_INDEX == nil then params.SELECTED_ALTITUDE_INDEX = 0 end
+    if params.REVERSE == nil then params.REVERSE = false end
     file:write(format(
         [[---@type Method__Tangent__PARAMS
 return {
@@ -83,11 +85,13 @@ ALTITUDES=%s,
 ALTITUDE_ROUND=%.16g,
 FORCE_ALTITUDE=%s,
 SELECTED_ALTITUDE_INDEX=%d,
+REVERSE=%s,
 }]],
         func.tableToString(params.ALTITUDES, "%.16g"),
         params.ALTITUDE_ROUND,
         params.FORCE_ALTITUDE,
-        params.SELECTED_ALTITUDE_INDEX
+        params.SELECTED_ALTITUDE_INDEX,
+        params.REVERSE
     ))
 
     file:close()
@@ -117,6 +121,13 @@ local function updateParams()
     local forceAltitude = UI.forceAltitudeCheckBox.CheckedState == ECheckBoxState.Checked
     if params.FORCE_ALTITUDE ~= forceAltitude then
         params.FORCE_ALTITUDE = forceAltitude
+        updateRequired = true
+    end
+
+    -- get reverse CheckBox state
+    local reverse = UI.reverseCheckBox.CheckedState == ECheckBoxState.Checked
+    if params.REVERSE ~= reverse then
+        params.REVERSE = reverse
         updateRequired = true
     end
 
@@ -253,6 +264,12 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         Z = u.Z / RoundedAltitude
     }
 
+    if params.REVERSE == true then
+        angle.X = -angle.X
+        angle.Y = -angle.Y
+        angle.Z = -angle.Z
+    end
+
     -- add planet center location to the vector
     u = {
         X = u.X + PlanetCenter.X,
@@ -330,6 +347,11 @@ local function updateUI()
 
     if UI.forceAltitudeCheckBox:IsValid() then
         UI.forceAltitudeCheckBox:SetCheckedState(params.FORCE_ALTITUDE == true and
+            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+    end
+
+    if UI.reverseCheckBox:IsValid() then
+        UI.reverseCheckBox:SetCheckedState(params.REVERSE == true and
             ECheckBoxState.Checked or ECheckBoxState.Unchecked)
     end
 end
@@ -466,12 +488,40 @@ local function createUI()
     horizontalBox_altitudeRound:AddChildToHorizontalBox(UI.altitudeRound)
     --#endregion
 
+    --#region reverse
+    ---@type UHorizontalBox
+    local horizontalBox_reverse = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget, FName(prefix .. "HorizontalBox_reverse"))
+    horizontalBox_reverse:SetToolTipText(FText(optUI.tangent.txt.reverse_tip))
+
+    ---@type UTextBlock
+    local textBlock_reverse = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget, FName(prefix .. "TextBlock_reverse"))
+    textBlock_reverse.Font.Size = optUI.tangent.font_size
+    textBlock_reverse.Font.FontObject = fontObj
+    textBlock_reverse:SetText(FText(optUI.tangent.txt.reverse))
+
+    ---@type USpacer
+    local spacer3 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget, FName(prefix .. "Spacer3"))
+    spacer3:SetSize(optUI.tangent.spacer_size)
+
+    ---@type UCheckBox
+    UI.reverseCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget, FName(prefix .. "CheckBox_reverse"))
+
+    horizontalBox_reverse:AddChildToHorizontalBox(textBlock_reverse)
+    horizontalBox_reverse:AddChildToHorizontalBox(spacer3)
+    horizontalBox_reverse:AddChildToHorizontalBox(UI.reverseCheckBox)
+    --#endregion
+
     verticalBox:AddChildToVerticalBox(textBlock_title)
     verticalBox:AddChildToVerticalBox(UI.altitudeComboBox)
     verticalBox:AddChildToVerticalBox(UI.altitudeTextBox)
     verticalBox:AddChildToVerticalBox(horizontalBox)
     verticalBox:AddChildToVerticalBox(horizontalBox_altitudeRound)
     verticalBox:AddChildToVerticalBox(UI.roundedAltitude)
+    verticalBox:AddChildToVerticalBox(horizontalBox_reverse)
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 

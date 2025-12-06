@@ -6,5 +6,6 @@ return {
     },
     ALTITUDE_ROUND = 50,
     FORCE_ALTITUDE = false,
-    SELECTED_ALTITUDE_INDEX = 0
+    SELECTED_ALTITUDE_INDEX = 0,
+    REVERSE = false,
 }
