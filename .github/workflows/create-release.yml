@@ -1,13 +1,13 @@
 name: Create a release
 
 env:
-  RELEASE_DIR: .RELEASE
   DOTNET_VERSION: 7.x
-  HASH_ALGORITHM: SHA-256
 
 on:
   push:
-    tags: 'v[0-9]+.[0-9]+.[0-9]+**'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - '!v0.0.0' # The tag "v0.0.0" is used for testing.
   workflow_dispatch:
     inputs:
       isDraft:
@@ -27,59 +27,58 @@ jobs:
     runs-on: windows-latest
 
     steps:
+    - name: Init
+      run: |
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Checkout lua-mods-libs
-      uses: actions/checkout@v4 
-
     - name: Set environment variables
       run: |
-        $name = Split-Path -Path (Get-Location) -Leaf
-        $version = '${{ github.ref_name }}' -replace '^v(?=\d+\.\d+\.\d+)', ''
-        $releaseFilename = $name + ".zip"
-        "NAME=$name" | Out-File -FilePath $env:GITHUB_ENV -Append
-        "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
-        "RELEASE_FILENAME=$releaseFilename" | Out-File -FilePath $env:GITHUB_ENV -Append
+        .\ci\set-vars.ps1 -github_ref_name '${{ github.ref_name }}' -github_repository $env:GITHUB_REPOSITORY
 
-    - name: Copy files
+    - name: Run the game-specific script (if exists)
       run: |
-        dir
-        $name = '${{ env.NAME }}'
-        $releaseDir = '${{ env.RELEASE_DIR }}'
-        $version = '${{ env.VERSION }}'
-        $targetDir = "$releaseDir\$name"
-        New-Item -Path . -Name $targetDir -ItemType 'directory'
-        dir
-        dir "$targetDir"
-        Move-Item -Path 'Scripts' -Destination "$targetDir"
-        dir "$targetDir"
-        New-Item -Path . -Name "$targetDir\enabled.txt" -ItemType 'file'
-        New-Item -Path "$targetDir" -Name "version.txt" -ItemType "file" -Value $version
-        Move-Item -Path @('.luarc.json', 'options.example.lua', 'ui-en.lua', 'main_params.example.lua') -Destination "$targetDir"
+        .\ci\game-specific.ps1
 
-    - name: Create ZIP archive
-      run: |
-        $name = '${{ env.NAME }}'
-        $releaseDir = '${{ env.RELEASE_DIR }}'
-        $releaseFilename = '${{ env.RELEASE_FILENAME }}'
-        Compress-Archive -Path "$releaseDir\$name" -DestinationPath "$releaseDir\$releaseFilename"
+    - name: Create release
+      run: .\ci\create-release.ps1
 
-    - name: Hash file
+    - name: Create game-specific release
       run: |
-        $hash = (Get-FileHash -Algorithm ('${{ env.HASH_ALGORITHM }}' -replace '-','') `
-          -Path ${{ env.RELEASE_DIR }}\${{ env.RELEASE_FILENAME }}).Hash
-        "HASH=$hash" | Out-File -FilePath $env:GITHUB_ENV -Append
+        $scriptPath = Join-Path "games" $env:GAME_NAME "ci" "create-release.ps1"
+        
+        if (Test-Path $scriptPath) {
+          Write-Host "🚀 Running game-specific release script for: $env:GAME_NAME"
+          try {
+            & $scriptPath
+          } catch {
+            Write-Error "❌ Failed to execute script at $scriptPath : $_"
+            exit 1
+          }
+        } else {
+          Write-Host "⚠️ No specific release script found at $scriptPath. Skipping."
+        }
+
+    - name: Cleanup draft v0.0.0 releases
+      if: env.ACT == 'true' && startsWith(github.ref, 'refs/tags/') && github.ref_name == 'v0.0.0'
+      run: .\ci\cleanup-draft-releases.ps1 '${{ github.repository }}'
 
     - name: GH Release
       uses: softprops/action-gh-release@v2.0.4
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         files: |
-          ${{ env.RELEASE_DIR }}/${{ env.RELEASE_FILENAME }}
+          ${{ env.RELEASE_DIR }}/*
         draft: ${{ inputs.isDraft == true && true || false }}
-        append_body: true
-        body: |
-          ```
-          VERSION: ${{ env.VERSION }}
-          SHA-256: ${{ env.HASH }}
-          ```
+        body: ""
+
+    - name: Delete temporary tag v0.0.0
+      if: env.ACT == 'true' && startsWith(github.ref, 'refs/tags/') && github.ref_name == 'v0.0.0'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        Write-Output "Deleting temporary tag v0.0.0"
+        git tag -d v0.0.0 2>$null
+        git push origin :refs/tags/v0.0.0

@@ -1,5 +1,16 @@
-main_params.lua
+/.LOCAL
+/.RELEASE
+/.TEST
+/.TEMP
+
 options.lua
 options.dev.lua
 params.lua
+params.dev.lua
+main_params.lua
+
 todo.md
+
+.vscode
+.secrets
+.env

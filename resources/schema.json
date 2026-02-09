@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "author": {
+      "description": "The name of the mod creator.",
+      "minLength": 1,
+      "type": "string"
+    },
+    "canonical_name": {
+      "description": "The canonical name. Cannot be empty or contain any whitespace.",
+      "minLength": 1,
+      "pattern": "[^\\s]",
+      "type": "string"
+    },
+    "description": {
+      "description": "A detailed description of the mod's features.",
+      "minLength": 1,
+      "type": "string"
+    },
+    "homepage": {
+      "description": "The URL to the mod page (e.g., Nexus Mods or GitHub).",
+      "format": "uri",
+      "minLength": 1,
+      "type": "string"
+    },
+    "name": {
+      "description": "The display name of the mod as seen by users.",
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "author",
+    "canonical_name",
+    "description",
+    "homepage",
+    "name"
+  ],
+  "title": "Mod metadata schema",
+  "type": "object"
+}
