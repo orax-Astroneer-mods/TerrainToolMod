@@ -49,6 +49,9 @@ $Content = $Content -replace '\{VERSION\}', $env:VERSION
 
 Set-Content -Path $TargetMetadata -Value $Content -Encoding utf8
 
+Write-Output "📝 Content of the file: $metadataFile"
+Write-Output $Content
+
 #
 # Create the PAK file
 # https://astroneermodding.readthedocs.io/en/latest/guides/basicSetup.html#setting-up-repak

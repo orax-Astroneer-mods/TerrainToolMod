@@ -38,6 +38,14 @@ if (-not ($jsonRawContent | Test-Json -SchemaFile $schemaPath)) {
 }
 $modMetadata = $jsonRawContent | ConvertFrom-Json
 
+$description = ""
+if ($modMetadata.description -is [Array]) {
+    $description = $modMetadata.description -join '\n'
+}
+else {
+    $description = $modMetadata.description
+}
+
 @{
     PROJECT_ROOT_DIR   = $projectRootDir
 
@@ -46,7 +54,7 @@ $modMetadata = $jsonRawContent | ConvertFrom-Json
     REPO_NAME          = $repoName
     MOD_AUTHOR         = $modMetadata.author
     MOD_CANONICAL_NAME = $modMetadata.canonical_name 
-    MOD_DESCRIPTION    = $modMetadata.description
+    MOD_DESCRIPTION    = $description
     MOD_HOMEPAGE       = $modMetadata.homepage
     MOD_NAME           = $modMetadata.name
 

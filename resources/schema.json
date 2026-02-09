@@ -19,8 +19,14 @@
     },
     "description": {
       "description": "A detailed description of the mod's features.",
+      "items": {
+        "type": "string"
+      },
       "minLength": 1,
-      "type": "string"
+      "type": [
+        "string",
+        "array"
+      ]
     },
     "homepage": {
       "description": "The URL to the mod page (e.g., Nexus Mods or GitHub).",
