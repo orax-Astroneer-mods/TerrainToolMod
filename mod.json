@@ -1,8 +1,8 @@
 {
     "$schema": "./resources/schema.json",
     "author": "orax",
-    "canonical_name": "",
-    "description": "",
+    "canonical_name": "TerrainTool",
+    "description": "Flatten the terrain following the planet's curvature. Restore terraformed terrain to its original state. Create a sloped terrain with the chosen angle. Change deformation size. Paint the terrain in non-creative mode.",
     "homepage": "https://www.nexusmods.com/profile/0R4X/mods?gameId=1955",
-    "name": ""
+    "name": "Terrain Tool"
 }
