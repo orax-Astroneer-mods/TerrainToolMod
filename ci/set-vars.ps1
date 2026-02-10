@@ -26,36 +26,12 @@ $targetDir = Join-Path $releaseDir $repoName
 $releaseFilename = "$repoName.zip"
 $releaseRelPath = Join-Path $releaseDir $releaseFilename
 
-# Read the mod metadata in the mod.json file.
-$jsonPath = Join-Path $projectRootDir "mod.json"
-$jsonRawContent = Get-Content -Path $jsonPath -Raw -Encoding utf8
-$schemaPath = Join-Path "resources" "schema.json"
-if (-not ($jsonRawContent | Test-Json)) {
-    throw "❌ Malformed JSON (syntax error). JSON path: $jsonPath"
-}
-if (-not ($jsonRawContent | Test-Json -SchemaFile $schemaPath)) {
-    throw "❌ JSON is valid but does not conform to the schema rules. JSON path: $jsonPath"
-}
-$modMetadata = $jsonRawContent | ConvertFrom-Json
-
-$description = ""
-if ($modMetadata.description -is [Array]) {
-    $description = $modMetadata.description -join '\n'
-}
-else {
-    $description = $modMetadata.description
-}
-
 @{
     PROJECT_ROOT_DIR   = $projectRootDir
 
     VERSION            = $version
     REPO_OWNER         = $repoOwner
     REPO_NAME          = $repoName
-    MOD_AUTHOR         = $modMetadata.author
-    MOD_DESCRIPTION    = $description
-    MOD_HOMEPAGE       = $modMetadata.homepage
-    MOD_NAME           = $modMetadata.name
 
     $GITHUB_REPOSITORY = $github_repository
 
