@@ -7,7 +7,7 @@
     },
     "enable_ue4ss": "true",
     "homepage": "{MOD_HOMEPAGE}",
-    "mod_id": "{MOD_ID}",
+    "mod_id": "{REPO_NAME}",
     "name": "{MOD_NAME}",
     "schema_version": 2,
     "sync": "client",

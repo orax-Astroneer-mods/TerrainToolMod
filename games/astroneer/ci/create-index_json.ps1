@@ -63,8 +63,8 @@ else {
 $Json = [ordered]@{ mods = [ordered]@{} }
 
 # Ensure the specific mod entry exists
-if (-not $Json.mods.Contains($env:MOD_CANONICAL_NAME)) {
-    $Json.mods[$env:MOD_CANONICAL_NAME] = [ordered]@{ latest_version = ""; versions = [ordered]@{} }
+if (-not $Json.mods.Contains($env:REPO_NAME)) {
+    $Json.mods[$env:REPO_NAME] = [ordered]@{ latest_version = ""; versions = [ordered]@{} }
 }
 
 # Process Tags
@@ -76,7 +76,7 @@ foreach ($TagObj in $Tags) {
     $Version = $Matches[1]
 
     # Skip if version already exists to save network requests
-    if ($Json.mods.$env:MOD_CANONICAL_NAME.versions.Contains($Version)) { continue }
+    if ($Json.mods.$env:REPO_NAME.versions.Contains($Version)) { continue }
 
     $FileName = "000-$env:REPO_NAME-$Version`_P.pak"
     $ReleaseUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$TagName/$FileName"
@@ -85,7 +85,7 @@ foreach ($TagObj in $Tags) {
         # Verify if the release asset actually exists
         Invoke-WebRequest -Uri $ReleaseUrl -Method Head -UserAgent "Mozilla/5.0" -ErrorAction Stop | Out-Null
         
-        $Json.mods.$env:MOD_CANONICAL_NAME.versions.$Version = [ordered]@{
+        $Json.mods.$env:REPO_NAME.versions.$Version = [ordered]@{
             download_url = $ReleaseUrl
             filename     = $FileName
         }
@@ -99,17 +99,17 @@ foreach ($TagObj in $Tags) {
 # --- RESTRUCTURING & FINAL SORTING ---
 
 # Sort versions for the current mod (using [version] type for correct numerical sorting)
-$AllVersions = $Json.mods.$env:MOD_CANONICAL_NAME.versions.Keys | Sort-Object { [version]$_ }
+$AllVersions = $Json.mods.$env:REPO_NAME.versions.Keys | Sort-Object { [version]$_ }
 
 if ($AllVersions) {
     $SortedVersions = [ordered]@{}
     foreach ($v in $AllVersions) { 
-        $SortedVersions[$v] = $Json.mods.$env:MOD_CANONICAL_NAME.versions.$v
+        $SortedVersions[$v] = $Json.mods.$env:REPO_NAME.versions.$v
     }
 
     # Update current mod data
-    $Json.mods.$env:MOD_CANONICAL_NAME.versions = $SortedVersions
-    $Json.mods.$env:MOD_CANONICAL_NAME.latest_version = $AllVersions | Select-Object -Last 1
+    $Json.mods.$env:REPO_NAME.versions = $SortedVersions
+    $Json.mods.$env:REPO_NAME.latest_version = $AllVersions | Select-Object -Last 1
 }
 
 # ALPHABETICAL SORTING OF MODS + KEY ORDERING

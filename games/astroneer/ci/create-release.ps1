@@ -41,7 +41,7 @@ $Content = Get-Content $SourceMetadata -Raw
 # Replace placeholders
 $Content = $Content -replace '\{MOD_AUTHOR\}', $env:MOD_AUTHOR
 $Content = $Content -replace '\{MOD_DESCRIPTION\}', $env:MOD_DESCRIPTION
-$Content = $Content -replace '\{MOD_ID\}', $env:REPO_NAME
+$Content = $Content -replace '\{REPO_NAME\}', $env:REPO_NAME
 $Content = $Content -replace '\{MOD_HOMEPAGE\}', $env:MOD_HOMEPAGE
 $Content = $Content -replace '\{MOD_NAME\}', $env:MOD_NAME
 $Content = $Content -replace '\{GITHUB_REPOSITORY\}', $env:GITHUB_REPOSITORY

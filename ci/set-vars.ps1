@@ -53,7 +53,6 @@ else {
     REPO_OWNER         = $repoOwner
     REPO_NAME          = $repoName
     MOD_AUTHOR         = $modMetadata.author
-    MOD_CANONICAL_NAME = $modMetadata.canonical_name 
     MOD_DESCRIPTION    = $description
     MOD_HOMEPAGE       = $modMetadata.homepage
     MOD_NAME           = $modMetadata.name

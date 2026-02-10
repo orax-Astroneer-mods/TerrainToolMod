@@ -11,12 +11,6 @@
       "minLength": 1,
       "type": "string"
     },
-    "canonical_name": {
-      "description": "The canonical name. Cannot be empty or contain any whitespace.",
-      "minLength": 1,
-      "pattern": "[^\\s]",
-      "type": "string"
-    },
     "description": {
       "description": "A detailed description of the mod's features.",
       "items": {
@@ -42,7 +36,6 @@
   },
   "required": [
     "author",
-    "canonical_name",
     "description",
     "homepage",
     "name"
