@@ -79,9 +79,9 @@ return {
             {
                 AutoCreateResourceEfficiency = 0,
                 CreativeModeNoResourceCollection = false,
-                DeltaTime = 0.03299999982118, -- ???
+                DeltaTime = 1 / 30,
                 ForceRemoveDecorators = false,
-                HardnessPenetration = 10,     -- 0 (default) to 10
+                HardnessPenetration = 10, -- 0 (default) to 10
                 Instigator = nil,
                 Intensity = 5,
                 Location = loc, ---@diagnostic disable-line: assign-type-mismatch
@@ -100,9 +100,9 @@ return {
             {
                 AutoCreateResourceEfficiency = 0,
                 CreativeModeNoResourceCollection = false,
-                DeltaTime = 0.03299999982118, -- ???
+                DeltaTime = 1 / 30,
                 ForceRemoveDecorators = false,
-                HardnessPenetration = 0,      -- 0 (default) to 10
+                HardnessPenetration = 0, -- 0 (default) to 10
                 Instigator = nil,
                 Intensity = smallestNumber,
                 Location = loc, ---@diagnostic disable-line: assign-type-mismatch

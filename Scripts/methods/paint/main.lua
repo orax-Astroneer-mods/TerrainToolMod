@@ -307,7 +307,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     controller:ClientDoDeformation({
         AutoCreateResourceEfficiency = 0,
         CreativeModeNoResourceCollection = false,
-        DeltaTime = 0.03299999982118, -- ???
+        DeltaTime = 1 / 30,
         ForceRemoveDecorators = false,
         HardnessPenetration = 0,
         Instigator = nil,

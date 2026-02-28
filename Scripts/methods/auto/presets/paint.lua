@@ -48,7 +48,7 @@ return {
             {
                 AutoCreateResourceEfficiency = 0,
                 CreativeModeNoResourceCollection = false,
-                DeltaTime = 0.03299999982118, -- ???
+                DeltaTime = 1 / 30,
                 ForceRemoveDecorators = false,
                 HardnessPenetration = 0,
                 Instigator = nil,

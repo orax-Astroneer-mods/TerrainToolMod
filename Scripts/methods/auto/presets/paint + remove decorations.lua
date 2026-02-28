@@ -65,9 +65,9 @@ return {
             {
                 AutoCreateResourceEfficiency = 0,
                 CreativeModeNoResourceCollection = false,
-                DeltaTime = 0.03299999982118, -- ???
+                DeltaTime = 1 / 30,
                 ForceRemoveDecorators = false,
-                HardnessPenetration = 10,     -- 0 (default) to 10
+                HardnessPenetration = 10, -- 0 (default) to 10
                 Instigator = nil,
                 Intensity = 0,
                 Location = location,
@@ -86,9 +86,9 @@ return {
             {
                 AutoCreateResourceEfficiency = 0,
                 CreativeModeNoResourceCollection = false,
-                DeltaTime = 0.03299999982118, -- ???
+                DeltaTime = 1 / 30,
                 ForceRemoveDecorators = false,
-                HardnessPenetration = 10,     -- 0 (default) to 10
+                HardnessPenetration = 10, -- 0 (default) to 10
                 Instigator = nil,
                 Intensity = 0,
                 Location = location,
