@@ -44,11 +44,11 @@ local dbg = {
         "/Engine/EngineDebugMaterials/WireframeMaterial.WireframeMaterial" -- Params: Color (wireframe, emissive).
         "/Engine/EngineDebugMaterials/DebugMeshMaterial.DebugMeshMaterial" -- Params: Color (emissive).
         "/Engine/EngineDebugMaterials/DebugEditorMaterial.DebugEditorMaterial" -- Params: Color, Desaturation, Opacity (emissive).
-        "/Engine/EngineDebugMaterials/M_SimpleTranslucent.M_SimpleTranslucent" -- Params: Color (translucent).
+        "/Engine/EngineDebugMaterials/M_SimpleUnlitTranslucent.M_SimpleUnlitTranslucent" -- Params: Color (translucent).
         "/Engine/EngineMaterials/EmissiveTexturedMaterial.EmissiveTexturedMaterial" -- Params: Texture.
         "/Engine/EngineMaterials/WorldGridMaterial.WorldGridMaterial" -- Params: None.
         ]]
-    matClassName = "/Engine/EngineDebugMaterials/M_SimpleTranslucent.M_SimpleTranslucent",
+    matClassName = "/Engine/EngineDebugMaterials/M_SimpleUnlitTranslucent.M_SimpleUnlitTranslucent",
     matWireframeClassName = "/Engine/EngineDebugMaterials/WireframeMaterial.WireframeMaterial",
     scale = { X = 0, Y = 0, Z = 0 },
 }
