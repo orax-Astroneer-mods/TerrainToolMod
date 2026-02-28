@@ -232,7 +232,8 @@ function m.spawnDebugObject(world, staticMeshActorClass, mesh, material, locatio
     color = color or { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
 
     ---@diagnostic disable-next-line: undefined-field
-    local staticMeshActor = world:SpawnActor(staticMeshActorClass, m.fvectorToUserData(location),
+    local staticMeshActor = world:SpawnActor(StaticFindObject("/Script/Engine.StaticMeshActor"),
+        m.fvectorToUserData(location),
         rotation) ---@cast staticMeshActor AStaticMeshActor
     assert(staticMeshActor:IsValid())
 
