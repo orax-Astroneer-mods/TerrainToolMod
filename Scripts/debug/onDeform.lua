@@ -20,6 +20,7 @@ RegisterHook("/Script/Astro.AstroPlanet:OnDeformationComplete",
             params.SequenceNumber,
             params.Shape,
             params.bEasyUnbury,
+            params.bForceUnburyWithNoDeformationEvent,
             params.bUseAlternatePolygonization
         )
     end)

@@ -1037,6 +1037,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         SequenceNumber = 0,
         Shape = 0,
         bEasyUnbury = false,
+        bForceUnburyWithNoDeformationEvent = false,
         bUseAlternatePolygonization = true
     })
 end

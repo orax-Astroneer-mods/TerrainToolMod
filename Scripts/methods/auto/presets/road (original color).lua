@@ -92,6 +92,7 @@ return {
                 SequenceNumber = 0,
                 Shape = 0,
                 bEasyUnbury = false,
+                bForceUnburyWithNoDeformationEvent = false,
                 bUseAlternatePolygonization = true
             })
 
@@ -112,6 +113,7 @@ return {
                 SequenceNumber = 0,
                 Shape = 0,
                 bEasyUnbury = false,
+                bForceUnburyWithNoDeformationEvent = false,
                 bUseAlternatePolygonization = true
             })
     end

@@ -509,6 +509,7 @@ local function hook_AstroPlanet_OnDeformationComplete(self, _deformParams)
             SequenceNumber = 0,
             Shape = 0,
             bEasyUnbury = false,
+            bForceUnburyWithNoDeformationEvent = false,
             bUseAlternatePolygonization = true
         })
     end
