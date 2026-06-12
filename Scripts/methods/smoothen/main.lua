@@ -33,13 +33,13 @@ local dbg = {
         "/Engine/EngineMaterials/EmissiveTexturedMaterial.EmissiveTexturedMaterial" -- Params: Texture.
         "/Engine/EngineMaterials/WorldGridMaterial.WorldGridMaterial" -- Params: None.
         ]]
-    matClassName = "/Engine/EngineDebugMaterials/DebugMeshMaterial.DebugMeshMaterial"
+    matClassName = "/Engine/EngineDebugMaterials/DebugMeshMaterial.DebugMeshMaterial",
 }
 
 local options = OPTIONS
 local optUI = OPTIONS_UI
 local UI = {
-    presetsComboBox = nil ---@type UComboBoxString
+    presetsComboBox = nil, ---@type UComboBoxString
 }
 local Presets, PresetNamesList = {}, {}
 local CurrentPreset ---@type Method__Smoothen__PRESET
@@ -66,13 +66,13 @@ local ESlateVisibility = {
     Hidden = 2,
     HitTestInvisible = 3,
     SelfHitTestInvisible = 4,
-    ESlateVisibility_MAX = 5
+    ESlateVisibility_MAX = 5,
 }
 
 ---@type ECheckBoxState
 local ECheckBoxState = {
-    Unchecked    = 0,
-    Checked      = 1,
+    Unchecked = 0,
+    Checked = 1,
     Undetermined = 2,
 }
 
@@ -108,8 +108,10 @@ end
 ---@return table
 local function loadAllPresets()
     ---@type string[]
-    local fileList = utils.getFileList(currentModDirectory .. "/Scripts/methods/" .. MethodName .. "/presets/",
-        ".lua")
+    local fileList = utils.getFileList(
+        currentModDirectory .. "/Scripts/methods/" .. MethodName .. "/presets/",
+        ".lua"
+    )
     local presets = {}
     local presetNamesList = {}
 
@@ -118,7 +120,7 @@ local function loadAllPresets()
         insert(presetNamesList, presetName)
 
         local presetTable = {
-            index = index
+            index = index,
         }
 
         local preset = dofile(file)
@@ -148,7 +150,11 @@ local function updateUI()
 
         -- select latest selected preset
         ---@diagnostic disable-next-line: param-type-mismatch
-        if params.LATEST_PRESET and params.LATEST_PRESET ~= "" and UI.presetsComboBox:FindOptionIndex(params.LATEST_PRESET) ~= -1 then
+        if
+            params.LATEST_PRESET
+            and params.LATEST_PRESET ~= ""
+            and UI.presetsComboBox:FindOptionIndex(params.LATEST_PRESET) ~= -1
+        then
             ---@diagnostic disable-next-line: param-type-mismatch
             UI.presetsComboBox:SetSelectedOption(params.LATEST_PRESET)
         else
@@ -157,8 +163,9 @@ local function updateUI()
     end
 
     if UI.debugCheckBox:IsValid() then
-        UI.debugCheckBox:SetCheckedState(params.DEBUG_OBJECTS == true and
-            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+        UI.debugCheckBox:SetCheckedState(
+            params.DEBUG_OBJECTS == true and ECheckBoxState.Checked or ECheckBoxState.Unchecked
+        )
     end
 end
 
@@ -170,8 +177,12 @@ local function writeParamsFile()
     assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
     -- defaults
-    if params.DEBUG_OBJECTS == nil then params.DEBUG_OBJECTS = false end
-    if params.LATEST_PRESET == nil then params.LATEST_PRESET = "" end
+    if params.DEBUG_OBJECTS == nil then
+        params.DEBUG_OBJECTS = false
+    end
+    if params.LATEST_PRESET == nil then
+        params.LATEST_PRESET = ""
+    end
     file:write(format(
         [[---@type Method__Smoothen__PARAMS
 return {
@@ -247,8 +258,17 @@ end
 ---@param _isUsingTool RemoteUnrealParam
 ---@param _justActivated RemoteUnrealParam
 ---@param _canUse RemoteUnrealParam
-local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult, _startedInteraction, _endedInteraction,
-                                      _isUsingTool, _justActivated, _canUse)
+local function hook_HandleTerrainTool(
+    _self,
+    _controller,
+    _toolHit,
+    _clickResult,
+    _startedInteraction,
+    _endedInteraction,
+    _isUsingTool,
+    _justActivated,
+    _canUse
+)
     if _justActivated:get() == true then
         World = UEHelpers:GetWorld()
 
@@ -275,10 +295,12 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local operation = deformTool.Operation
 
     -- check if a flatten operation is selected
-    if operation ~= EDeformType.Flatten and
-        operation ~= EDeformType.FlattenAddOnly and
-        operation ~= EDeformType.FlattenSubtractOnly and
-        operation ~= EDeformType.ColorPick then
+    if
+        operation ~= EDeformType.Flatten
+        and operation ~= EDeformType.FlattenAddOnly
+        and operation ~= EDeformType.FlattenSubtractOnly
+        and operation ~= EDeformType.ColorPick
+    then
         return
     end
 
@@ -323,10 +345,20 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         ExecuteInGameThread(function()
             loadDebugAssets()
 
-            insert(DebugObjects,
+            insert(
+                DebugObjects,
                 ---@diagnostic disable-next-line: param-type-mismatch
-                func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material, toolHit.Location,
-                    nil, dbg.scale, { R = 50, G = 0, B = 0, A = 1 }))
+                func.spawnDebugObject(
+                    World,
+                    dbg.staticMeshActorClass,
+                    dbg.mesh,
+                    dbg.material,
+                    toolHit.Location,
+                    nil,
+                    dbg.scale,
+                    { R = 50, G = 0, B = 0, A = 1 }
+                )
+            )
         end)
     end
 
@@ -353,10 +385,21 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
 
             ---@diagnostic disable-next-line: missing-fields
             local hit = {} ---@type FHitResult
-            LineTraceSingleForObjects(sys,
-                World, { X = r.x, Y = r.y, Z = r.z },
-                { X = endPoint.x, Y = endPoint.y, Z = endPoint.z }, { 6 }, false, {}, 0,
-                hit, true, color, color, 0)
+            LineTraceSingleForObjects(
+                sys,
+                World,
+                { X = r.x, Y = r.y, Z = r.z },
+                { X = endPoint.x, Y = endPoint.y, Z = endPoint.z },
+                { 6 },
+                false,
+                {},
+                0,
+                hit,
+                true,
+                color,
+                color,
+                0
+            )
 
             -- If there is a hit, set the max offset to the distance of the hit.
             if hit.Distance > 0 then
@@ -373,28 +416,57 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
                     if hit.Distance ~= 0 then
                         c = { R = 0, G = 50, B = 0, A = 1.0 }
                     end
-                    insert(DebugObjects,
+                    insert(
+                        DebugObjects,
                         ---@diagnostic disable-next-line: param-type-mismatch
-                        func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
+                        func.spawnDebugObject(
+                            World,
+                            dbg.staticMeshActorClass,
+                            dbg.mesh,
+                            dbg.material,
                             { X = r.x, Y = r.y, Z = r.z },
-                            nil, dbg.scale, c))
+                            nil,
+                            dbg.scale,
+                            c
+                        )
+                    )
                 end)
             end
 
             ---@diagnostic disable-next-line: missing-fields
             local outHit = {} ---@type FHitResult
-            LineTraceSingleForObjects(sys,
-                World, { X = r.x, Y = r.y, Z = r.z },
-                { X = endPoint.x, Y = endPoint.y, Z = endPoint.z }, { 6 }, false, {}, 0,
-                outHit, true, color, color, 0)
+            LineTraceSingleForObjects(
+                sys,
+                World,
+                { X = r.x, Y = r.y, Z = r.z },
+                { X = endPoint.x, Y = endPoint.y, Z = endPoint.z },
+                { 6 },
+                false,
+                {},
+                0,
+                outHit,
+                true,
+                color,
+                color,
+                0
+            )
 
             if dbgObject then
                 ExecuteInGameThread(function()
-                    insert(DebugObjects,
+                    insert(
+                        DebugObjects,
                         ---@diagnostic disable-next-line: param-type-mismatch
-                        func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
+                        func.spawnDebugObject(
+                            World,
+                            dbg.staticMeshActorClass,
+                            dbg.mesh,
+                            dbg.material,
                             outHit.Location,
-                            nil, dbg.scale, { R = 0, G = 0, B = 50, A = 1.0 }))
+                            nil,
+                            dbg.scale,
+                            { R = 0, G = 0, B = 50, A = 1.0 }
+                        )
+                    )
                 end)
             end
 
@@ -498,11 +570,24 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
 
                 -- new normal
                 for i = 50, 500, 50 do
-                    insert(DebugObjects,
+                    insert(
+                        DebugObjects,
                         ---@diagnostic disable-next-line: param-type-mismatch
-                        func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material,
-                            { X = x_loc + x_norm * i, Y = y_loc + y_norm * i, Z = z_loc + z_norm * i },
-                            nil, dbg.scale, { R = 1, G = 1, B = 1, A = 0.1 }))
+                        func.spawnDebugObject(
+                            World,
+                            dbg.staticMeshActorClass,
+                            dbg.mesh,
+                            dbg.material,
+                            {
+                                X = x_loc + x_norm * i,
+                                Y = y_loc + y_norm * i,
+                                Z = z_loc + z_norm * i,
+                            },
+                            nil,
+                            dbg.scale,
+                            { R = 1, G = 1, B = 1, A = 0.1 }
+                        )
+                    )
                 end
             end
         end)
@@ -521,7 +606,8 @@ local function createUI()
         return false
     end
 
-    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    local fontObj =
+        StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
     if not fontObj:IsValid() then
         log.warn("Font object is not valid.")
         return false
@@ -530,62 +616,101 @@ local function createUI()
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
     ---@type UUserWidget
-    UI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
-        FName(prefix .. "UserWidget"))
+    UI.userWidget = StaticConstructObject(
+        StaticFindObject("/Script/UMG.UserWidget"),
+        gameInstance,
+        FName(prefix .. "UserWidget")
+    )
     assert(UI.userWidget:IsValid())
 
-    UI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), UI.userWidget,
-        FName(prefix .. "WidgetTree"))
+    UI.userWidget.WidgetTree = StaticConstructObject(
+        StaticFindObject("/Script/UMG.WidgetTree"),
+        UI.userWidget,
+        FName(prefix .. "WidgetTree")
+    )
     assert(UI.userWidget.WidgetTree:IsValid())
 
     ---@type UCanvasPanel
-    UI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
-        UI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
+    UI.canvas = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CanvasPanel"),
+        UI.userWidget.WidgetTree,
+        FName(prefix .. "CanvasPanel")
+    )
     assert(UI.canvas:IsValid())
     UI.userWidget.WidgetTree.RootWidget = UI.canvas
 
     local rootWidget = UI.userWidget.WidgetTree.RootWidget
 
     ---@type UVerticalBox
-    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
-        rootWidget, FName(prefix .. "VerticalBox"))
+    local verticalBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.VerticalBox"),
+        rootWidget,
+        FName(prefix .. "VerticalBox")
+    )
 
     ---@type UTextBlock
-    local textBlock_title = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_title"))
+    local textBlock_title = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_title")
+    )
     textBlock_title.Font.Size = optUI.smoothen.font_size
     textBlock_title.Font.FontObject = fontObj
     textBlock_title:SetText(FText(optUI.smoothen.txt.title))
     textBlock_title:SetToolTipText(FText(optUI.smoothen.txt.description_tip))
 
     ---@type UComboBoxString
-    UI.presetsComboBox = StaticConstructObject(StaticFindObject("/Script/UMG.ComboBoxString"),
-        rootWidget, FName(prefix .. "ComboBoxString_presets"))
+    UI.presetsComboBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.ComboBoxString"),
+        rootWidget,
+        FName(prefix .. "ComboBoxString_presets")
+    )
     UI.presetsComboBox.Font.FontObject = fontObj
-    UI.presetsComboBox:SetToolTipText(FText(format(optUI.smoothen.txt.presetsComboBox_tip,
-        func.getKeybindName(options.enable_handleTerrainTool_Key, options.enable_handleTerrainTool_ModifierKeys))))
+    UI.presetsComboBox:SetToolTipText(
+        FText(
+            format(
+                optUI.smoothen.txt.presetsComboBox_tip,
+                func.getKeybindName(
+                    options.enable_handleTerrainTool_Key,
+                    options.enable_handleTerrainTool_ModifierKeys
+                )
+            )
+        )
+    )
 
     --#region debug
     ---@type UHorizontalBox
-    local horizontalBox_debug = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_debug"))
+    local horizontalBox_debug = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_debug")
+    )
     horizontalBox_debug:SetToolTipText(FText(optUI.smoothen.txt.debug_tip))
 
     ---@type UTextBlock
-    local textBlock = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_debug"))
+    local textBlock = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_debug")
+    )
     textBlock.Font.Size = optUI.smoothen.font_size
     textBlock.Font.FontObject = fontObj
     textBlock:SetText(FText(optUI.smoothen.txt.debug))
 
     ---@type USpacer
-    local spacer = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_debug"))
+    local spacer = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_debug")
+    )
     spacer:SetSize(optUI.smoothen.spacer_size)
 
     ---@type UCheckBox
-    UI.debugCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_debug"))
+    UI.debugCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_debug")
+    )
 
     horizontalBox_debug:AddChildToHorizontalBox(textBlock)
     horizontalBox_debug:AddChildToHorizontalBox(spacer)

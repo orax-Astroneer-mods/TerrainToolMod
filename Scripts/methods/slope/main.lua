@@ -18,7 +18,7 @@ local huge = math.huge
 local SlopeDirection = vec3(huge, huge, huge)
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
 local UI = {
-    angleTextBox = nil ---@type UEditableTextBox
+    angleTextBox = nil, ---@type UEditableTextBox
 }
 local options = OPTIONS
 local optUI = OPTIONS_UI
@@ -42,8 +42,8 @@ local EDeformType = {
 
 ---@type ECheckBoxState
 local ECheckBoxState = {
-    Unchecked    = 0,
-    Checked      = 1,
+    Unchecked = 0,
+    Checked = 1,
     Undetermined = 2,
 }
 
@@ -54,7 +54,7 @@ local ESlateVisibility = {
     Hidden = 2,
     HitTestInvisible = 3,
     SelfHitTestInvisible = 4,
-    ESlateVisibility_MAX = 5
+    ESlateVisibility_MAX = 5,
 }
 
 ---https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/Kismet/UKismetMathLibrary/FindLookAtRotation
@@ -98,7 +98,9 @@ local function writeParamsFile()
     assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
     -- defaults
-    if params.SLOPE_ANGLE == nil then params.SLOPE_ANGLE = 45 end
+    if params.SLOPE_ANGLE == nil then
+        params.SLOPE_ANGLE = 45
+    end
 
     file:write(format(
         [[---@type Method__Slope__PARAMS
@@ -141,8 +143,17 @@ end
 ---@param _isUsingTool RemoteUnrealParam
 ---@param _justActivated RemoteUnrealParam
 ---@param _canUse RemoteUnrealParam
-local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult, _startedInteraction, _endedInteraction,
-                                      _isUsingTool, _justActivated, _canUse)
+local function hook_HandleTerrainTool(
+    _self,
+    _controller,
+    _toolHit,
+    _clickResult,
+    _startedInteraction,
+    _endedInteraction,
+    _isUsingTool,
+    _justActivated,
+    _canUse
+)
     local controller = _controller:get() ---@type APlayController
 
     if _justActivated:get() == true then
@@ -162,14 +173,18 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local operation = deformTool.Operation
 
     -- check if a flatten operation is selected
-    if operation ~= EDeformType.Flatten and
-        operation ~= EDeformType.FlattenAddOnly and
-        operation ~= EDeformType.FlattenSubtractOnly then
+    if
+        operation ~= EDeformType.Flatten
+        and operation ~= EDeformType.FlattenAddOnly
+        and operation ~= EDeformType.FlattenSubtractOnly
+    then
         return
     end
 
     -- ignored
-    if startedInteraction == false and SlopeDirection.x == huge then return end
+    if startedInteraction == false and SlopeDirection.x == huge then
+        return
+    end
 
     -- check if the hit actor is a SolarBody (planet)
     if not toolHit.Actor:Get():IsA("/Script/Astro.SolarBody") then ---@diagnostic disable-line: undefined-field
@@ -194,20 +209,26 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         local keyName_fromCamera_reversed = options.set_slope_direction_from_camera_reversed_KeyName
         local keyName_fromSlope = options.set_slope_direction_from_slope_KeyName
 
-        if keyName_fromCamera and controller:IsInputKeyDown({ KeyName = FName(keyName_fromCamera) }) then
+        if
+            keyName_fromCamera
+            and controller:IsInputKeyDown({ KeyName = FName(keyName_fromCamera) })
+        then
             setSlopeDirectionFromCamera(false)
-        elseif keyName_fromCamera_reversed and controller:IsInputKeyDown({ KeyName = FName(keyName_fromCamera_reversed) }) then
+        elseif
+            keyName_fromCamera_reversed
+            and controller:IsInputKeyDown({ KeyName = FName(keyName_fromCamera_reversed) })
+        then
             setSlopeDirectionFromCamera(true)
-        elseif keyName_fromSlope and controller:IsInputKeyDown({ KeyName = FName(keyName_fromSlope) }) then
+        elseif
+            keyName_fromSlope and controller:IsInputKeyDown({ KeyName = FName(keyName_fromSlope) })
+        then
             setSlopeDirectionFromSlope(
                 vec3.new(
                     toolHit.Location.X - PlanetCenter.X,
                     toolHit.Location.Y - PlanetCenter.Y,
-                    toolHit.Location.Z - PlanetCenter.Z),
-                vec3.new(
-                    toolHit.Normal.X,
-                    toolHit.Normal.Y,
-                    toolHit.Normal.Z)
+                    toolHit.Location.Z - PlanetCenter.Z
+                ),
+                vec3.new(toolHit.Normal.X, toolHit.Normal.Y, toolHit.Normal.Z)
             )
         else
             if keyName_fromCamera or keyName_fromCamera_reversed or keyName_fromSlope then
@@ -222,7 +243,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local u = {
         X = toolHit.Location.X - PlanetCenter.X,
         Y = toolHit.Location.Y - PlanetCenter.Y,
-        Z = toolHit.Location.Z - PlanetCenter.Z
+        Z = toolHit.Location.Z - PlanetCenter.Z,
     }
 
     local altitude = sqrt(u.X * u.X + u.Y * u.Y + u.Z * u.Z)
@@ -231,14 +252,15 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local u_unit = {
         X = u.X / altitude,
         Y = u.Y / altitude,
-        Z = u.Z / altitude
+        Z = u.Z / altitude,
     }
 
-    local v = vec3.rotate(vec3.new(u_unit.X, u_unit.Y, u_unit.Z), rad(params.SLOPE_ANGLE), SlopeDirection)
+    local v =
+        vec3.rotate(vec3.new(u_unit.X, u_unit.Y, u_unit.Z), rad(params.SLOPE_ANGLE), SlopeDirection)
 
     u_unit = { X = v.x, Y = v.y, Z = v.z }
 
-    -- RepBrushState (0x810)
+    -- RepBrushState
     deformTool.RepBrushState.CurrentDeformNormal = u_unit
 
     ---@diagnostic disable: inject-field
@@ -272,46 +294,64 @@ local function createUI()
         return false
     end
 
-    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    local fontObj =
+        StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
     if not fontObj:IsValid() then
         log.warn("Font object is not valid.")
         return false
     end
 
     local shortcuts = format(
-        "%s = %s\n" ..
-        "%s = %s\n" ..
-        "%s = %s",
-        options.set_slope_direction_from_camera_KeyName, options.set_slope_direction_from_camera_text,
-        options.set_slope_direction_from_camera_KeyName, options.set_slope_direction_from_camera_reversed_text,
-        options.set_slope_direction_from_camera_reversed_KeyName, options.set_slope_direction_from_slope_text)
+        "%s = %s\n" .. "%s = %s\n" .. "%s = %s",
+        options.set_slope_direction_from_camera_KeyName,
+        options.set_slope_direction_from_camera_text,
+        options.set_slope_direction_from_camera_KeyName,
+        options.set_slope_direction_from_camera_reversed_text,
+        options.set_slope_direction_from_camera_reversed_KeyName,
+        options.set_slope_direction_from_slope_text
+    )
 
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
     ---@type UUserWidget
-    UI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
-        FName(prefix .. "UserWidget"))
+    UI.userWidget = StaticConstructObject(
+        StaticFindObject("/Script/UMG.UserWidget"),
+        gameInstance,
+        FName(prefix .. "UserWidget")
+    )
     assert(UI.userWidget:IsValid())
 
-    UI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), UI.userWidget,
-        FName(prefix .. "WidgetTree"))
+    UI.userWidget.WidgetTree = StaticConstructObject(
+        StaticFindObject("/Script/UMG.WidgetTree"),
+        UI.userWidget,
+        FName(prefix .. "WidgetTree")
+    )
     assert(UI.userWidget.WidgetTree:IsValid())
 
     ---@type UCanvasPanel
-    UI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
-        UI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
+    UI.canvas = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CanvasPanel"),
+        UI.userWidget.WidgetTree,
+        FName(prefix .. "CanvasPanel")
+    )
     assert(UI.canvas:IsValid())
     UI.userWidget.WidgetTree.RootWidget = UI.canvas
 
     local rootWidget = UI.userWidget.WidgetTree.RootWidget
 
     ---@type UVerticalBox
-    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
-        rootWidget, FName(prefix .. "VerticalBox"))
+    local verticalBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.VerticalBox"),
+        rootWidget,
+        FName(prefix .. "VerticalBox")
+    )
 
     ---@type UTextBlock
-    local textBlock_title = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_title"))
+    local textBlock_title = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_title")
+    )
     textBlock_title.Font.Size = optUI.slope.font_size
     textBlock_title.Font.FontObject = fontObj
     textBlock_title:SetText(FText(optUI.slope.txt.title))
@@ -319,25 +359,37 @@ local function createUI()
 
     --#region angle
     ---@type UHorizontalBox
-    local horizontalBox_angle = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_angle"))
+    local horizontalBox_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_angle")
+    )
     horizontalBox_angle:SetToolTipText(FText(optUI.slope.txt.angle_tip))
 
     ---@type UTextBlock
-    local textBlock_angle = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_angle"))
+    local textBlock_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_angle")
+    )
     textBlock_angle.Font.Size = optUI.slope.font_size
     textBlock_angle.Font.FontObject = fontObj
     textBlock_angle:SetText(FText(optUI.slope.txt.angle))
 
     ---@type USpacer
-    local spacer_angle = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_angle"))
+    local spacer_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_angle")
+    )
     spacer_angle:SetSize(optUI.slope.spacer_size)
 
     ---@type UEditableTextBox
-    UI.angleTextBox = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_angle"))
+    UI.angleTextBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_angle")
+    )
     UI.angleTextBox.WidgetStyle.Font.Size = optUI.slope.font_size
     UI.angleTextBox.WidgetStyle.Font.FontObject = fontObj
     UI.angleTextBox.SelectAllTextWhenFocused = true

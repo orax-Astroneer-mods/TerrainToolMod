@@ -54,7 +54,7 @@ local ESlateVisibility = {
     Hidden = 2,
     HitTestInvisible = 3,
     SelfHitTestInvisible = 4,
-    ESlateVisibility_MAX = 5
+    ESlateVisibility_MAX = 5,
 }
 
 -- Global shared variable between onDeform_color and Paint method.
@@ -106,9 +106,11 @@ local function loadOptions()
     local file = format([[%s\options.lua]], currentModDirectory)
 
     if not isFileExists(file) then
-        local cmd = format([[copy "%s\options.example.lua" "%s\options.lua"]],
+        local cmd = format(
+            [[copy "%s\options.example.lua" "%s\options.lua"]],
             currentModDirectory,
-            currentModDirectory)
+            currentModDirectory
+        )
 
         print("Copy example options to options.lua. Execute command: " .. cmd .. "\n")
 
@@ -156,17 +158,26 @@ local onDeform_color = require("onDeform.color.main")
 --#region hooks
 ---@param callback function
 local function registerHook_DeformTool_HandleTerrainTool(callback)
-    if type(PreId_DeformTool_HandleTerrainTool) == "number" or type(PostId_DeformTool_HandleTerrainTool) == "number" then
+    if
+        type(PreId_DeformTool_HandleTerrainTool) == "number"
+        or type(PostId_DeformTool_HandleTerrainTool) == "number"
+    then
         log.warn("DeformTool_HandleTerrainTool is already hooked.")
         return
     end
-    PreId_DeformTool_HandleTerrainTool, PostId_DeformTool_HandleTerrainTool = RegisterHook(
-        "/Script/Astro.DeformTool:HandleTerrainTool", callback)
+    PreId_DeformTool_HandleTerrainTool, PostId_DeformTool_HandleTerrainTool =
+        RegisterHook("/Script/Astro.DeformTool:HandleTerrainTool", callback)
 end
 local function unregisterHook_handleTerrainTool()
-    if type(PreId_DeformTool_HandleTerrainTool) == "number" and type(PostId_DeformTool_HandleTerrainTool) == "number" then
-        UnregisterHook("/Script/Astro.DeformTool:HandleTerrainTool", PreId_DeformTool_HandleTerrainTool,
-            PostId_DeformTool_HandleTerrainTool)
+    if
+        type(PreId_DeformTool_HandleTerrainTool) == "number"
+        and type(PostId_DeformTool_HandleTerrainTool) == "number"
+    then
+        UnregisterHook(
+            "/Script/Astro.DeformTool:HandleTerrainTool",
+            PreId_DeformTool_HandleTerrainTool,
+            PostId_DeformTool_HandleTerrainTool
+        )
         PreId_DeformTool_HandleTerrainTool = nil
         PostId_DeformTool_HandleTerrainTool = nil
     end
@@ -174,17 +185,26 @@ end
 
 ---@param callback function
 local function registerHook_DeformTool_Deactivated(callback)
-    if type(PreId_DeformTool_Deactivated) == "number" or type(PostId_DeformTool_Deactivated) == "number" then
+    if
+        type(PreId_DeformTool_Deactivated) == "number"
+        or type(PostId_DeformTool_Deactivated) == "number"
+    then
         log.warn("DeformTool_Deactivated is already hooked.")
         return
     end
-    PreId_DeformTool_Deactivated, PostId_DeformTool_Deactivated = RegisterHook(
-        "/Script/Astro.DeformTool:Deactivated", callback)
+    PreId_DeformTool_Deactivated, PostId_DeformTool_Deactivated =
+        RegisterHook("/Script/Astro.DeformTool:Deactivated", callback)
 end
 local function unregisterHook_DeformTool_Deactivated()
-    if type(PreId_DeformTool_Deactivated) == "number" and type(PostId_DeformTool_Deactivated) == "number" then
-        UnregisterHook("/Script/Astro.DeformTool:Deactivated", PreId_DeformTool_Deactivated,
-            PostId_DeformTool_Deactivated)
+    if
+        type(PreId_DeformTool_Deactivated) == "number"
+        and type(PostId_DeformTool_Deactivated) == "number"
+    then
+        UnregisterHook(
+            "/Script/Astro.DeformTool:Deactivated",
+            PreId_DeformTool_Deactivated,
+            PostId_DeformTool_Deactivated
+        )
         PreId_DeformTool_Deactivated = nil
         PostId_DeformTool_Deactivated = nil
     end
@@ -198,13 +218,16 @@ local function writeMainParamsFile()
     assert(file, format("\nUnable to open the main params file %q.", mainParamsFile))
 
     -- defaults
-    if mainParams.LATEST_METHOD == nil then mainParams.LATEST_METHOD = "tangent" end
+    if mainParams.LATEST_METHOD == nil then
+        mainParams.LATEST_METHOD = "tangent"
+    end
 
     file:write(format(
         [[return { ---@type TerrainToolMod_Main_PARAMS
 LATEST_METHOD="%s"
 }]],
-        mainParams.LATEST_METHOD))
+        mainParams.LATEST_METHOD
+    ))
 
     file:close()
 end
@@ -223,11 +246,12 @@ end
 local function loadMethods()
     local methods = {}
     ---@diagnostic disable-next-line: undefined-field
-    local methodNamesList = type(options.methodsToLoad) == "table" and options.methodsToLoad or MethodsToLoad
+    local methodNamesList = type(options.methodsToLoad) == "table" and options.methodsToLoad
+        or MethodsToLoad
 
     for index, methodName in ipairs(methodNamesList) do
         local methodTable = {
-            index = index
+            index = index,
         }
 
         local file = format([[%s\Scripts\methods\%s\main.lua]], currentModDirectory, methodName)
@@ -279,7 +303,6 @@ local function setMethod(method)
 
     log.debug(format("Set method: %q.", newMethod))
 
-
     unregisterHook_handleTerrainTool()
     unregisterHook_DeformTool_Deactivated()
 
@@ -293,7 +316,9 @@ local function setMethod(method)
     --
     -- hook HandleTerrainTool (main hook)
     if type(Methods[newMethod].hook_DeformTool_HandleTerrainTool) == "function" then
-        registerHook_DeformTool_HandleTerrainTool(Methods[newMethod].hook_DeformTool_HandleTerrainTool)
+        registerHook_DeformTool_HandleTerrainTool(
+            Methods[newMethod].hook_DeformTool_HandleTerrainTool
+        )
     end
     -- hook on Terrain Tool deactivated
     if type(Methods[newMethod].hook_DeformTool_Deactivated) == "function" then
@@ -335,12 +360,17 @@ local function enableMod()
     end
 
     -- execute onUpdate event for the (updated) method
-    if mainParams.LATEST_METHOD ~= "" and type(Methods[mainParams.LATEST_METHOD].onUpdate) == "function" then
+    if
+        mainParams.LATEST_METHOD ~= ""
+        and type(Methods[mainParams.LATEST_METHOD].onUpdate) == "function"
+    then
         log.debug("Execute onUpdate event for the current method %q.", mainParams.LATEST_METHOD)
         Methods[mainParams.LATEST_METHOD].onUpdate()
     end
 
-    log.debug(format("Terrain Tool Mod is already ENABLED. Method updated: %q.", mainParams.LATEST_METHOD))
+    log.debug(
+        format("Terrain Tool Mod is already ENABLED. Method updated: %q.", mainParams.LATEST_METHOD)
+    )
 end
 
 local function disableMod()
@@ -374,19 +404,19 @@ RegisterCustomProperty({
     ["Name"] = "Deform_NormalX",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x82C
+    ["OffsetInternal"] = 0x82C,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_NormalY",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x82C + 4
+    ["OffsetInternal"] = 0x82C + 4,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_NormalZ",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x82C + 8
+    ["OffsetInternal"] = 0x82C + 8,
 })
 
 -- Deform_Location1
@@ -394,19 +424,19 @@ RegisterCustomProperty({
     ["Name"] = "Deform_Location1X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x838
+    ["OffsetInternal"] = 0x838,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location1Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x838 + 4
+    ["OffsetInternal"] = 0x838 + 4,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location1Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x838 + 8
+    ["OffsetInternal"] = 0x838 + 8,
 })
 
 -- Deform_Normal2
@@ -414,19 +444,19 @@ RegisterCustomProperty({
     ["Name"] = "Deform_Normal2X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x860
+    ["OffsetInternal"] = 0x860,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Normal2Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x860 + 4
+    ["OffsetInternal"] = 0x860 + 4,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Normal2Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x860 + 8
+    ["OffsetInternal"] = 0x860 + 8,
 })
 
 -- Deform_Location2
@@ -434,19 +464,19 @@ RegisterCustomProperty({
     ["Name"] = "Deform_Location2X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x86C
+    ["OffsetInternal"] = 0x86C,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location2Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x86C + 4
+    ["OffsetInternal"] = 0x86C + 4,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location2Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x86C + 8
+    ["OffsetInternal"] = 0x86C + 8,
 })
 
 -- Deform_Location3
@@ -454,19 +484,19 @@ RegisterCustomProperty({
     ["Name"] = "Deform_Location3X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8E8
+    ["OffsetInternal"] = 0x8E8,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location3Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8E8 + 4
+    ["OffsetInternal"] = 0x8E8 + 4,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location3Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8E8 + 8
+    ["OffsetInternal"] = 0x8E8 + 8,
 })
 
 -- Deform_Normal3
@@ -474,19 +504,19 @@ RegisterCustomProperty({
     ["Name"] = "Deform_Normal3X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8F4
+    ["OffsetInternal"] = 0x8F4,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Normal3Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8F4 + 4
+    ["OffsetInternal"] = 0x8F4 + 4,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Normal3Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8F4 + 8
+    ["OffsetInternal"] = 0x8F4 + 8,
 })
 
 -- Deform_Location4
@@ -494,19 +524,19 @@ RegisterCustomProperty({
     ["Name"] = "Deform_Location4X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x900
+    ["OffsetInternal"] = 0x900,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location4Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x900 + 4
+    ["OffsetInternal"] = 0x900 + 4,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location4Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x900 + 8
+    ["OffsetInternal"] = 0x900 + 8,
 })
 --#endregion
 
@@ -520,7 +550,8 @@ if #MethodNamesList == 0 then
 end
 
 local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
-    RegisterHook("/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C:OnColorAndTypePicked",
+    RegisterHook(
+        "/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C:OnColorAndTypePicked",
         ---@param TerrainToolCreativeMenu RemoteUnrealParam
         ---@param SelectedColor RemoteUnrealParam
         ---@param SelectedColorIndex RemoteUnrealParam
@@ -528,23 +559,42 @@ local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
         function(TerrainToolCreativeMenu, SelectedColor, SelectedColorIndex, PaintType)
             local menu = TerrainToolCreativeMenu:get() ---@type UTerrainToolCreativeMenu_C
 
-            if CurrenMethod ~= "" and type(Methods[CurrenMethod].hook_TerrainToolCreativeMenu_OnColorAndTypePicked) == "function" then
-                Methods[CurrenMethod].hook_TerrainToolCreativeMenu_OnColorAndTypePicked(menu, SelectedColor:get(),
-                    SelectedColorIndex:get(), PaintType:get())
+            if
+                CurrenMethod ~= ""
+                and type(
+                        Methods[CurrenMethod].hook_TerrainToolCreativeMenu_OnColorAndTypePicked
+                    )
+                    == "function"
+            then
+                Methods[CurrenMethod].hook_TerrainToolCreativeMenu_OnColorAndTypePicked(
+                    menu,
+                    SelectedColor:get(),
+                    SelectedColorIndex:get(),
+                    PaintType:get()
+                )
             end
 
-            onDeform_color.hook_TerrainToolCreativeMenu_OnColorAndTypePicked(menu, SelectedColor:get(),
-                SelectedColorIndex:get(), PaintType:get())
-        end)
+            onDeform_color.hook_TerrainToolCreativeMenu_OnColorAndTypePicked(
+                menu,
+                SelectedColor:get(),
+                SelectedColorIndex:get(),
+                PaintType:get()
+            )
+        end
+    )
 end
 
 local function hook_Planet_Marker_HandlePlanetMarkerSelected()
-    RegisterHook("/Game/Exploration/Planet_Marker.Planet_Marker_C:HandlePlanetMarkerSelected",
+    RegisterHook(
+        "/Game/Exploration/Planet_Marker.Planet_Marker_C:HandlePlanetMarkerSelected",
         ---@param self RemoteUnrealParam
         function(self)
             -- execute HandlePlanetMarkerSelected event for the current method
-            if CurrenMethod ~= "" and
-                type(Methods[CurrenMethod].hook_Planet_Marker_HandlePlanetMarkerSelected) == "function" then
+            if
+                CurrenMethod ~= ""
+                and type(Methods[CurrenMethod].hook_Planet_Marker_HandlePlanetMarkerSelected)
+                    == "function"
+            then
                 log.debug("Execute HandlePlanetMarkerSelected event for method %q.", CurrenMethod)
                 Methods[CurrenMethod].hook_Planet_Marker_HandlePlanetMarkerSelected(self)
             end
@@ -554,7 +604,8 @@ local function hook_Planet_Marker_HandlePlanetMarkerSelected()
                 log.debug("Execute HandlePlanetMarkerSelected event for onDeform_color.")
                 onDeform_color.hook_Planet_Marker_HandlePlanetMarkerSelected(self)
             end
-        end)
+        end
+    )
 end
 
 ---@param self RemoteUnrealParam
@@ -562,7 +613,10 @@ end
 RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
     local newPawn = NewPawn:get() ---@type ADesignAstro_C
 
-    if newPawn:IsA("/Game/Character/DesignAstro.DesignAstro_C") and newPawn.LocalSolarBody:IsValid() then
+    if
+        newPawn:IsA("/Game/Character/DesignAstro.DesignAstro_C")
+        and newPawn.LocalSolarBody:IsValid()
+    then
         local firstInitialization = FirstInit
 
         if firstInitialization == true then
@@ -574,8 +628,7 @@ RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, New
         end
 
         -- execute onClientRestart event for the current method
-        if CurrenMethod ~= "" and
-            type(Methods[CurrenMethod].onClientRestart) == "function" then
+        if CurrenMethod ~= "" and type(Methods[CurrenMethod].onClientRestart) == "function" then
             log.debug("Execute onClientRestart event for method %q.", CurrenMethod)
             Methods[CurrenMethod].onClientRestart(self, newPawn, firstInitialization)
         end
@@ -590,33 +643,44 @@ RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, New
     end
 end)
 
-RegisterHook("/Script/Engine.PlayerController:ClientReceiveLocalizedMessage",
-    function(...)
-        -- execute event for the current method
-        if CurrenMethod ~= "" and
-            type(Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage) == "function" then
-            log.debug("Execute PlayerController_ClientReceiveLocalizedMessage event for method %q.", CurrenMethod)
-            Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage(...)
-        end
+RegisterHook("/Script/Engine.PlayerController:ClientReceiveLocalizedMessage", function(...)
+    -- execute event for the current method
+    if
+        CurrenMethod ~= ""
+        and type(Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage)
+            == "function"
+    then
+        log.debug(
+            "Execute PlayerController_ClientReceiveLocalizedMessage event for method %q.",
+            CurrenMethod
+        )
+        Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage(...)
+    end
 
-        -- execute event for onDeform_color
-        if type(onDeform_color.PlayerController_ClientReceiveLocalizedMessage) == "function" then
-            log.debug("Execute PlayerController_ClientReceiveLocalizedMessage event for onDeform_color.")
-            onDeform_color.PlayerController_ClientReceiveLocalizedMessage(...)
-        end
-    end)
+    -- execute event for onDeform_color
+    if type(onDeform_color.PlayerController_ClientReceiveLocalizedMessage) == "function" then
+        log.debug(
+            "Execute PlayerController_ClientReceiveLocalizedMessage event for onDeform_color."
+        )
+        onDeform_color.PlayerController_ClientReceiveLocalizedMessage(...)
+    end
+end)
 
 -- Manage "UE4SS Restart mods" or when the script is injected manually.
 if UEHelpers:GetPlayer():IsValid() then
     local player = UEHelpers:GetPlayer() ---@cast player ADesignAstro_C
 
-    if player:IsA("/Game/Character/DesignAstro.DesignAstro_C") and player.LocalSolarBody:IsValid() then
+    if
+        player:IsA("/Game/Character/DesignAstro.DesignAstro_C") and player.LocalSolarBody:IsValid()
+    then
         hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
         hook_Planet_Marker_HandlePlanetMarkerSelected()
 
         -- execute onModRestartedOrStartedManually event for the current method
-        if CurrenMethod ~= "" and
-            type(Methods[CurrenMethod].onModRestartedOrStartedManually) == "function" then
+        if
+            CurrenMethod ~= ""
+            and type(Methods[CurrenMethod].onModRestartedOrStartedManually) == "function"
+        then
             log.debug("Execute onModRestartedOrStartedManually event for method %q.", CurrenMethod)
             Methods[CurrenMethod].onModRestartedOrStartedManually(FirstInit)
         end
@@ -647,7 +711,11 @@ local function getVectorLen(u)
 end
 
 local function getTerrainTool()
-    if CachedTerrainTool:IsValid() and CachedTerrainTool.bHidden == false and CachedTerrainTool.bReplicateHidden == false then
+    if
+        CachedTerrainTool:IsValid()
+        and CachedTerrainTool.bHidden == false
+        and CachedTerrainTool.bReplicateHidden == false
+    then
         return CachedTerrainTool
     end
 
@@ -690,9 +758,12 @@ end
 local function checkIfPropertyExists(property, outputDevice)
     if Methods[mainParams.LATEST_METHOD].params[property] == nil then
         if outputDevice then
-            outputDevice:Log(format(
-                "This property does not exist for the method %q. Use the \"method\" command to change the method.",
-                mainParams.LATEST_METHOD))
+            outputDevice:Log(
+                format(
+                    'This property does not exist for the method %q. Use the "method" command to change the method.',
+                    mainParams.LATEST_METHOD
+                )
+            )
         end
 
         return false
@@ -809,7 +880,10 @@ local function createHelpUI()
     textLeft = textLeft .. "\n[Method: slope]\n"
     textRight = textRight .. "\n\n"
     add("set_slope_direction_from_camera", options.set_slope_direction_from_camera_KeyName)
-    add("set_slope_direction_from_camera_reversed", options.set_slope_direction_from_camera_reversed_KeyName)
+    add(
+        "set_slope_direction_from_camera_reversed",
+        options.set_slope_direction_from_camera_reversed_KeyName
+    )
     add("set_slope_direction_from_slope", options.set_slope_direction_from_slope_KeyName)
 
     text = text .. "\n[Method: auto]\n"
@@ -817,40 +891,80 @@ local function createHelpUI()
     textRight = textRight .. "\n\n"
     add("auto__increase_angle", options.auto__increase_angle_KeyName)
     add("auto__decrease_angle", options.auto__decrease_angle_KeyName)
-    add("auto__increase_expected_angle",
-        options.auto__increase_or_decrease_expected_angle_KeyName .. "+" .. options.auto__increase_angle_KeyName,
-        options.auto__increase_expected_angle_text)
-    add("auto__decrease_expected_angle",
-        options.auto__increase_or_decrease_expected_angle_KeyName .. "+" .. options.auto__decrease_angle_KeyName,
-        options.auto__decrease_expected_angle_text)
+    add(
+        "auto__increase_expected_angle",
+        options.auto__increase_or_decrease_expected_angle_KeyName
+            .. "+"
+            .. options.auto__increase_angle_KeyName,
+        options.auto__increase_expected_angle_text
+    )
+    add(
+        "auto__decrease_expected_angle",
+        options.auto__increase_or_decrease_expected_angle_KeyName
+            .. "+"
+            .. options.auto__decrease_angle_KeyName,
+        options.auto__decrease_expected_angle_text
+    )
     add("auto__set_angle_to_value1", options.auto__set_angle_to_value1_KeyName)
     add("auto__set_angle_to_value2", options.auto__set_angle_to_value2_KeyName)
     add("auto__set_angle_to_zero", options.auto__set_angle_to_zero_KeyName)
     add("auto__set_angle_from_slope", options.auto__set_angle_from_slope_KeyName)
-    add("auto__set_angle_from_inverse_slope",
-        options.auto__set_angle_from_slope_Modifier_KeyName .. "+" .. options.auto__set_angle_from_slope_KeyName,
-        options.auto__set_angle_from_inverse_slope_text)
-    add("auto__set_angle_to_expectedAngle",
-        options.auto__set_angle_to_expectedAngle_Modifier_KeyName ..
-        "+" .. options.auto__set_angle_to_expectedAngle_KeyName, options.auto__set_angle_to_expectedAngle_text)
+    add(
+        "auto__set_angle_from_inverse_slope",
+        options.auto__set_angle_from_slope_Modifier_KeyName
+            .. "+"
+            .. options.auto__set_angle_from_slope_KeyName,
+        options.auto__set_angle_from_inverse_slope_text
+    )
+    add(
+        "auto__set_angle_to_expectedAngle",
+        options.auto__set_angle_to_expectedAngle_Modifier_KeyName
+            .. "+"
+            .. options.auto__set_angle_to_expectedAngle_KeyName,
+        options.auto__set_angle_to_expectedAngle_text
+    )
 
     text = text .. "\n[Method: revert]\n"
     textLeft = textLeft .. "\n[Method: revert]\n"
     textRight = textRight .. "\n\n"
     add("revert_offset_location_down", options.revert_offset_location_down_KeyName)
     add("revert_offset_location_up", options.revert_offset_location_up_KeyName)
-    add("revert_offset_location_fixed_value", options.revert_offset_location_fixed_value_1_KeyName,
-        format(options.revert_offset_location_fixed_value_text, options.revert_offset_location_fixed_value_1))
-    add("revert_offset_location_fixed_value", options.revert_offset_location_fixed_value_2_KeyName,
-        format(options.revert_offset_location_fixed_value_text, options.revert_offset_location_fixed_value_2))
-    add("revert_offset_location_fixed_forward_backward_value",
-        options.revert_offset_location_modifier_KeyName .. "+" .. options.revert_offset_location_fixed_value_1_KeyName,
-        format(options.revert_offset_location_fixed_forward_backward_value_text,
-            options.revert_offset_forward_backward_location_fixed_value_1))
-    add("revert_offset_location_fixed_forward_backward_value",
-        options.revert_offset_location_modifier_KeyName .. "+" .. options.revert_offset_location_fixed_value_2_KeyName,
-        format(options.revert_offset_location_fixed_forward_backward_value_text,
-            options.revert_offset_forward_backward_location_fixed_value_2))
+    add(
+        "revert_offset_location_fixed_value",
+        options.revert_offset_location_fixed_value_1_KeyName,
+        format(
+            options.revert_offset_location_fixed_value_text,
+            options.revert_offset_location_fixed_value_1
+        )
+    )
+    add(
+        "revert_offset_location_fixed_value",
+        options.revert_offset_location_fixed_value_2_KeyName,
+        format(
+            options.revert_offset_location_fixed_value_text,
+            options.revert_offset_location_fixed_value_2
+        )
+    )
+    add(
+        "revert_offset_location_fixed_forward_backward_value",
+        options.revert_offset_location_modifier_KeyName
+            .. "+"
+            .. options.revert_offset_location_fixed_value_1_KeyName,
+        format(
+            options.revert_offset_location_fixed_forward_backward_value_text,
+            options.revert_offset_forward_backward_location_fixed_value_1
+        )
+    )
+    add(
+        "revert_offset_location_fixed_forward_backward_value",
+        options.revert_offset_location_modifier_KeyName
+            .. "+"
+            .. options.revert_offset_location_fixed_value_2_KeyName,
+        format(
+            options.revert_offset_location_fixed_forward_backward_value_text,
+            options.revert_offset_forward_backward_location_fixed_value_2
+        )
+    )
     add("revert_toggle_revert_once", options.revert_toggle_revert_once_KeyName)
 
     -- remove new line (\n) at the end
@@ -859,40 +973,62 @@ local function createHelpUI()
 
     text = text .. "\n" .. optUI._main.helpText_bottom
 
-    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    local fontObj =
+        StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
 
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
     ---@type UUserWidget
-    HelpUI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
-        FName(prefix .. "UserWidget"))
+    HelpUI.userWidget = StaticConstructObject(
+        StaticFindObject("/Script/UMG.UserWidget"),
+        gameInstance,
+        FName(prefix .. "UserWidget")
+    )
     assert(HelpUI.userWidget:IsValid())
 
-    HelpUI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), HelpUI.userWidget,
-        FName(prefix .. "WidgetTree"))
+    HelpUI.userWidget.WidgetTree = StaticConstructObject(
+        StaticFindObject("/Script/UMG.WidgetTree"),
+        HelpUI.userWidget,
+        FName(prefix .. "WidgetTree")
+    )
     assert(HelpUI.userWidget.WidgetTree:IsValid())
 
     ---@type UCanvasPanel
-    HelpUI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
-        HelpUI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
+    HelpUI.canvas = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CanvasPanel"),
+        HelpUI.userWidget.WidgetTree,
+        FName(prefix .. "CanvasPanel")
+    )
     assert(HelpUI.canvas:IsValid())
     HelpUI.userWidget.WidgetTree.RootWidget = HelpUI.canvas
 
     ---@type UHorizontalBox
-    local horizontalBox_main = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        HelpUI.userWidget.WidgetTree.RootWidget, FName(prefix .. "HorizontalBox_main"))
+    local horizontalBox_main = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        HelpUI.userWidget.WidgetTree.RootWidget,
+        FName(prefix .. "HorizontalBox_main")
+    )
 
     ---@type UVerticalBox
-    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
-        horizontalBox_main, FName(prefix .. "VerticalBox"))
+    local verticalBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.VerticalBox"),
+        horizontalBox_main,
+        FName(prefix .. "VerticalBox")
+    )
 
     ---@type UHorizontalBox
-    local horizontalBox = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        verticalBox, FName(prefix .. "HorizontalBox1"))
+    local horizontalBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        verticalBox,
+        FName(prefix .. "HorizontalBox1")
+    )
 
     ---@type UMultiLineEditableTextBox
-    local multiLineEditableTextBox_left = StaticConstructObject(umg_MultiLineEditableTextBox,
-        horizontalBox, FName(prefix .. "multiLineEditableTextBox_left"))
+    local multiLineEditableTextBox_left = StaticConstructObject(
+        umg_MultiLineEditableTextBox,
+        horizontalBox,
+        FName(prefix .. "multiLineEditableTextBox_left")
+    )
     multiLineEditableTextBox_left.WidgetStyle.Font.FontObject = fontObj
     multiLineEditableTextBox_left.WidgetStyle.Font.Size = options.help_ui.font_size
     multiLineEditableTextBox_left.bIsReadOnly = true
@@ -900,8 +1036,11 @@ local function createHelpUI()
     horizontalBox:AddChildToHorizontalBox(multiLineEditableTextBox_left)
 
     ---@type UMultiLineEditableTextBox
-    local multiLineEditableTextBox_right = StaticConstructObject(umg_MultiLineEditableTextBox,
-        horizontalBox, FName(prefix .. "MultiLineEditableTextBox_right"))
+    local multiLineEditableTextBox_right = StaticConstructObject(
+        umg_MultiLineEditableTextBox,
+        horizontalBox,
+        FName(prefix .. "MultiLineEditableTextBox_right")
+    )
     multiLineEditableTextBox_right.WidgetStyle.Font.FontObject = fontObj
     multiLineEditableTextBox_right.WidgetStyle.Font.Size = options.help_ui.font_size
     multiLineEditableTextBox_right.bIsReadOnly = true
@@ -909,8 +1048,11 @@ local function createHelpUI()
     horizontalBox:AddChildToHorizontalBox(multiLineEditableTextBox_right)
 
     ---@type UMultiLineEditableTextBox
-    local multiLineEditableTextBox_bottom = StaticConstructObject(umg_MultiLineEditableTextBox,
-        horizontalBox, FName(prefix .. "MultiLineEditableTextBox_bottom"))
+    local multiLineEditableTextBox_bottom = StaticConstructObject(
+        umg_MultiLineEditableTextBox,
+        horizontalBox,
+        FName(prefix .. "MultiLineEditableTextBox_bottom")
+    )
     multiLineEditableTextBox_bottom.WidgetStyle.Font.FontObject = fontObj
     multiLineEditableTextBox_bottom.WidgetStyle.Font.Size = options.help_ui.font_size
     multiLineEditableTextBox_bottom.bIsReadOnly = true
@@ -972,7 +1114,6 @@ local function createTangentTerrain()
         local designAstro = UEHelpers:GetPlayer() ---@cast designAstro ADesignAstro_C
         local controller = UEHelpers:GetPlayerController() ---@cast controller APlayControllerInstance_C
 
-
         local loc = designAstro:K2_GetActorLocation()
         local fw = designAstro:GetActorForwardVector()
         local right = designAstro:GetActorRightVector()
@@ -986,13 +1127,13 @@ local function createTangentTerrain()
         local floor1 = {
             X = loc.X - (up.X * capsuleHalfHeight),
             Y = loc.Y - (up.Y * capsuleHalfHeight),
-            Z = loc.Z - (up.Z * capsuleHalfHeight)
+            Z = loc.Z - (up.Z * capsuleHalfHeight),
         }
 
         local relativeFloor = {
             X = floor1.X - planetCenter.X,
             Y = floor1.Y - planetCenter.Y,
-            Z = floor1.Z - planetCenter.Z
+            Z = floor1.Z - planetCenter.Z,
         }
 
         local altitude = getVectorLen(relativeFloor)
@@ -1010,7 +1151,8 @@ local function createTangentTerrain()
                 local u = vec3.rotate(
                     vec3.new(relativeFloor.X, relativeFloor.Y, relativeFloor.Z),
                     theta2,
-                    vec3.new(fw.X, fw.Y, fw.Z))
+                    vec3.new(fw.X, fw.Y, fw.Z)
+                )
 
                 floor2 = { X = u.x, Y = u.y, Z = u.z }
 
@@ -1018,10 +1160,12 @@ local function createTangentTerrain()
                 local v = vec3.rotate(
                     vec3.new(floor2.X, floor2.Y, floor2.Z),
                     theta1,
-                    vec3.new(right.X, right.Y, right.Z))
+                    vec3.new(right.X, right.Y, right.Z)
+                )
 
                 local normal = vec3.normalize(v)
-                local v_absolute = vec3.new(v.x + planetCenter.X, v.y + planetCenter.Y, v.z + planetCenter.Z)
+                local v_absolute =
+                    vec3.new(v.x + planetCenter.X, v.y + planetCenter.Y, v.z + planetCenter.Z)
 
                 controller:ClientDoDeformation({
                     AutoCreateResourceEfficiency = 0,
@@ -1044,7 +1188,7 @@ local function createTangentTerrain()
                     Shape = 0,
                     bEasyUnbury = false,
                     bForceUnburyWithNoDeformationEvent = false,
-                    bUseAlternatePolygonization = true
+                    bUseAlternatePolygonization = true,
                 })
             end
         end
@@ -1053,85 +1197,111 @@ end
 
 registerKeyBind(options.toggle_help_ui_Key, options.toggle_help_ui_ModifierKeys, toogleHelpUI)
 
-registerKeyBind(options.enable_handleTerrainTool_Key,
+registerKeyBind(
+    options.enable_handleTerrainTool_Key,
     options.enable_handleTerrainTool_ModifierKeys,
-    enableMod)
+    enableMod
+)
 
-registerKeyBind(options.disable_handleTerrainTool_Key,
+registerKeyBind(
+    options.disable_handleTerrainTool_Key,
     options.disable_handleTerrainTool_ModifierKeys,
-    disableMod)
+    disableMod
+)
 
-registerKeyBind(options.toggle_handleTerrainTool_Key,
+registerKeyBind(
+    options.toggle_handleTerrainTool_Key,
     options.toggle_handleTerrainTool_ModifierKeys,
-    toggleModStatus)
+    toggleModStatus
+)
 
-registerKeyBind(options.create_tangent_terrain_Key,
+registerKeyBind(
+    options.create_tangent_terrain_Key,
     options.create_tangent_terrain_ModifierKeys,
-    createTangentTerrain)
+    createTangentTerrain
+)
 
-registerKeyBind(options.set_deformType_Key,
-    options.set_deformType_ModifierKeys,
-    setDeformTypeTo)
+registerKeyBind(options.set_deformType_Key, options.set_deformType_ModifierKeys, setDeformTypeTo)
 
-registerKeyBind(options.set_tangent_method_Key,
-    options.set_tangent_method_ModifierKeys,
-    function() setMethod("tangent") end)
+registerKeyBind(options.set_tangent_method_Key, options.set_tangent_method_ModifierKeys, function()
+    setMethod("tangent")
+end)
 
-registerKeyBind(options.set_slope_method_Key,
-    options.set_slope_method_ModifierKeys,
-    function() setMethod("slope") end)
+registerKeyBind(options.set_slope_method_Key, options.set_slope_method_ModifierKeys, function()
+    setMethod("slope")
+end)
 
-registerKeyBind(options.set_smoothen_method_Key,
+registerKeyBind(
+    options.set_smoothen_method_Key,
     options.set_smoothen_method_ModifierKeys,
-    function() setMethod("smoothen") end)
+    function()
+        setMethod("smoothen")
+    end
+)
 
-registerKeyBind(options.set_auto_method_Key,
-    options.set_auto_method_ModifierKeys,
-    function() setMethod("auto") end)
+registerKeyBind(options.set_auto_method_Key, options.set_auto_method_ModifierKeys, function()
+    setMethod("auto")
+end)
 
-registerKeyBind(options.set_paint_method_Key,
-    options.set_paint_method_ModifierKeys,
-    function() setMethod("paint") end)
+registerKeyBind(options.set_paint_method_Key, options.set_paint_method_ModifierKeys, function()
+    setMethod("paint")
+end)
 
-registerKeyBind(options.set_revert_method_Key,
-    options.set_revert_method_ModifierKeys,
-    function() setMethod("revert") end)
+registerKeyBind(options.set_revert_method_Key, options.set_revert_method_ModifierKeys, function()
+    setMethod("revert")
+end)
 
-registerKeyBind(options.toggle_colorDeform_ui_Key,
+registerKeyBind(
+    options.toggle_colorDeform_ui_Key,
     options.toggle_colorDeform_ui_ModifierKeys,
     function()
         onDeform_color.toggleUI()
-    end)
+    end
+)
 
-registerKeyBind(options.set_Flatten_mode_Key,
-    options.set_Flatten_mode_ModifierKeys,
-    function() setDeformTypeTo(EDeformType.Flatten) end)
+registerKeyBind(options.set_Flatten_mode_Key, options.set_Flatten_mode_ModifierKeys, function()
+    setDeformTypeTo(EDeformType.Flatten)
+end)
 
-registerKeyBind(options.set_FlattenSubtractOnly_mode_Key,
+registerKeyBind(
+    options.set_FlattenSubtractOnly_mode_Key,
     options.set_FlattenSubtractOnly_mode_ModifierKeys,
-    function() setDeformTypeTo(EDeformType.FlattenSubtractOnly) end)
+    function()
+        setDeformTypeTo(EDeformType.FlattenSubtractOnly)
+    end
+)
 
-registerKeyBind(options.set_FlattenAddOnly_mode_Key,
+registerKeyBind(
+    options.set_FlattenAddOnly_mode_Key,
     options.set_FlattenAddOnly_mode_ModifierKeys,
-    function() setDeformTypeTo(EDeformType.FlattenAddOnly) end)
+    function()
+        setDeformTypeTo(EDeformType.FlattenAddOnly)
+    end
+)
 
-registerKeyBind(options.increase_BaseBrushDeformationScale_Key,
+registerKeyBind(
+    options.increase_BaseBrushDeformationScale_Key,
     options.increase_BaseBrushDeformationScale_ModifierKeys,
     function()
         local terrainTool = getTerrainTool()
         terrainTool.BaseBrushDeformationScale = math.min(
             terrainTool.BaseBrushDeformationScale + options.BaseBrushDeformationScale_step,
-            options.BaseBrushDeformationScale_max)
-    end)
+            options.BaseBrushDeformationScale_max
+        )
+    end
+)
 
-registerKeyBind(options.decrease_BaseBrushDeformationScale_Key,
+registerKeyBind(
+    options.decrease_BaseBrushDeformationScale_Key,
     options.decrease_BaseBrushDeformationScale_ModifierKeys,
     function()
         local terrainTool = getTerrainTool()
         terrainTool.BaseBrushDeformationScale = math.max(
             terrainTool.BaseBrushDeformationScale - options.BaseBrushDeformationScale_step,
-            options.BaseBrushDeformationScale_min)
-    end)
+            options.BaseBrushDeformationScale_min
+        )
+    end
+)
 
 ---@param fullCommand string
 ---@param parameters table
@@ -1183,9 +1353,7 @@ RegisterConsoleCommandHandler("ttmod", function(fullCommand, parameters, outputD
     elseif arg == "off" then
         disableMod()
     else
-        local helpMsg =
-            "Usage: ttmod [on | off]>\n" ..
-            "Example: ttmod on\n"
+        local helpMsg = "Usage: ttmod [on | off]>\n" .. "Example: ttmod on\n"
         outputDevice:Log(helpMsg)
     end
 
@@ -1217,12 +1385,11 @@ RegisterConsoleCommandHandler("deform_type", function(fullCommand, parameters, o
     RevertModifications = 11
     Count = 12]]
 
-    local helpMsg =
-        "Force the terrain tool to use a specific deform type.\n" ..
-        "Usage: deform_type <DeformType>\n" ..
-        "Example: operation 11\n" ..
-        "DeformType values:\n" ..
-        values
+    local helpMsg = "Force the terrain tool to use a specific deform type.\n"
+        .. "Usage: deform_type <DeformType>\n"
+        .. "Example: operation 11\n"
+        .. "DeformType values:\n"
+        .. values
 
     if #parameters < 1 then
         outputDevice:Log(helpMsg)
@@ -1246,10 +1413,9 @@ end)
 ---@param outputDevice FOutputDevice
 ---@return boolean
 RegisterConsoleCommandHandler("look", function(fullCommand, parameters, outputDevice)
-    local helpMsg =
-        "Look in the north or east direction." ..
-        "Usage: look {n | e}\n" ..
-        "Example: look n"
+    local helpMsg = "Look in the north or east direction."
+        .. "Usage: look {n | e}\n"
+        .. "Example: look n"
 
     if #parameters < 1 then
         outputDevice:Log(helpMsg)
