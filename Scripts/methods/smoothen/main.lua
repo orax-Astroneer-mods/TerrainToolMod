@@ -492,20 +492,16 @@ local function hook_HandleTerrainTool(
         y_norm = y_norm / #normals
         z_norm = z_norm / #normals
 
-        -- RepBrushState (0x804)
+        -- RepBrushState
         deformTool.RepBrushState.CurrentDeformNormal = { X = x_norm, Y = y_norm, Z = z_norm }
 
-        deformTool.Deform_NormalX = x_norm
-        deformTool.Deform_NormalY = y_norm
-        deformTool.Deform_NormalZ = z_norm
+        deformTool.Deform_Normal1X = x_norm
+        deformTool.Deform_Normal1Y = y_norm
+        deformTool.Deform_Normal1Z = z_norm
 
         deformTool.Deform_Normal2X = x_norm
         deformTool.Deform_Normal2Y = y_norm
         deformTool.Deform_Normal2Z = z_norm
-
-        deformTool.Deform_Normal3X = x_norm
-        deformTool.Deform_Normal3Y = y_norm
-        deformTool.Deform_Normal3Z = z_norm
 
         deformTool.HitNormal = { X = x_norm, Y = y_norm, Z = z_norm }
     end
@@ -521,7 +517,7 @@ local function hook_HandleTerrainTool(
         y_loc = y_loc / #locations
         z_loc = z_loc / #locations
 
-        -- RepBrushState (0x804)
+        -- RepBrushState
         deformTool.RepBrushState.CurrentDeformLocation = { X = x_loc, Y = y_loc, Z = z_loc }
 
         deformTool.Deform_Location1X = x_loc
@@ -535,10 +531,6 @@ local function hook_HandleTerrainTool(
         deformTool.Deform_Location3X = x_loc
         deformTool.Deform_Location3Y = y_loc
         deformTool.Deform_Location3Z = z_loc
-
-        deformTool.Deform_Location4X = x_loc
-        deformTool.Deform_Location4Y = y_loc
-        deformTool.Deform_Location4Z = z_loc
 
         deformTool.HitLocation = { X = x_loc, Y = y_loc, Z = z_loc }
     end

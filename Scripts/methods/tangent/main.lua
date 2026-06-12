@@ -309,17 +309,13 @@ local function hook_HandleTerrainTool(
 
 	---@diagnostic disable: inject-field
 
-	deformTool.Deform_NormalX = angle.X
-	deformTool.Deform_NormalY = angle.Y
-	deformTool.Deform_NormalZ = angle.Z
+	deformTool.Deform_Normal1X = angle.X
+	deformTool.Deform_Normal1Y = angle.Y
+	deformTool.Deform_Normal1Z = angle.Z
 
 	deformTool.Deform_Normal2X = angle.X
 	deformTool.Deform_Normal2Y = angle.Y
 	deformTool.Deform_Normal2Z = angle.Z
-
-	deformTool.Deform_Normal3X = angle.X
-	deformTool.Deform_Normal3Y = angle.Y
-	deformTool.Deform_Normal3Z = angle.Z
 
 	deformTool.Deform_Location1X = u.X
 	deformTool.Deform_Location1Y = u.Y
@@ -332,10 +328,6 @@ local function hook_HandleTerrainTool(
 	deformTool.Deform_Location3X = u.X
 	deformTool.Deform_Location3Y = u.Y
 	deformTool.Deform_Location3Z = u.Z
-
-	deformTool.Deform_Location4X = u.X
-	deformTool.Deform_Location4Y = u.Y
-	deformTool.Deform_Location4Z = u.Z
 
 	deformTool.HitLocation = u
 	deformTool.HitNormal = angle

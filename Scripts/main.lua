@@ -75,8 +75,9 @@ local WriteMainParamsFileRequired = false
 
 local UEHelpers = require("UEHelpers")
 local logging = require("lib.lua-mods-libs.logging")
-local utils = require("lib.lua-mods-libs.utils")
 local func = require("func")
+
+local offsets = require("offsets")
 
 modules = "lib.LEEF-math.modules." ---@diagnostic disable-line: lowercase-global
 Vec3 = require("lib.LEEF-math.modules.vec3")
@@ -401,42 +402,22 @@ end
 --#region Custom properties
 -- Deform_Normal1
 RegisterCustomProperty({
-    ["Name"] = "Deform_NormalX",
+    ["Name"] = "Deform_Normal1X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x82C,
+    ["OffsetInternal"] = offsets.Deform_Normal1X,
 })
 RegisterCustomProperty({
-    ["Name"] = "Deform_NormalY",
+    ["Name"] = "Deform_Normal1Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x82C + 4,
+    ["OffsetInternal"] = offsets.Deform_Normal1Y,
 })
 RegisterCustomProperty({
-    ["Name"] = "Deform_NormalZ",
+    ["Name"] = "Deform_Normal1Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x82C + 8,
-})
-
--- Deform_Location1
-RegisterCustomProperty({
-    ["Name"] = "Deform_Location1X",
-    ["Type"] = PropertyTypes.FloatProperty,
-    ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x838,
-})
-RegisterCustomProperty({
-    ["Name"] = "Deform_Location1Y",
-    ["Type"] = PropertyTypes.FloatProperty,
-    ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x838 + 4,
-})
-RegisterCustomProperty({
-    ["Name"] = "Deform_Location1Z",
-    ["Type"] = PropertyTypes.FloatProperty,
-    ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x838 + 8,
+    ["OffsetInternal"] = offsets.Deform_Normal1Z,
 })
 
 -- Deform_Normal2
@@ -444,19 +425,39 @@ RegisterCustomProperty({
     ["Name"] = "Deform_Normal2X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x860,
+    ["OffsetInternal"] = offsets.Deform_Normal2X,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Normal2Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x860 + 4,
+    ["OffsetInternal"] = offsets.Deform_Normal2Y,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Normal2Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x860 + 8,
+    ["OffsetInternal"] = offsets.Deform_Normal2Z,
+})
+
+-- Deform_Location1
+RegisterCustomProperty({
+    ["Name"] = "Deform_Location1X",
+    ["Type"] = PropertyTypes.FloatProperty,
+    ["BelongsToClass"] = "/Script/Astro.DeformTool",
+    ["OffsetInternal"] = offsets.Deform_Location1X,
+})
+RegisterCustomProperty({
+    ["Name"] = "Deform_Location1Y",
+    ["Type"] = PropertyTypes.FloatProperty,
+    ["BelongsToClass"] = "/Script/Astro.DeformTool",
+    ["OffsetInternal"] = offsets.Deform_Location1Y,
+})
+RegisterCustomProperty({
+    ["Name"] = "Deform_Location1Z",
+    ["Type"] = PropertyTypes.FloatProperty,
+    ["BelongsToClass"] = "/Script/Astro.DeformTool",
+    ["OffsetInternal"] = offsets.Deform_Location1Z,
 })
 
 -- Deform_Location2
@@ -464,19 +465,19 @@ RegisterCustomProperty({
     ["Name"] = "Deform_Location2X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x86C,
+    ["OffsetInternal"] = offsets.Deform_Location2X,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location2Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x86C + 4,
+    ["OffsetInternal"] = offsets.Deform_Location2Y,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location2Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x86C + 8,
+    ["OffsetInternal"] = offsets.Deform_Location2Z,
 })
 
 -- Deform_Location3
@@ -484,59 +485,19 @@ RegisterCustomProperty({
     ["Name"] = "Deform_Location3X",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8E8,
+    ["OffsetInternal"] = offsets.Deform_Location3X,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location3Y",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8E8 + 4,
+    ["OffsetInternal"] = offsets.Deform_Location3Y,
 })
 RegisterCustomProperty({
     ["Name"] = "Deform_Location3Z",
     ["Type"] = PropertyTypes.FloatProperty,
     ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8E8 + 8,
-})
-
--- Deform_Normal3
-RegisterCustomProperty({
-    ["Name"] = "Deform_Normal3X",
-    ["Type"] = PropertyTypes.FloatProperty,
-    ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8F4,
-})
-RegisterCustomProperty({
-    ["Name"] = "Deform_Normal3Y",
-    ["Type"] = PropertyTypes.FloatProperty,
-    ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8F4 + 4,
-})
-RegisterCustomProperty({
-    ["Name"] = "Deform_Normal3Z",
-    ["Type"] = PropertyTypes.FloatProperty,
-    ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x8F4 + 8,
-})
-
--- Deform_Location4
-RegisterCustomProperty({
-    ["Name"] = "Deform_Location4X",
-    ["Type"] = PropertyTypes.FloatProperty,
-    ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x900,
-})
-RegisterCustomProperty({
-    ["Name"] = "Deform_Location4Y",
-    ["Type"] = PropertyTypes.FloatProperty,
-    ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x900 + 4,
-})
-RegisterCustomProperty({
-    ["Name"] = "Deform_Location4Z",
-    ["Type"] = PropertyTypes.FloatProperty,
-    ["BelongsToClass"] = "/Script/Astro.DeformTool",
-    ["OffsetInternal"] = 0x900 + 8,
+    ["OffsetInternal"] = offsets.Deform_Location3Z,
 })
 --#endregion
 

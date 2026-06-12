@@ -265,17 +265,13 @@ local function hook_HandleTerrainTool(
 
     ---@diagnostic disable: inject-field
 
-    deformTool.Deform_NormalX = u_unit.X
-    deformTool.Deform_NormalY = u_unit.Y
-    deformTool.Deform_NormalZ = u_unit.Z
+    deformTool.Deform_Normal1X = u_unit.X
+    deformTool.Deform_Normal1Y = u_unit.Y
+    deformTool.Deform_Normal1Z = u_unit.Z
 
     deformTool.Deform_Normal2X = u_unit.X
     deformTool.Deform_Normal2Y = u_unit.Y
     deformTool.Deform_Normal2Z = u_unit.Z
-
-    deformTool.Deform_Normal3X = u_unit.X
-    deformTool.Deform_Normal3Y = u_unit.Y
-    deformTool.Deform_Normal3Z = u_unit.Z
 
     deformTool.HitNormal = u_unit
 
