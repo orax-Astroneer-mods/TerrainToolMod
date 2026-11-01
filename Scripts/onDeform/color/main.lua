@@ -543,9 +543,33 @@ local function manageHook()
     end
 end
 
-local function init()
+---Center of the player's planet, or nil while still loading into a server.
+---@return FVector?
+local function getPlanetCenter()
     Controller = UEHelpers:GetPlayerController() ---@cast Controller APlayControllerInstance_C
-    PlanetCenter = Controller:GetLocalSolarBody():GetCenter()
+    if not Controller:IsValid() then
+        return nil
+    end
+    local designAstro = UEHelpers:GetPlayer()
+    if not designAstro:IsValid() or not designAstro:IsA("/Game/Character/DesignAstro.DesignAstro_C") then
+        return nil
+    end ---@cast designAstro ADesignAstro_C
+    if not designAstro.LocalSolarBody:IsValid() then
+        return nil
+    end
+    local solarBody = Controller:GetLocalSolarBody()
+    if not solarBody:IsValid() then
+        return nil
+    end
+    return solarBody:GetCenter()
+end
+
+local function init()
+    local planetCenter = getPlanetCenter()
+    if planetCenter == nil then
+        return
+    end
+    PlanetCenter = planetCenter
     if UI.userWidget:IsValid() == false or UI.userWidget:IsInViewport() == false or UICreated == false then
         UICreated = createUI()
         if UICreated == false then
@@ -588,13 +612,13 @@ end
 ---@param newPawn ADesignAstro_C
 ---@param firstInitialization boolean
 function m.hook_PlayerController_ClientRestart(self, newPawn, firstInitialization)
-    Controller = UEHelpers:GetPlayerController() ---@cast Controller APlayControllerInstance_C
-    PlanetCenter = Controller:GetLocalSolarBody():GetCenter()
+    -- The localized-message hook is disabled, so the UI is created here.
+    init()
 end
 
 ---@param self RemoteUnrealParam
 function m.hook_Planet_Marker_HandlePlanetMarkerSelected(self)
-    PlanetCenter = Controller:GetLocalSolarBody():GetCenter()
+    PlanetCenter = getPlanetCenter() or PlanetCenter
 
     UI.menu:Destruct()
     UI.menu:Construct()

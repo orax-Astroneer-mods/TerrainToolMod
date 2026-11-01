@@ -569,11 +569,9 @@ local function hook_Planet_Marker_HandlePlanetMarkerSelected()
     )
 end
 
----@param self RemoteUnrealParam
----@param NewPawn RemoteUnrealParam
-RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
-    local newPawn = NewPawn:get() ---@type ADesignAstro_C
-
+---@param self APlayerController
+---@param newPawn ADesignAstro_C
+local function onPlayerPawnReady(self, newPawn)
     if
         newPawn:IsA("/Game/Character/DesignAstro.DesignAstro_C")
         and newPawn.LocalSolarBody:IsValid()
@@ -602,30 +600,75 @@ RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, New
 
         FirstInit = false
     end
+end
+
+-- Hooking the ClientRestart RPC crashes clients joining a dedicated server, so poll for the pawn instead.
+local PAWN_POLL_INTERVAL_MS = 1000
+local PAWN_SETTLE_CHECKS = 3
+local ReadyPawnAddress = nil ---@type integer?
+local CandidatePawnAddress = nil ---@type integer?
+local CandidatePawnChecks = 0
+
+LoopAsync(PAWN_POLL_INTERVAL_MS, function()
+    ExecuteInGameThread(function()
+        local pawn = UEHelpers:GetPlayer() ---@cast pawn ADesignAstro_C
+        if
+            not pawn:IsValid()
+            or not pawn:IsA("/Game/Character/DesignAstro.DesignAstro_C")
+            or not pawn.LocalSolarBody:IsValid()
+        then
+            CandidatePawnAddress = nil
+            CandidatePawnChecks = 0
+            return
+        end
+
+        local address = pawn:GetAddress()
+        if address == ReadyPawnAddress then
+            return
+        end
+        if address ~= CandidatePawnAddress then
+            CandidatePawnAddress = address
+            CandidatePawnChecks = 0
+        end
+        CandidatePawnChecks = CandidatePawnChecks + 1
+        if CandidatePawnChecks < PAWN_SETTLE_CHECKS then
+            return
+        end
+
+        ReadyPawnAddress = address
+        onPlayerPawnReady(UEHelpers:GetPlayerController(), pawn)
+    end)
+
+    return false
 end)
 
-RegisterHook("/Script/Engine.PlayerController:ClientReceiveLocalizedMessage", function(...)
-    -- execute event for the current method
-    if
-        CurrenMethod ~= ""
-        and type(Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage)
-            == "function"
-    then
-        log.debug(
-            "Execute PlayerController_ClientReceiveLocalizedMessage event for method %q.",
-            CurrenMethod
-        )
-        Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage(...)
-    end
+-- Disabled: the same crash as ClientRestart above.
+local HOOK_CLIENT_RECEIVE_LOCALIZED_MESSAGE = false
 
-    -- execute event for onDeform_color
-    if type(onDeform_color.PlayerController_ClientReceiveLocalizedMessage) == "function" then
-        log.debug(
-            "Execute PlayerController_ClientReceiveLocalizedMessage event for onDeform_color."
-        )
-        onDeform_color.PlayerController_ClientReceiveLocalizedMessage(...)
-    end
-end)
+if HOOK_CLIENT_RECEIVE_LOCALIZED_MESSAGE then
+    RegisterHook("/Script/Engine.PlayerController:ClientReceiveLocalizedMessage", function(...)
+        -- execute event for the current method
+        if
+            CurrenMethod ~= ""
+            and type(Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage)
+                == "function"
+        then
+            log.debug(
+                "Execute PlayerController_ClientReceiveLocalizedMessage event for method %q.",
+                CurrenMethod
+            )
+            Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage(...)
+        end
+
+        -- execute event for onDeform_color
+        if type(onDeform_color.PlayerController_ClientReceiveLocalizedMessage) == "function" then
+            log.debug(
+                "Execute PlayerController_ClientReceiveLocalizedMessage event for onDeform_color."
+            )
+            onDeform_color.PlayerController_ClientReceiveLocalizedMessage(...)
+        end
+    end)
+end
 
 -- Manage "UE4SS Restart mods" or when the script is injected manually.
 if UEHelpers:GetPlayer():IsValid() then
@@ -650,6 +693,10 @@ if UEHelpers:GetPlayer():IsValid() then
             log.debug("Execute onModRestartedOrStartedManually event for onDeform_color.")
             onDeform_color.onModRestartedOrStartedManually(FirstInit)
         end
+
+        -- Stops the pawn poll from registering these hooks a second time.
+        ReadyPawnAddress = player:GetAddress()
+        FirstInit = false
     end
 end
 
@@ -690,8 +737,20 @@ local function getTerrainTool()
         end
     end
 
+    -- On a dedicated server the held tool fails the hidden check, so use the last activated one.
+    if CachedTerrainTool:IsValid() then
+        return CachedTerrainTool
+    end
+
     return CreateInvalidObject()
 end
+
+RegisterHook("/Script/Astro.DeformTool:Activated", function(self)
+    local deformTool = self:get()
+    if deformTool:IsValid() and deformTool:IsA("/Game/Components_Small/SmallDeform_TERRAIN_EXPERIMENTAL.SmallDeform_TERRAIN_EXPERIMENTAL_C") then
+        CachedTerrainTool = deformTool
+    end
+end)
 
 ---@param deformType? EDeformType
 ---@param deformTool? ASmallDeform_TERRAIN_EXPERIMENTAL_C|UObject
@@ -702,6 +761,7 @@ local function setDeformTypeTo(deformType, deformTool)
 
     if not deformTool:IsValid() then
         log.warn("DeformTool is invalid.")
+        return
     end
 
     deformType = deformType or options.deformType
@@ -1065,6 +1125,9 @@ local function toogleHelpUI()
     end
 end
 
+local TANGENT_TERRAIN_SERVER_BATCH_SIZE = 10
+local TANGENT_TERRAIN_SERVER_BATCH_DELAY_MS = 100
+
 local function createTangentTerrain()
     local baseArcLength = options.TangentTerrain.ALC_LENGTH
     local iterations = options.TangentTerrain.ITERATIONS
@@ -1074,6 +1137,10 @@ local function createTangentTerrain()
     ExecuteInGameThread(function()
         local designAstro = UEHelpers:GetPlayer() ---@cast designAstro ADesignAstro_C
         local controller = UEHelpers:GetPlayerController() ---@cast controller APlayControllerInstance_C
+
+        -- ClientDoDeformation is local only and a dedicated server overwrites it, so clients ask the server.
+        local isClient = not controller:HasAuthority()
+        local deformations = {}
 
         local loc = designAstro:K2_GetActorLocation()
         local fw = designAstro:GetActorForwardVector()
@@ -1128,7 +1195,7 @@ local function createTangentTerrain()
                 local v_absolute =
                     vec3.new(v.x + planetCenter.X, v.y + planetCenter.Y, v.z + planetCenter.Z)
 
-                controller:ClientDoDeformation({
+                table.insert(deformations, {
                     AutoCreateResourceEfficiency = 0,
                     CreativeModeNoResourceCollection = false,
                     DeltaTime = 1000, -- ???
@@ -1153,6 +1220,40 @@ local function createTangentTerrain()
                 })
             end
         end
+
+        if not isClient then
+            for _, deformation in ipairs(deformations) do
+                controller:ClientDoDeformation(deformation)
+            end
+            return
+        end
+
+        -- Batch the RPCs instead of sending hundreds in one frame.
+        local nextIndex = 1
+        local batchPending = false
+        LoopAsync(TANGENT_TERRAIN_SERVER_BATCH_DELAY_MS, function()
+            if nextIndex > #deformations then
+                return true
+            end
+            if batchPending then
+                return false
+            end
+
+            batchPending = true
+            ExecuteInGameThread(function()
+                if not controller:IsValid() then
+                    nextIndex = #deformations + 1
+                else
+                    local last = math.min(nextIndex + TANGENT_TERRAIN_SERVER_BATCH_SIZE - 1, #deformations)
+                    for k = nextIndex, last do
+                        controller:ServerDoDeformation(deformations[k])
+                    end
+                    nextIndex = last + 1
+                end
+                batchPending = false
+            end)
+            return false
+        end)
     end)
 end
 
