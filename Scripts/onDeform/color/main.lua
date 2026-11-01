@@ -38,13 +38,13 @@ local ESlateVisibility = {
     Hidden = 2,
     HitTestInvisible = 3,
     SelfHitTestInvisible = 4,
-    ESlateVisibility_MAX = 5
+    ESlateVisibility_MAX = 5,
 }
 
 ---@type ECheckBoxState
 local ECheckBoxState = {
-    Unchecked    = 0,
-    Checked      = 1,
+    Unchecked = 0,
+    Checked = 1,
     Undetermined = 2,
 }
 
@@ -106,26 +106,38 @@ local function writeParamsFile()
 
     assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
-    if params.PLANET_MATERIAL_INDEX == nil then params.PLANET_MATERIAL_INDEX = {} end
-    if params.ENABLE == nil then params.ENABLE = false end
-    if params.REVERT_COLOR == nil then params.REVERT_COLOR = false end
-    if params.SCALE == nil then params.SCALE = 1.25 end
-    if params.VISIBILITY == nil then params.VISIBILITY = ESlateVisibility.Visible end
+    if params.PLANET_MATERIAL_INDEX == nil then
+        params.PLANET_MATERIAL_INDEX = {}
+    end
+    if params.ENABLE == nil then
+        params.ENABLE = false
+    end
+    if params.REVERT_COLOR == nil then
+        params.REVERT_COLOR = false
+    end
+    if params.SCALE == nil then
+        params.SCALE = 1.25
+    end
+    if params.VISIBILITY == nil then
+        params.VISIBILITY = ESlateVisibility.Visible
+    end
 
-    file:write(format(
-        [[return {
+    file:write(
+        format(
+            [[return {
 PLANET_MATERIAL_INDEX=%s,
 ENABLE=%s,
 REVERT_COLOR=%s,
 SCALE=%.16g,
 VISIBILITY=%d,
 }]],
-        func.tableToString(params.PLANET_MATERIAL_INDEX, "%d"),
-        params.ENABLE,
-        params.REVERT_COLOR,
-        params.SCALE,
-        params.VISIBILITY
-    ))
+            func.tableToString(params.PLANET_MATERIAL_INDEX, "%d"),
+            params.ENABLE,
+            params.REVERT_COLOR,
+            params.SCALE,
+            params.VISIBILITY
+        )
+    )
 
     file:close()
 end
@@ -143,7 +155,6 @@ local function updateParams()
         params.ENABLE = enable
         updateRequired = true
     end
-
 
     local scale = tonumber(UI.scale.Text:ToString())
     if scale == nil then
@@ -194,13 +205,15 @@ local function updateUI()
     params = func.loadParamsFile(paramsFile) ---@type TerrainToolMod__onDeform_color__PARAMS
 
     if UI.enableCheckBox:IsValid() then
-        UI.enableCheckBox:SetCheckedState(params.ENABLE == true and
-            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+        UI.enableCheckBox:SetCheckedState(
+            params.ENABLE == true and ECheckBoxState.Checked or ECheckBoxState.Unchecked
+        )
     end
 
     if UI.revertColorCheckBox:IsValid() then
-        UI.revertColorCheckBox:SetCheckedState(params.REVERT_COLOR == true and
-            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+        UI.revertColorCheckBox:SetCheckedState(
+            params.REVERT_COLOR == true and ECheckBoxState.Checked or ECheckBoxState.Unchecked
+        )
     end
 
     if UI.scale:IsValid() then
@@ -213,11 +226,16 @@ local function updateUI()
         if designAstro:IsValid() then ---@cast designAstro ADesignAstro_C
             local planetName = designAstro:GetLocalSolarBody().Name:ToString()
             materialIndex = params.PLANET_MATERIAL_INDEX[planetName]
-            if materialIndex == nil then materialIndex = 0 end
+            if materialIndex == nil then
+                materialIndex = 0
+            end
         end
 
-        UI.menu:OnColorAndTypePicked({ R = 0, G = 0, B = 0, A = 0 },
-            materialIndex, EPaintIndexType.PlanetPalette)
+        UI.menu:OnColorAndTypePicked(
+            { R = 0, G = 0, B = 0, A = 0 },
+            materialIndex,
+            EPaintIndexType.PlanetPalette
+        )
     end
     MaterialIndexImage = materialIndex
     _G.MaterialIndexImage = materialIndex
@@ -255,7 +273,8 @@ local function createUI()
         return false
     end
 
-    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    local fontObj =
+        StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
     if not fontObj:IsValid() then
         return false
     end
@@ -263,56 +282,92 @@ local function createUI()
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
     ---@type UUserWidget
-    UI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
-        FName(prefix .. "UserWidget"))
+    UI.userWidget = StaticConstructObject(
+        StaticFindObject("/Script/UMG.UserWidget"),
+        gameInstance,
+        FName(prefix .. "UserWidget")
+    )
     assert(UI.userWidget:IsValid())
 
-    UI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), UI.userWidget,
-        FName(prefix .. "WidgetTree"))
+    UI.userWidget.WidgetTree = StaticConstructObject(
+        StaticFindObject("/Script/UMG.WidgetTree"),
+        UI.userWidget,
+        FName(prefix .. "WidgetTree")
+    )
     assert(UI.userWidget.WidgetTree:IsValid())
 
     ---@type UCanvasPanel
-    UI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
-        UI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
+    UI.canvas = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CanvasPanel"),
+        UI.userWidget.WidgetTree,
+        FName(prefix .. "CanvasPanel")
+    )
     assert(UI.canvas:IsValid())
     UI.userWidget.WidgetTree.RootWidget = UI.canvas
 
     local rootWidget = UI.userWidget.WidgetTree.RootWidget
 
     ---@type UVerticalBox
-    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
-        rootWidget, FName(prefix .. "VerticalBox"))
+    local verticalBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.VerticalBox"),
+        rootWidget,
+        FName(prefix .. "VerticalBox")
+    )
 
     ---@type UTextBlock
-    local textBlock_title = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_title"))
+    local textBlock_title = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_title")
+    )
     textBlock_title.Font.Size = optUI.onDeform_color.font_size
     textBlock_title.Font.FontObject = fontObj
     textBlock_title:SetText(FText(optUI.onDeform_color.txt.title))
-    textBlock_title:SetToolTipText(FText(format(optUI.onDeform_color.txt.description_tip,
-        func.getKeybindName(options.toggle_colorDeform_ui_Key, options.toggle_colorDeform_ui_ModifierKeys))))
+    textBlock_title:SetToolTipText(
+        FText(
+            format(
+                optUI.onDeform_color.txt.description_tip,
+                func.getKeybindName(
+                    options.toggle_colorDeform_ui_Key,
+                    options.toggle_colorDeform_ui_ModifierKeys
+                )
+            )
+        )
+    )
 
     --#region enable
     ---@type UHorizontalBox
-    local horizontalBox_enable = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_enable"))
+    local horizontalBox_enable = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_enable")
+    )
     horizontalBox_enable:SetToolTipText(FText(optUI.onDeform_color.txt.enable_tip))
 
     ---@type UTextBlock
-    local textBlock_enable = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_enable"))
+    local textBlock_enable = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_enable")
+    )
     textBlock_enable.Font.Size = optUI.onDeform_color.font_size
     textBlock_enable.Font.FontObject = fontObj
     textBlock_enable:SetText(FText(optUI.onDeform_color.txt.enable))
 
     ---@type USpacer
-    local spacer_enable = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_enable"))
+    local spacer_enable = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_enable")
+    )
     spacer_enable:SetSize(optUI.onDeform_color.spacer_size)
 
     ---@type UCheckBox
-    UI.enableCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_enable"))
+    UI.enableCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_enable")
+    )
 
     horizontalBox_enable:AddChildToHorizontalBox(textBlock_enable)
     horizontalBox_enable:AddChildToHorizontalBox(spacer_enable)
@@ -321,25 +376,37 @@ local function createUI()
 
     --#region scale
     ---@type UHorizontalBox
-    local horizontalBox_scale = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_scale"))
+    local horizontalBox_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_scale")
+    )
     horizontalBox_scale:SetToolTipText(FText(optUI.onDeform_color.txt.scale_tip))
 
     ---@type UTextBlock
-    local textBlock_scale = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_scale"))
+    local textBlock_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_scale")
+    )
     textBlock_scale.Font.Size = optUI.onDeform_color.font_size
     textBlock_scale.Font.FontObject = fontObj
     textBlock_scale:SetText(FText(optUI.onDeform_color.txt.scale))
 
     ---@type USpacer
-    local spacer_scale = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_scale"))
+    local spacer_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_scale")
+    )
     spacer_scale:SetSize(optUI.onDeform_color.spacer_size)
 
     ---@type UEditableTextBox
-    UI.scale = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_scale"))
+    UI.scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_scale")
+    )
     UI.scale.WidgetStyle.Font.Size = optUI.onDeform_color.font_size
     UI.scale.WidgetStyle.Font.FontObject = fontObj
     UI.scale.SelectAllTextWhenFocused = true
@@ -351,25 +418,37 @@ local function createUI()
 
     --#region revert original color
     ---@type UHorizontalBox
-    local horizontalBox_revertColor = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_revertColor"))
+    local horizontalBox_revertColor = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_revertColor")
+    )
     horizontalBox_revertColor:SetToolTipText(FText(optUI.onDeform_color.txt.revertColor_tip))
 
     ---@type UTextBlock
-    local textBlock_revertColor = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_revertColor"))
+    local textBlock_revertColor = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_revertColor")
+    )
     textBlock_revertColor.Font.Size = optUI.onDeform_color.font_size
     textBlock_revertColor.Font.FontObject = fontObj
     textBlock_revertColor:SetText(FText(optUI.onDeform_color.txt.revertColor))
 
     ---@type USpacer
-    local spacer_revertColor = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_revertColor"))
+    local spacer_revertColor = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_revertColor")
+    )
     spacer_revertColor:SetSize(optUI.onDeform_color.spacer_size)
 
     ---@type UCheckBox
-    UI.revertColorCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_revertColor"))
+    UI.revertColorCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_revertColor")
+    )
 
     horizontalBox_revertColor:AddChildToHorizontalBox(textBlock_revertColor)
     horizontalBox_revertColor:AddChildToHorizontalBox(spacer_revertColor)
@@ -378,26 +457,47 @@ local function createUI()
 
     --#region material index
     ---@type UHorizontalBox
-    local horizontalBox_material_index = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_material_index"))
-    horizontalBox_material_index:SetToolTipText(FText(format(optUI.onDeform_color.txt.material_index_tip,
-        func.getKeybindName(options.enable_handleTerrainTool_Key, options.enable_handleTerrainTool_ModifierKeys))))
+    local horizontalBox_material_index = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_material_index")
+    )
+    horizontalBox_material_index:SetToolTipText(
+        FText(
+            format(
+                optUI.onDeform_color.txt.material_index_tip,
+                func.getKeybindName(
+                    options.enable_handleTerrainTool_Key,
+                    options.enable_handleTerrainTool_ModifierKeys
+                )
+            )
+        )
+    )
 
     ---@type UTextBlock
-    local textBlock_materialIndex = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_material_index"))
+    local textBlock_materialIndex = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_material_index")
+    )
     textBlock_materialIndex.Font.Size = optUI.onDeform_color.font_size
     textBlock_materialIndex.Font.FontObject = fontObj
     textBlock_materialIndex:SetText(FText(optUI.onDeform_color.txt.material_index))
 
     ---@type USpacer
-    local spacer_material_index = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_material_index"))
+    local spacer_material_index = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_material_index")
+    )
     spacer_material_index:SetSize(optUI.onDeform_color.spacer_size)
 
     ---@type UEditableTextBox
-    UI.materialIndex = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_material_index"))
+    UI.materialIndex = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_material_index")
+    )
     UI.materialIndex.WidgetStyle.Font.Size = optUI.onDeform_color.font_size
     UI.materialIndex.WidgetStyle.Font.FontObject = fontObj
     UI.materialIndex.SelectAllTextWhenFocused = true
@@ -416,8 +516,10 @@ local function createUI()
 
     ---@type UTerrainToolCreativeMenu_C
     UI.menu = StaticConstructObject(
-        StaticFindObject("/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C"), rootWidget,
-        FName(prefix .. "TerrainToolCreativeMenu_C"))
+        StaticFindObject("/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C"),
+        rootWidget,
+        FName(prefix .. "TerrainToolCreativeMenu_C")
+    )
     assert(UI.menu:IsValid(), "Unable to create TerrainToolCreativeMenu widget.")
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
@@ -432,11 +534,14 @@ local function createUI()
     UI.userWidget:AddToViewport(optUI._generic.zOrder2)
 
     UI.canvas:AddChildToCanvas(UI.menu)
-    UI.menu.ActiveColorImage.RenderTransformPivot = optUI.onDeform_color.ActiveColorImage_RenderTransformPivot
-    UI.menu.ActiveColorImage.RenderTransform.Scale = optUI.onDeform_color.ActiveColorImage_RenderTransform_Scale
+    UI.menu.ActiveColorImage.RenderTransformPivot =
+        optUI.onDeform_color.ActiveColorImage_RenderTransformPivot
+    UI.menu.ActiveColorImage.RenderTransform.Scale =
+        optUI.onDeform_color.ActiveColorImage_RenderTransform_Scale
     verticalBox:AddChildToVerticalBox(UI.menu.ActiveColorImage)
 
-    UI.menu.CreativeTerrainPlanetColorPicker.Padding = optUI.onDeform_color.CreativeTerrainPlanetColorPicker_Padding
+    UI.menu.CreativeTerrainPlanetColorPicker.Padding =
+        optUI.onDeform_color.CreativeTerrainPlanetColorPicker_Padding
     verticalBox:AddChildToVerticalBox(UI.menu.CreativeTerrainPlanetColorPicker)
 
     UI.menu:RemoveFromParent()
@@ -447,7 +552,12 @@ local function createUI()
 end
 
 local function showUI()
-    if UICreated == true and UI.userWidget and UI.userWidget:IsValid() and UI.userWidget:IsInViewport() then
+    if
+        UICreated == true
+        and UI.userWidget
+        and UI.userWidget:IsValid()
+        and UI.userWidget:IsInViewport()
+    then
         UI.userWidget:SetVisibility(ESlateVisibility.Visible)
     else
         UICreated = createUI()
@@ -468,7 +578,11 @@ local function hideUI()
 end
 
 function m.toggleUI()
-    if UI.userWidget and UI.userWidget:IsValid() and UI.userWidget:GetVisibility() == ESlateVisibility.Visible then
+    if
+        UI.userWidget
+        and UI.userWidget:IsValid()
+        and UI.userWidget:GetVisibility() == ESlateVisibility.Visible
+    then
         hideUI()
     else
         showUI()
@@ -481,13 +595,17 @@ local function hook_AstroPlanet_OnDeformationComplete(self, _deformParams)
     local deformParams = _deformParams:get() ---@type FDeformationParamsT2
 
     ---@diagnostic disable-next-line: undefined-field
-    if deformParams.Instigator:Get():IsA(
-            "/Game/Components_Small/SmallDeform_TERRAIN_EXPERIMENTAL.SmallDeform_TERRAIN_EXPERIMENTAL_C") and
-        (deformParams.Operation == EDeformType.Add or
-            deformParams.Operation == EDeformType.Flatten or
-            deformParams.Operation == EDeformType.FlattenAddOnly or
-            deformParams.Operation == EDeformType.FlattenSubtractOnly or
-            deformParams.Operation == EDeformType.PlatformSurface)
+    if
+        deformParams.Instigator:Get():IsA(
+            "/Game/Components_Small/SmallDeform_TERRAIN_EXPERIMENTAL.SmallDeform_TERRAIN_EXPERIMENTAL_C"
+        )
+        and (
+            deformParams.Operation == EDeformType.Add
+            or deformParams.Operation == EDeformType.Flatten
+            or deformParams.Operation == EDeformType.FlattenAddOnly
+            or deformParams.Operation == EDeformType.FlattenSubtractOnly
+            or deformParams.Operation == EDeformType.PlatformSurface
+        )
     then
         Controller:ClientDoDeformation({
             AutoCreateResourceEfficiency = 0,
@@ -503,31 +621,45 @@ local function hook_AstroPlanet_OnDeformationComplete(self, _deformParams)
                 Z = deformParams.Location.Z + PlanetCenter.Z,
             },
             MaterialIndex = deform.MaterialIndex,
-            Normal = { X = deformParams.Normal.X, Y = deformParams.Normal.Y, Z = deformParams.Normal.Z },
+            Normal = {
+                X = deformParams.Normal.X,
+                Y = deformParams.Normal.Y,
+                Z = deformParams.Normal.Z,
+            },
             Operation = deform.Operation,
             Scale = deformParams.Scale * params.SCALE,
             SequenceNumber = 0,
             Shape = 0,
             bEasyUnbury = false,
             bForceUnburyWithNoDeformationEvent = false,
-            bUseAlternatePolygonization = true
+            bUseAlternatePolygonization = true,
         })
     end
 end
 
 ---@param callback function
 local function registerHook_AstroPlanet_OnDeformationComplete(callback)
-    if type(PreId_AstroPlanet_OnDeformationComplete) == "number" or type(PostId_AstroPlanet_OnDeformationComplete) == "number" then
+    if
+        type(PreId_AstroPlanet_OnDeformationComplete) == "number"
+        or type(PostId_AstroPlanet_OnDeformationComplete) == "number"
+    then
         log.warn("AstroPlanet_OnDeformationComplete is already hooked.")
         return
     end
-    PreId_AstroPlanet_OnDeformationComplete, PostId_AstroPlanet_OnDeformationComplete = RegisterHook(
-        "/Script/Astro.AstroPlanet:OnDeformationComplete", callback)
+    PreId_AstroPlanet_OnDeformationComplete, PostId_AstroPlanet_OnDeformationComplete =
+        RegisterHook("/Script/Astro.AstroPlanet:OnDeformationComplete", callback)
 end
+
 local function unregisterHook_AstroPlanet_OnDeformationComplete()
-    if type(PreId_AstroPlanet_OnDeformationComplete) == "number" and type(PostId_AstroPlanet_OnDeformationComplete) == "number" then
-        UnregisterHook("/Script/Astro.AstroPlanet:OnDeformationComplete", PreId_AstroPlanet_OnDeformationComplete,
-            PostId_AstroPlanet_OnDeformationComplete)
+    if
+        type(PreId_AstroPlanet_OnDeformationComplete) == "number"
+        and type(PostId_AstroPlanet_OnDeformationComplete) == "number"
+    then
+        UnregisterHook(
+            "/Script/Astro.AstroPlanet:OnDeformationComplete",
+            PreId_AstroPlanet_OnDeformationComplete,
+            PostId_AstroPlanet_OnDeformationComplete
+        )
         PreId_AstroPlanet_OnDeformationComplete = nil
         PostId_AstroPlanet_OnDeformationComplete = nil
     end
@@ -551,7 +683,10 @@ local function getPlanetCenter()
         return nil
     end
     local designAstro = UEHelpers:GetPlayer()
-    if not designAstro:IsValid() or not designAstro:IsA("/Game/Character/DesignAstro.DesignAstro_C") then
+    if
+        not designAstro:IsValid()
+        or not designAstro:IsA("/Game/Character/DesignAstro.DesignAstro_C")
+    then
         return nil
     end ---@cast designAstro ADesignAstro_C
     if not designAstro.LocalSolarBody:IsValid() then
@@ -570,7 +705,11 @@ local function init()
         return
     end
     PlanetCenter = planetCenter
-    if UI.userWidget:IsValid() == false or UI.userWidget:IsInViewport() == false or UICreated == false then
+    if
+        UI.userWidget:IsValid() == false
+        or UI.userWidget:IsInViewport() == false
+        or UICreated == false
+    then
         UICreated = createUI()
         if UICreated == false then
             log.warn("Unable to create UI.")
@@ -595,11 +734,19 @@ end)
 ---@param SelectedColor FLinearColor
 ---@param SelectedColorIndex int32
 ---@param PaintType EPaintIndexType
-function m.hook_TerrainToolCreativeMenu_OnColorAndTypePicked(self, SelectedColor, SelectedColorIndex, PaintType)
+function m.hook_TerrainToolCreativeMenu_OnColorAndTypePicked(
+    self,
+    SelectedColor,
+    SelectedColorIndex,
+    PaintType
+)
     MaterialIndexImage = SelectedColorIndex
     _G.MaterialIndexImage = SelectedColorIndex
 
-    if UI.revertColorCheckBox:IsValid() and UI.revertColorCheckBox.CheckedState == ECheckBoxState.Unchecked then
+    if
+        UI.revertColorCheckBox:IsValid()
+        and UI.revertColorCheckBox.CheckedState == ECheckBoxState.Unchecked
+    then
         deform.MaterialIndex = SelectedColorIndex
     end
 

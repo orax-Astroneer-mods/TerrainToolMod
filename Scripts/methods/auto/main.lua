@@ -55,13 +55,13 @@ local ESlateVisibility = {
     Hidden = 2,
     HitTestInvisible = 3,
     SelfHitTestInvisible = 4,
-    ESlateVisibility_MAX = 5
+    ESlateVisibility_MAX = 5,
 }
 
 ---@type ECheckBoxState
 local ECheckBoxState = {
-    Unchecked    = 0,
-    Checked      = 1,
+    Unchecked = 0,
+    Checked = 1,
     Undetermined = 2,
 }
 
@@ -83,8 +83,10 @@ end
 ---@return table
 local function loadAllPresets()
     ---@type string[]
-    local fileList = utils.getFileList(currentModDirectory .. "/Scripts/methods/" .. MethodName .. "/presets/",
-        ".lua")
+    local fileList = utils.getFileList(
+        currentModDirectory .. "/Scripts/methods/" .. MethodName .. "/presets/",
+        ".lua"
+    )
     local presets = {}
     local presetNamesList = {}
 
@@ -93,7 +95,7 @@ local function loadAllPresets()
         table.insert(presetNamesList, presetName)
 
         local presetTable = {
-            index = index
+            index = index,
         }
 
         local preset = dofile(file)
@@ -123,10 +125,18 @@ local function writeParamsFile()
 
     assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
-    if params.LATEST_PRESET == nil then params.LATEST_PRESET = "" end
-    if params.LOOP_DELAY == nil then params.LOOP_DELAY = 250 end
-    if params.SPEED_LIMIT == nil then params.SPEED_LIMIT = 1360.0 end
-    if params.NO_SLIDING == nil then params.NO_SLIDING = false end
+    if params.LATEST_PRESET == nil then
+        params.LATEST_PRESET = ""
+    end
+    if params.LOOP_DELAY == nil then
+        params.LOOP_DELAY = 250
+    end
+    if params.SPEED_LIMIT == nil then
+        params.SPEED_LIMIT = 1360.0
+    end
+    if params.NO_SLIDING == nil then
+        params.NO_SLIDING = false
+    end
 
     file:write(format(
         [[---@type Method__Auto__PARAMS
@@ -224,8 +234,9 @@ local function updateUI()
     end
 
     if UI.noSlidingCheckBox:IsValid() then
-        UI.noSlidingCheckBox:SetCheckedState(params.NO_SLIDING == true and
-            ECheckBoxState.Checked or ECheckBoxState.Unchecked)
+        UI.noSlidingCheckBox:SetCheckedState(
+            params.NO_SLIDING == true and ECheckBoxState.Checked or ECheckBoxState.Unchecked
+        )
     end
 
     local presets, presetNamesList = loadAllPresets()
@@ -242,7 +253,11 @@ local function updateUI()
         end
         -- select latest selected preset
         ---@diagnostic disable-next-line: param-type-mismatch
-        if params.LATEST_PRESET and params.LATEST_PRESET ~= "" and UI.comboBox_presets:FindOptionIndex(params.LATEST_PRESET) ~= -1 then
+        if
+            params.LATEST_PRESET
+            and params.LATEST_PRESET ~= ""
+            and UI.comboBox_presets:FindOptionIndex(params.LATEST_PRESET) ~= -1
+        then
             ---@diagnostic disable-next-line: param-type-mismatch
             UI.comboBox_presets:SetSelectedOption(params.LATEST_PRESET)
         else
@@ -275,7 +290,11 @@ local function startMainLoop()
     LoopAsync(params.LOOP_DELAY or 250, function()
         -- The angle will not change if the character is not holding the Terrain tool or moving,
         -- or if the loop must stop.
-        if MainLoops[loopIndex] == false and DesignAstro.HoldingTool == true and DesignAstro.CurrentSpeed > 0 then
+        if
+            MainLoops[loopIndex] == false
+            and DesignAstro.HoldingTool == true
+            and DesignAstro.CurrentSpeed > 0
+        then
             if ExpectedAngle == mathHuge then
                 return MainLoops[loopIndex]
             end
@@ -304,7 +323,8 @@ local function createUI()
         return false
     end
 
-    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    local fontObj =
+        StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
     if not fontObj:IsValid() then
         log.warn("Font object is not valid.")
         return false
@@ -313,29 +333,44 @@ local function createUI()
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
     ---@type UUserWidget
-    UI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
-        FName(prefix .. "UserWidget"))
+    UI.userWidget = StaticConstructObject(
+        StaticFindObject("/Script/UMG.UserWidget"),
+        gameInstance,
+        FName(prefix .. "UserWidget")
+    )
     assert(UI.userWidget:IsValid())
 
-    UI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), UI.userWidget,
-        FName(prefix .. "WidgetTree"))
+    UI.userWidget.WidgetTree = StaticConstructObject(
+        StaticFindObject("/Script/UMG.WidgetTree"),
+        UI.userWidget,
+        FName(prefix .. "WidgetTree")
+    )
     assert(UI.userWidget.WidgetTree:IsValid())
 
     ---@type UCanvasPanel
-    UI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
-        UI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
+    UI.canvas = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CanvasPanel"),
+        UI.userWidget.WidgetTree,
+        FName(prefix .. "CanvasPanel")
+    )
     assert(UI.canvas:IsValid())
     UI.userWidget.WidgetTree.RootWidget = UI.canvas
 
     local rootWidget = UI.userWidget.WidgetTree.RootWidget
 
     ---@type UVerticalBox
-    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
-        rootWidget, FName(prefix .. "VerticalBox"))
+    local verticalBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.VerticalBox"),
+        rootWidget,
+        FName(prefix .. "VerticalBox")
+    )
 
     ---@type UTextBlock
-    local textBlock_title = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_title"))
+    local textBlock_title = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_title")
+    )
     textBlock_title.Font.Size = optUI.auto.font_size
     textBlock_title.Font.FontObject = fontObj
     textBlock_title:SetText(FText(optUI.auto.txt.title))
@@ -343,25 +378,37 @@ local function createUI()
 
     --#region loop delay
     ---@type UHorizontalBox
-    local horizontalBox_loop_delay = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_loop_delay"))
+    local horizontalBox_loop_delay = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_loop_delay")
+    )
 
     ---@type UTextBlock
-    UI.textBlock_loop_delay = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_loop_delay"))
+    UI.textBlock_loop_delay = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_loop_delay")
+    )
     UI.textBlock_loop_delay.Font.Size = optUI.auto.font_size
     UI.textBlock_loop_delay.Font.FontObject = fontObj
     UI.textBlock_loop_delay:SetText(FText(optUI.auto.txt.loop_delay))
     UI.textBlock_loop_delay:SetToolTipText(FText(optUI.auto.txt.loop_delay_tip))
 
     ---@type USpacer
-    local spacer_loop_delay = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_loop_delay"))
+    local spacer_loop_delay = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_loop_delay")
+    )
     spacer_loop_delay:SetSize(optUI.auto.spacer_size)
 
     ---@type UEditableTextBox
-    UI.loop_delay = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_loop_delay"))
+    UI.loop_delay = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_loop_delay")
+    )
     UI.loop_delay.WidgetStyle.Font.Size = optUI.auto.font_size
     UI.loop_delay.WidgetStyle.Font.FontObject = fontObj
     UI.loop_delay.SelectAllTextWhenFocused = true
@@ -373,26 +420,47 @@ local function createUI()
 
     --#region angle
     ---@type UHorizontalBox
-    local horizontalBox_angle = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_angle"))
-    horizontalBox_angle:SetToolTipText(FText(format(optUI.auto.txt.angle_tip,
-        func.getKeybindName(options.enable_handleTerrainTool_Key, options.enable_handleTerrainTool_ModifierKeys))))
+    local horizontalBox_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_angle")
+    )
+    horizontalBox_angle:SetToolTipText(
+        FText(
+            format(
+                optUI.auto.txt.angle_tip,
+                func.getKeybindName(
+                    options.enable_handleTerrainTool_Key,
+                    options.enable_handleTerrainTool_ModifierKeys
+                )
+            )
+        )
+    )
 
     ---@type UTextBlock
-    local textBlock_angle = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_angle"))
+    local textBlock_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_angle")
+    )
     textBlock_angle.Font.Size = optUI.auto.font_size
     textBlock_angle.Font.FontObject = fontObj
     textBlock_angle:SetText(FText(optUI.auto.txt.angle))
 
     ---@type USpacer
-    local spacer_angle = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_angle"))
+    local spacer_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_angle")
+    )
     spacer_angle:SetSize(optUI.auto.spacer_size)
 
     ---@type UEditableTextBox
-    UI.angle = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_angle"))
+    UI.angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_angle")
+    )
     UI.angle.WidgetStyle.Font.Size = optUI.auto.font_size
     UI.angle.WidgetStyle.Font.FontObject = fontObj
     UI.angle.SelectAllTextWhenFocused = true
@@ -404,25 +472,37 @@ local function createUI()
 
     --#region expected angle
     ---@type UHorizontalBox
-    local horizontalBox_expected_angle = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_expected_angle"))
+    local horizontalBox_expected_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_expected_angle")
+    )
     horizontalBox_expected_angle:SetToolTipText(FText(optUI.auto.txt.expected_angle_tip))
 
     ---@type UTextBlock
-    local textBlock_expected_angle = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_expected_angle"))
+    local textBlock_expected_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_expected_angle")
+    )
     textBlock_expected_angle.Font.Size = optUI.auto.font_size
     textBlock_expected_angle.Font.FontObject = fontObj
     textBlock_expected_angle:SetText(FText(optUI.auto.txt.expected_angle))
 
     ---@type USpacer
-    local spacer_expected_angle = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_expected_angle"))
+    local spacer_expected_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_expected_angle")
+    )
     spacer_expected_angle:SetSize(optUI.auto.spacer_size)
 
     ---@type UEditableTextBox
-    UI.expected_angle = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_expected_angle"))
+    UI.expected_angle = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_expected_angle")
+    )
     UI.expected_angle.WidgetStyle.Font.Size = optUI.auto.font_size
     UI.expected_angle.WidgetStyle.Font.FontObject = fontObj
     UI.expected_angle.SelectAllTextWhenFocused = true
@@ -434,25 +514,37 @@ local function createUI()
 
     --#region speed limit
     ---@type UHorizontalBox
-    local horizontalBox_speed_limit = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_speed_limit"))
+    local horizontalBox_speed_limit = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_speed_limit")
+    )
     horizontalBox_speed_limit:SetToolTipText(FText(optUI.auto.txt.speed_limit_tip))
 
     ---@type UTextBlock
-    local textBlock_speed_limit = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_speed_limit"))
+    local textBlock_speed_limit = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_speed_limit")
+    )
     textBlock_speed_limit.Font.Size = optUI.auto.font_size
     textBlock_speed_limit.Font.FontObject = fontObj
     textBlock_speed_limit:SetText(FText(optUI.auto.txt.speed_limit))
 
     ---@type USpacer
-    local spacer_speed_limit = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_speed_limit"))
+    local spacer_speed_limit = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_speed_limit")
+    )
     spacer_speed_limit:SetSize(optUI.auto.spacer_size)
 
     ---@type UEditableTextBox
-    UI.speed_limit = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_speed_limit"))
+    UI.speed_limit = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_speed_limit")
+    )
     UI.speed_limit.WidgetStyle.Font.Size = optUI.auto.font_size
     UI.speed_limit.WidgetStyle.Font.FontObject = fontObj
     UI.speed_limit.SelectAllTextWhenFocused = true
@@ -464,25 +556,37 @@ local function createUI()
 
     --#region no sliding
     ---@type UHorizontalBox
-    local horizontalBox_no_sliding = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_no_sliding"))
+    local horizontalBox_no_sliding = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_no_sliding")
+    )
     horizontalBox_no_sliding:SetToolTipText(FText(optUI.auto.txt.no_sliding_tip))
 
     ---@type UTextBlock
-    local textBlock_no_sliding = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_no_sliding"))
+    local textBlock_no_sliding = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_no_sliding")
+    )
     textBlock_no_sliding.Font.Size = optUI.auto.font_size
     textBlock_no_sliding.Font.FontObject = fontObj
     textBlock_no_sliding:SetText(FText(optUI.auto.txt.no_sliding))
 
     ---@type USpacer
-    local spacer_no_sliding = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_no_sliding"))
+    local spacer_no_sliding = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_no_sliding")
+    )
     spacer_no_sliding:SetSize(optUI.auto.spacer_size)
 
     ---@type UCheckBox
-    UI.noSlidingCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_no_sliding"))
+    UI.noSlidingCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_no_sliding")
+    )
 
     horizontalBox_no_sliding:AddChildToHorizontalBox(textBlock_no_sliding)
     horizontalBox_no_sliding:AddChildToHorizontalBox(spacer_no_sliding)
@@ -491,11 +595,23 @@ local function createUI()
 
     --#region presets
     ---@type UComboBoxString
-    UI.comboBox_presets = StaticConstructObject(StaticFindObject("/Script/UMG.ComboBoxString"), verticalBox,
-        FName("ComboBox_presets")) ---@type UComboBoxString
+    UI.comboBox_presets = StaticConstructObject(
+        StaticFindObject("/Script/UMG.ComboBoxString"),
+        verticalBox,
+        FName("ComboBox_presets")
+    ) ---@type UComboBoxString
     UI.comboBox_presets.Font.FontObject = fontObj
-    UI.comboBox_presets:SetToolTipText(FText(format(optUI.auto.txt.presetsComboBox_tip,
-        func.getKeybindName(options.enable_handleTerrainTool_Key, options.enable_handleTerrainTool_ModifierKeys))))
+    UI.comboBox_presets:SetToolTipText(
+        FText(
+            format(
+                optUI.auto.txt.presetsComboBox_tip,
+                func.getKeybindName(
+                    options.enable_handleTerrainTool_Key,
+                    options.enable_handleTerrainTool_ModifierKeys
+                )
+            )
+        )
+    )
     --#endregion
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
@@ -567,8 +683,17 @@ end
 ---@param _isUsingTool RemoteUnrealParam
 ---@param _justActivated RemoteUnrealParam
 ---@param _canUse RemoteUnrealParam
-local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult, _startedInteraction, _endedInteraction,
-                                      _isUsingTool, _justActivated, _canUse)
+local function hook_HandleTerrainTool(
+    _self,
+    _controller,
+    _toolHit,
+    _clickResult,
+    _startedInteraction,
+    _endedInteraction,
+    _isUsingTool,
+    _justActivated,
+    _canUse
+)
     if CurrentPresetName == "" then
         return -- no preset found
     end
@@ -620,7 +745,8 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         if noSliding then
             if SlideStartSpeedThreshold == mathHuge then
                 -- save game value
-                SlideStartSpeedThreshold = DesignAstro.AstroCharacterMovement.SlideStartSpeedThreshold
+                SlideStartSpeedThreshold =
+                    DesignAstro.AstroCharacterMovement.SlideStartSpeedThreshold
             end
 
             -- This very high number should disable sliding.
@@ -635,8 +761,14 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         end
     end
 
-    if controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__decrease_angle_KeyName) }) then
-        if controller:IsInputKeyDown({ KeyName = FName(options.auto__increase_or_decrease_expected_angle_KeyName) }) then
+    if
+        controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__decrease_angle_KeyName) })
+    then
+        if
+            controller:IsInputKeyDown({
+                KeyName = FName(options.auto__increase_or_decrease_expected_angle_KeyName),
+            })
+        then
             if ExpectedAngle == mathHuge then
                 setExpectedAngle(Angle - 5)
             else
@@ -646,8 +778,14 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             setAngle(Angle - 1)
             log.debug(format("Angle: %.16g", Angle))
         end
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__increase_angle_KeyName) }) then
-        if controller:IsInputKeyDown({ KeyName = FName(options.auto__increase_or_decrease_expected_angle_KeyName) }) then
+    elseif
+        controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__increase_angle_KeyName) })
+    then
+        if
+            controller:IsInputKeyDown({
+                KeyName = FName(options.auto__increase_or_decrease_expected_angle_KeyName),
+            })
+        then
             if ExpectedAngle == mathHuge then
                 setExpectedAngle(Angle + 5)
             else
@@ -657,30 +795,57 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
             setAngle(Angle + 1)
             log.debug(format("Angle: %.16g", Angle))
         end
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__set_angle_to_expectedAngle_KeyName) }) and
-        controller:IsInputKeyDown({ KeyName = FName(options.auto__increase_or_decrease_expected_angle_KeyName) }) then
+    elseif
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.auto__set_angle_to_expectedAngle_KeyName),
+        })
+        and controller:IsInputKeyDown({
+            KeyName = FName(options.auto__increase_or_decrease_expected_angle_KeyName),
+        })
+    then
         if ExpectedAngle ~= nil and ExpectedAngle ~= mathHuge then
             setAngle(ExpectedAngle)
         end
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__set_angle_to_value1_KeyName) }) then
+    elseif
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.auto__set_angle_to_value1_KeyName),
+        })
+    then
         setExpectedAngle(45)
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__set_angle_to_value2_KeyName) }) then
+    elseif
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.auto__set_angle_to_value2_KeyName),
+        })
+    then
         setExpectedAngle(-45)
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__set_angle_to_zero_KeyName) }) then
+    elseif
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.auto__set_angle_to_zero_KeyName),
+        })
+    then
         setExpectedAngle(0)
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.auto__set_angle_from_slope_KeyName) }) then
-        local sign = controller:IsInputKeyDown({ KeyName = FName(options.auto__set_angle_from_slope_Modifier_KeyName) }) and
-            -1 or 1
+    elseif
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.auto__set_angle_from_slope_KeyName),
+        })
+    then
+        local sign = controller:IsInputKeyDown({
+            KeyName = FName(options.auto__set_angle_from_slope_Modifier_KeyName),
+        }) and -1 or 1
 
         local toolHit = _toolHit:get() ---@type FHitResult
         local relativeLocation = vec3.new(
             toolHit.Location.X - PlanetCenter.X,
             toolHit.Location.Y - PlanetCenter.Y,
-            toolHit.Location.Z - PlanetCenter.Z)
+            toolHit.Location.Z - PlanetCenter.Z
+        )
 
-        local angle = math.deg(vec3.angle_to(
-            relativeLocation,
-            vec3.new(toolHit.Normal.X, toolHit.Normal.Y, toolHit.Normal.Z))) * sign
+        local angle = math.deg(
+            vec3.angle_to(
+                relativeLocation,
+                vec3.new(toolHit.Normal.X, toolHit.Normal.Y, toolHit.Normal.Z)
+            )
+        ) * sign
         log.debug(format("Angle under cursor: %.16g", angle))
         setExpectedAngle(func.roundToBase(angle, 1))
     end
@@ -698,12 +863,12 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local floor = {
         X = loc.X - (up.X * Capsule.halfHeight),
         Y = loc.Y - (up.Y * Capsule.halfHeight),
-        Z = loc.Z - (up.Z * Capsule.halfHeight)
+        Z = loc.Z - (up.Z * Capsule.halfHeight),
     }
     local relativeFloor = {
         X = floor.X - PlanetCenter.X,
         Y = floor.Y - PlanetCenter.Y,
-        Z = floor.Z - PlanetCenter.Z
+        Z = floor.Z - PlanetCenter.Z,
     }
 
     local altitude = func.getVectorLen(relativeFloor)
@@ -724,7 +889,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         relativeFloor = relativeFloor,
         right = right,
         up = up,
-        world = World
+        world = World,
     }
 
     CurrentPreset.doDeformation(parameters)

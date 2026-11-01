@@ -747,7 +747,12 @@ end
 
 RegisterHook("/Script/Astro.DeformTool:Activated", function(self)
     local deformTool = self:get()
-    if deformTool:IsValid() and deformTool:IsA("/Game/Components_Small/SmallDeform_TERRAIN_EXPERIMENTAL.SmallDeform_TERRAIN_EXPERIMENTAL_C") then
+    if
+        deformTool:IsValid()
+        and deformTool:IsA(
+            "/Game/Components_Small/SmallDeform_TERRAIN_EXPERIMENTAL.SmallDeform_TERRAIN_EXPERIMENTAL_C"
+        )
+    then
         CachedTerrainTool = deformTool
     end
 end)
@@ -1244,7 +1249,8 @@ local function createTangentTerrain()
                 if not controller:IsValid() then
                     nextIndex = #deformations + 1
                 else
-                    local last = math.min(nextIndex + TANGENT_TERRAIN_SERVER_BATCH_SIZE - 1, #deformations)
+                    local last =
+                        math.min(nextIndex + TANGENT_TERRAIN_SERVER_BATCH_SIZE - 1, #deformations)
                     for k = nextIndex, last do
                         controller:ServerDoDeformation(deformations[k])
                     end

@@ -45,14 +45,28 @@ return {
         local endLoc = {
             X = p.characterLocation.X - p.up.X * 500,
             Y = p.characterLocation.Y - p.up.Y * 500,
-            Z = p.characterLocation.Z - p.up.Z * 500
+            Z = p.characterLocation.Z - p.up.Z * 500,
         }
 
         ---@diagnostic disable-next-line: missing-fields
         local hit = {} ---@type FHitResult
-        local result = sys:LineTraceSingleForObjects(p.world,
-            p.characterLocation, endLoc, { 6 }, false, {}, 0, hit, true, {}, {}, 0) ---@diagnostic disable-line: missing-fields
-        if not result then return end
+        local result = sys:LineTraceSingleForObjects(
+            p.world,
+            p.characterLocation,
+            endLoc,
+            { 6 },
+            false,
+            {},
+            0,
+            hit,
+            true,
+            {},
+            {},
+            0
+        ) ---@diagnostic disable-line: missing-fields
+        if not result then
+            return
+        end
 
         local controller = p.controller
         local location = {
@@ -61,46 +75,44 @@ return {
             Z = p.floor.Z,
         }
 
-        controller:ClientDoDeformation(
-            {
-                AutoCreateResourceEfficiency = 0,
-                CreativeModeNoResourceCollection = false,
-                DeltaTime = 1 / 30,
-                ForceRemoveDecorators = false,
-                HardnessPenetration = 10, -- 0 (default) to 10
-                Instigator = nil,
-                Intensity = 0,
-                Location = location,
-                MaterialIndex = -1,
-                Normal = { X = hit.Normal.X, Y = hit.Normal.Y, Z = hit.Normal.Z },
-                Operation = EDeformType.Subtract,
-                Scale = scale,
-                SequenceNumber = 0,
-                Shape = 0,
-                bEasyUnbury = false,
-                bForceUnburyWithNoDeformationEvent = false,
-                bUseAlternatePolygonization = true
-            })
+        controller:ClientDoDeformation({
+            AutoCreateResourceEfficiency = 0,
+            CreativeModeNoResourceCollection = false,
+            DeltaTime = 1 / 30,
+            ForceRemoveDecorators = false,
+            HardnessPenetration = 10, -- 0 (default) to 10
+            Instigator = nil,
+            Intensity = 0,
+            Location = location,
+            MaterialIndex = -1,
+            Normal = { X = hit.Normal.X, Y = hit.Normal.Y, Z = hit.Normal.Z },
+            Operation = EDeformType.Subtract,
+            Scale = scale,
+            SequenceNumber = 0,
+            Shape = 0,
+            bEasyUnbury = false,
+            bForceUnburyWithNoDeformationEvent = false,
+            bUseAlternatePolygonization = true,
+        })
 
-        controller:ClientDoDeformation(
-            {
-                AutoCreateResourceEfficiency = 0,
-                CreativeModeNoResourceCollection = false,
-                DeltaTime = 1 / 30,
-                ForceRemoveDecorators = false,
-                HardnessPenetration = 10, -- 0 (default) to 10
-                Instigator = nil,
-                Intensity = 0,
-                Location = location,
-                MaterialIndex = materialIndex,
-                Normal = { X = hit.Normal.X, Y = hit.Normal.Y, Z = hit.Normal.Z },
-                Operation = EDeformType.ColorPaint,
-                Scale = scale_paint,
-                SequenceNumber = 0,
-                Shape = 0,
-                bEasyUnbury = false,
-                bForceUnburyWithNoDeformationEvent = false,
-                bUseAlternatePolygonization = true
-            })
-    end
+        controller:ClientDoDeformation({
+            AutoCreateResourceEfficiency = 0,
+            CreativeModeNoResourceCollection = false,
+            DeltaTime = 1 / 30,
+            ForceRemoveDecorators = false,
+            HardnessPenetration = 10, -- 0 (default) to 10
+            Instigator = nil,
+            Intensity = 0,
+            Location = location,
+            MaterialIndex = materialIndex,
+            Normal = { X = hit.Normal.X, Y = hit.Normal.Y, Z = hit.Normal.Z },
+            Operation = EDeformType.ColorPaint,
+            Scale = scale_paint,
+            SequenceNumber = 0,
+            Shape = 0,
+            bEasyUnbury = false,
+            bForceUnburyWithNoDeformationEvent = false,
+            bUseAlternatePolygonization = true,
+        })
+    end,
 }

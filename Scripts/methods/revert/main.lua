@@ -60,7 +60,7 @@ local ESlateVisibility = {
     Hidden = 2,
     HitTestInvisible = 3,
     SelfHitTestInvisible = 4,
-    ESlateVisibility_MAX = 5
+    ESlateVisibility_MAX = 5,
 }
 
 ---@type EDeformType
@@ -82,8 +82,8 @@ local EDeformType = {
 
 ---@type ECheckBoxState
 local ECheckBoxState = {
-    Unchecked    = 0,
-    Checked      = 1,
+    Unchecked = 0,
+    Checked = 1,
     Undetermined = 2,
 }
 
@@ -139,12 +139,16 @@ function DebugSphere.create()
 
             -- create the sphere
             ---@diagnostic disable: param-type-mismatch
-            DebugSphere.actor = func.spawnDebugObject(UEHelpers:GetWorld(),
-                dbg.staticMeshActorClass, dbg.mesh, material,
+            DebugSphere.actor = func.spawnDebugObject(
+                UEHelpers:GetWorld(),
+                dbg.staticMeshActorClass,
+                dbg.mesh,
+                material,
                 { X = 0, Y = 0, Z = 0 },
                 nil,
                 { X = 0, Y = 0, Z = 0 },
-                { R = params.R, G = params.G, B = params.B, A = params.A })
+                { R = params.R, G = params.G, B = params.B, A = params.A }
+            )
             ---@diagnostic enable: param-type-mismatch
 
             if DebugSphere.actor:IsValid() then
@@ -174,7 +178,7 @@ function DebugSphere.setScale(scale)
         local newScale = {
             X = scale / bounds.BoxExtent.X,
             Y = scale / bounds.BoxExtent.Y,
-            Z = scale / bounds.BoxExtent.Z
+            Z = scale / bounds.BoxExtent.Z,
         }
         DebugSphere.actor:SetActorScale3D(newScale)
     end
@@ -187,21 +191,46 @@ local function writeParamsFile()
 
     assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
-    if params.DEBUG == nil then params.DEBUG = true end
-    if params.INTENSITY == nil then params.INTENSITY = 5.0 end
-    if params.OFFSET_UP_DOWN == nil then params.OFFSET_UP_DOWN = 0.0 end
-    if params.OFFSET_FORWARD_BACKWARD == nil then params.OFFSET_FORWARD_BACKWARD = 0.0 end
-    if params.REVERT_COLOR_ONLY == nil then params.REVERT_COLOR_ONLY = false end
-    if params.REVERT_ONCE == nil then params.REVERT_ONCE = false end
-    if params.SCALE == nil then params.SCALE = 2000.0 end
-    if params.WIREFRAME == nil then params.WIREFRAME = false end
-    if params.R == nil then params.R = 1 end
-    if params.G == nil then params.G = 0 end
-    if params.B == nil then params.B = 0 end
-    if params.A == nil then params.A = 0.5 end
+    if params.DEBUG == nil then
+        params.DEBUG = true
+    end
+    if params.INTENSITY == nil then
+        params.INTENSITY = 5.0
+    end
+    if params.OFFSET_UP_DOWN == nil then
+        params.OFFSET_UP_DOWN = 0.0
+    end
+    if params.OFFSET_FORWARD_BACKWARD == nil then
+        params.OFFSET_FORWARD_BACKWARD = 0.0
+    end
+    if params.REVERT_COLOR_ONLY == nil then
+        params.REVERT_COLOR_ONLY = false
+    end
+    if params.REVERT_ONCE == nil then
+        params.REVERT_ONCE = false
+    end
+    if params.SCALE == nil then
+        params.SCALE = 2000.0
+    end
+    if params.WIREFRAME == nil then
+        params.WIREFRAME = false
+    end
+    if params.R == nil then
+        params.R = 1
+    end
+    if params.G == nil then
+        params.G = 0
+    end
+    if params.B == nil then
+        params.B = 0
+    end
+    if params.A == nil then
+        params.A = 0.5
+    end
 
-    file:write(format(
-        [[---@type Method__Revert__PARAMS
+    file:write(
+        format(
+            [[---@type Method__Revert__PARAMS
 return {
 DEBUG=%s,
 INTENSITY=%.16g,
@@ -216,19 +245,20 @@ G=%.16g,
 B=%.16g,
 A=%.16g
 }]],
-        params.DEBUG,
-        params.INTENSITY,
-        params.OFFSET_UP_DOWN,
-        params.OFFSET_FORWARD_BACKWARD,
-        params.REVERT_COLOR_ONLY,
-        params.REVERT_ONCE,
-        params.SCALE,
-        params.WIREFRAME,
-        params.R,
-        params.G,
-        params.B,
-        params.A
-    ))
+            params.DEBUG,
+            params.INTENSITY,
+            params.OFFSET_UP_DOWN,
+            params.OFFSET_FORWARD_BACKWARD,
+            params.REVERT_COLOR_ONLY,
+            params.REVERT_ONCE,
+            params.SCALE,
+            params.WIREFRAME,
+            params.R,
+            params.G,
+            params.B,
+            params.A
+        )
+    )
 
     file:close()
 end
@@ -348,14 +378,18 @@ local function updateUI()
     UI.offsetUpDown:SetText(FText(tostring(params.OFFSET_UP_DOWN)))
     UI.offsetForwardBackward:SetText(FText(tostring(params.OFFSET_FORWARD_BACKWARD)))
     UI.scale:SetText(FText(tostring(params.SCALE)))
-    UI.revertOnceCheckBox:SetCheckedState(params.REVERT_ONCE == true and ECheckBoxState.Checked or
-        ECheckBoxState.Unchecked)
-    UI.revertColorOnlyCheckBox:SetCheckedState(params.REVERT_COLOR_ONLY == true and ECheckBoxState.Checked or
-        ECheckBoxState.Unchecked)
-    UI.debugCheckBox:SetCheckedState(params.DEBUG == true and ECheckBoxState.Checked or
-        ECheckBoxState.Unchecked)
-    UI.wireframeCheckBox:SetCheckedState(params.WIREFRAME == true and ECheckBoxState.Checked or
-        ECheckBoxState.Unchecked)
+    UI.revertOnceCheckBox:SetCheckedState(
+        params.REVERT_ONCE == true and ECheckBoxState.Checked or ECheckBoxState.Unchecked
+    )
+    UI.revertColorOnlyCheckBox:SetCheckedState(
+        params.REVERT_COLOR_ONLY == true and ECheckBoxState.Checked or ECheckBoxState.Unchecked
+    )
+    UI.debugCheckBox:SetCheckedState(
+        params.DEBUG == true and ECheckBoxState.Checked or ECheckBoxState.Unchecked
+    )
+    UI.wireframeCheckBox:SetCheckedState(
+        params.WIREFRAME == true and ECheckBoxState.Checked or ECheckBoxState.Unchecked
+    )
     UI.r:SetText(FText(tostring(params.R)))
     UI.g:SetText(FText(tostring(params.G)))
     UI.b:SetText(FText(tostring(params.B)))
@@ -374,7 +408,8 @@ local function createUI()
         return false
     end
 
-    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    local fontObj =
+        StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
     if not fontObj:IsValid() then
         log.warn("Font object is not valid.")
         return false
@@ -383,29 +418,44 @@ local function createUI()
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
     ---@type UUserWidget
-    UI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
-        FName(prefix .. "UserWidget"))
+    UI.userWidget = StaticConstructObject(
+        StaticFindObject("/Script/UMG.UserWidget"),
+        gameInstance,
+        FName(prefix .. "UserWidget")
+    )
     assert(UI.userWidget:IsValid())
 
-    UI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), UI.userWidget,
-        FName(prefix .. "WidgetTree"))
+    UI.userWidget.WidgetTree = StaticConstructObject(
+        StaticFindObject("/Script/UMG.WidgetTree"),
+        UI.userWidget,
+        FName(prefix .. "WidgetTree")
+    )
     assert(UI.userWidget.WidgetTree:IsValid())
 
     ---@type UCanvasPanel
-    UI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
-        UI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
+    UI.canvas = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CanvasPanel"),
+        UI.userWidget.WidgetTree,
+        FName(prefix .. "CanvasPanel")
+    )
     assert(UI.canvas:IsValid())
     UI.userWidget.WidgetTree.RootWidget = UI.canvas
 
     local rootWidget = UI.userWidget.WidgetTree.RootWidget
 
     ---@type UVerticalBox
-    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
-        rootWidget, FName(prefix .. "VerticalBox"))
+    local verticalBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.VerticalBox"),
+        rootWidget,
+        FName(prefix .. "VerticalBox")
+    )
 
     ---@type UTextBlock
-    local textBlock_title = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_title"))
+    local textBlock_title = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_title")
+    )
     textBlock_title.Font.Size = optUI.revert.font_size
     textBlock_title.Font.FontObject = fontObj
     textBlock_title:SetText(FText(optUI.revert.txt.title))
@@ -413,25 +463,37 @@ local function createUI()
 
     --#region scale
     ---@type UHorizontalBox
-    local horizontalBox_scale = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_scale"))
+    local horizontalBox_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_scale")
+    )
     horizontalBox_scale:SetToolTipText(FText(optUI.revert.txt.scale_tip))
 
     ---@type UTextBlock
-    local textBlock_scale = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_scale"))
+    local textBlock_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_scale")
+    )
     textBlock_scale.Font.Size = optUI.revert.font_size
     textBlock_scale.Font.FontObject = fontObj
     textBlock_scale:SetText(FText(optUI.revert.txt.scale))
 
     ---@type USpacer
-    local spacer_scale = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_scale"))
+    local spacer_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_scale")
+    )
     spacer_scale:SetSize(optUI.revert.spacer_size)
 
     ---@type UEditableTextBox
-    UI.scale = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_scale"))
+    UI.scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_scale")
+    )
     UI.scale.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.scale.WidgetStyle.Font.FontObject = fontObj
     UI.scale.SelectAllTextWhenFocused = true
@@ -443,25 +505,37 @@ local function createUI()
 
     --#region intensity
     ---@type UHorizontalBox
-    local horizontalBox_intensity = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_intensity"))
+    local horizontalBox_intensity = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_intensity")
+    )
     horizontalBox_intensity:SetToolTipText(FText(optUI.revert.txt.intensity_tip))
 
     ---@type UTextBlock
-    local textBlock_intensity = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_intensity"))
+    local textBlock_intensity = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_intensity")
+    )
     textBlock_intensity.Font.Size = optUI.revert.font_size
     textBlock_intensity.Font.FontObject = fontObj
     textBlock_intensity:SetText(FText(optUI.revert.txt.intensity))
 
     ---@type USpacer
-    local spacer_intensity = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_intensity"))
+    local spacer_intensity = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_intensity")
+    )
     spacer_intensity:SetSize(optUI.revert.spacer_size)
 
     ---@type UEditableTextBox
-    UI.intensity = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_intensity"))
+    UI.intensity = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_intensity")
+    )
     UI.intensity.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.intensity.WidgetStyle.Font.FontObject = fontObj
     UI.intensity.SelectAllTextWhenFocused = true
@@ -473,26 +547,39 @@ local function createUI()
 
     --#region revertOnce
     ---@type UHorizontalBox
-    local horizontalBox_revertOnce = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_revertOnce"))
-    horizontalBox_revertOnce:SetToolTipText(FText(format(optUI.revert.txt.revertOnce_tip,
-        options.revert_toggle_revert_once_KeyName)))
+    local horizontalBox_revertOnce = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_revertOnce")
+    )
+    horizontalBox_revertOnce:SetToolTipText(
+        FText(format(optUI.revert.txt.revertOnce_tip, options.revert_toggle_revert_once_KeyName))
+    )
 
     ---@type UTextBlock
-    local textBlock_revertOnce = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_revertOnce"))
+    local textBlock_revertOnce = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_revertOnce")
+    )
     textBlock_revertOnce.Font.Size = optUI.revert.font_size
     textBlock_revertOnce.Font.FontObject = fontObj
     textBlock_revertOnce:SetText(FText(optUI.revert.txt.revertOnce))
 
     ---@type USpacer
-    local spacer_revertOnce = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_revertOnce"))
+    local spacer_revertOnce = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_revertOnce")
+    )
     spacer_revertOnce:SetSize(optUI.revert.spacer_size)
 
     ---@type UCheckBox
-    UI.revertOnceCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_revertOnce"))
+    UI.revertOnceCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_revertOnce")
+    )
 
     horizontalBox_revertOnce:AddChildToHorizontalBox(textBlock_revertOnce)
     horizontalBox_revertOnce:AddChildToHorizontalBox(spacer_revertOnce)
@@ -501,25 +588,37 @@ local function createUI()
 
     --#region revertColorOnly
     ---@type UHorizontalBox
-    local horizontalBox_revertColorOnly = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_revertColorOnly"))
+    local horizontalBox_revertColorOnly = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_revertColorOnly")
+    )
     horizontalBox_revertColorOnly:SetToolTipText(FText(optUI.revert.txt.revertColorOnly_tip))
 
     ---@type UTextBlock
-    local textBlock_revertColorOnly = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_revertColorOnly"))
+    local textBlock_revertColorOnly = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_revertColorOnly")
+    )
     textBlock_revertColorOnly.Font.Size = optUI.revert.font_size
     textBlock_revertColorOnly.Font.FontObject = fontObj
     textBlock_revertColorOnly:SetText(FText(optUI.revert.txt.revertColorOnly))
 
     ---@type USpacer
-    local spacer_revertColorOnly = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_revertColorOnly"))
+    local spacer_revertColorOnly = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_revertColorOnly")
+    )
     spacer_revertColorOnly:SetSize(optUI.revert.spacer_size)
 
     ---@type UCheckBox
-    UI.revertColorOnlyCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_revertColorOnly"))
+    UI.revertColorOnlyCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_revertColorOnly")
+    )
 
     horizontalBox_revertColorOnly:AddChildToHorizontalBox(textBlock_revertColorOnly)
     horizontalBox_revertColorOnly:AddChildToHorizontalBox(spacer_revertColorOnly)
@@ -528,51 +627,83 @@ local function createUI()
 
     --#region Offset (up/down)
     ---@type UHorizontalBox
-    local horizontalBox_offsetUpDown = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_offsetUpDown"))
+    local horizontalBox_offsetUpDown = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_offsetUpDown")
+    )
     local sp = " = "
     local nl = "\n"
     local v1_offset_p = format(" (+ %d)", options.revert_offset_location_value)
     local v1_offset_m = format(" (- %d)", options.revert_offset_location_value)
     local v2_offset_p = format(" (+ %d)", options.revert_offset_location_value_with_modifier)
     local v2_offset_m = format(" (- %d)", options.revert_offset_location_value_with_modifier)
-    local helpText_offsetUpDown =
-        optUI.revert.txt.keybinds ..
-        options.revert_offset_location_down_text ..
-        sp .. options.revert_offset_location_down_KeyName .. v1_offset_m .. nl ..
-        options.revert_offset_location_up_text ..
-        sp .. options.revert_offset_location_up_KeyName .. v1_offset_p .. nl ..
-        options.revert_offset_location_down_text ..
-        sp ..
-        options.revert_offset_location_down_KeyName ..
-        "+" .. options.revert_offset_location_modifier_KeyName .. v2_offset_m .. nl ..
-        options.revert_offset_location_up_text ..
-        sp ..
-        options.revert_offset_location_up_KeyName ..
-        "+" .. options.revert_offset_location_modifier_KeyName .. v2_offset_p .. nl ..
-        format(options.revert_offset_location_fixed_value_text, options.revert_offset_location_fixed_value_1) ..
-        sp ..
-        options.revert_offset_location_fixed_value_1_KeyName .. nl ..
-        format(options.revert_offset_location_fixed_value_text, options.revert_offset_location_fixed_value_2) ..
-        sp ..
-        options.revert_offset_location_fixed_value_2_KeyName
-    horizontalBox_offsetUpDown:SetToolTipText(FText(optUI.revert.txt.offsetUpDown_tip .. "\n" .. helpText_offsetUpDown))
+    local helpText_offsetUpDown = optUI.revert.txt.keybinds
+        .. options.revert_offset_location_down_text
+        .. sp
+        .. options.revert_offset_location_down_KeyName
+        .. v1_offset_m
+        .. nl
+        .. options.revert_offset_location_up_text
+        .. sp
+        .. options.revert_offset_location_up_KeyName
+        .. v1_offset_p
+        .. nl
+        .. options.revert_offset_location_down_text
+        .. sp
+        .. options.revert_offset_location_down_KeyName
+        .. "+"
+        .. options.revert_offset_location_modifier_KeyName
+        .. v2_offset_m
+        .. nl
+        .. options.revert_offset_location_up_text
+        .. sp
+        .. options.revert_offset_location_up_KeyName
+        .. "+"
+        .. options.revert_offset_location_modifier_KeyName
+        .. v2_offset_p
+        .. nl
+        .. format(
+            options.revert_offset_location_fixed_value_text,
+            options.revert_offset_location_fixed_value_1
+        )
+        .. sp
+        .. options.revert_offset_location_fixed_value_1_KeyName
+        .. nl
+        .. format(
+            options.revert_offset_location_fixed_value_text,
+            options.revert_offset_location_fixed_value_2
+        )
+        .. sp
+        .. options.revert_offset_location_fixed_value_2_KeyName
+    horizontalBox_offsetUpDown:SetToolTipText(
+        FText(optUI.revert.txt.offsetUpDown_tip .. "\n" .. helpText_offsetUpDown)
+    )
 
     ---@type UTextBlock
-    local textBlock_offsetUpDown = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_offsetUpDown"))
+    local textBlock_offsetUpDown = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_offsetUpDown")
+    )
     textBlock_offsetUpDown.Font.Size = optUI.revert.font_size
     textBlock_offsetUpDown.Font.FontObject = fontObj
     textBlock_offsetUpDown:SetText(FText(optUI.revert.txt.offsetUpDown))
 
     ---@type USpacer
-    local spacer_offsetUpDown = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_offsetUpDown"))
+    local spacer_offsetUpDown = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_offsetUpDown")
+    )
     spacer_offsetUpDown:SetSize(optUI.revert.spacer_size)
 
     ---@type UEditableTextBox
-    UI.offsetUpDown = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_offsetUpDown"))
+    UI.offsetUpDown = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_offsetUpDown")
+    )
     UI.offsetUpDown.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.offsetUpDown.WidgetStyle.Font.FontObject = fontObj
     UI.offsetUpDown.SelectAllTextWhenFocused = true
@@ -584,44 +715,60 @@ local function createUI()
 
     --#region Offset (forward/backward)
     ---@type UHorizontalBox
-    local horizontalBox_offsetForwardBackward = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_offsetForwardBackward"))
-    local helpText_offsetForwardBackward =
-        optUI.revert.txt.keybinds ..
-
+    local horizontalBox_offsetForwardBackward = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_offsetForwardBackward")
+    )
+    local helpText_offsetForwardBackward = optUI.revert.txt.keybinds
         -- SHIFT+HOME
-        format(options.revert_offset_location_fixed_forward_backward_value_text,
-            options.revert_offset_forward_backward_location_fixed_value_1) ..
-        sp ..
-        options.revert_offset_location_modifier_KeyName .. "+" ..
-        options.revert_offset_location_fixed_value_1_KeyName ..
-        nl ..
-
+        .. format(
+            options.revert_offset_location_fixed_forward_backward_value_text,
+            options.revert_offset_forward_backward_location_fixed_value_1
+        )
+        .. sp
+        .. options.revert_offset_location_modifier_KeyName
+        .. "+"
+        .. options.revert_offset_location_fixed_value_1_KeyName
+        .. nl
         -- SHIFT+END
-        format(options.revert_offset_location_fixed_forward_backward_value_text,
-            options.revert_offset_forward_backward_location_fixed_value_2) ..
-        sp ..
-        options.revert_offset_location_modifier_KeyName .. "+" ..
-        options.revert_offset_location_fixed_value_2_KeyName
+        .. format(
+            options.revert_offset_location_fixed_forward_backward_value_text,
+            options.revert_offset_forward_backward_location_fixed_value_2
+        )
+        .. sp
+        .. options.revert_offset_location_modifier_KeyName
+        .. "+"
+        .. options.revert_offset_location_fixed_value_2_KeyName
 
-    horizontalBox_offsetForwardBackward:SetToolTipText(FText(optUI.revert.txt.offsetForwardBackward_tip ..
-        "\n" .. helpText_offsetForwardBackward))
+    horizontalBox_offsetForwardBackward:SetToolTipText(
+        FText(optUI.revert.txt.offsetForwardBackward_tip .. "\n" .. helpText_offsetForwardBackward)
+    )
 
     ---@type UTextBlock
-    local textBlock_offsetForwardBackward = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_offsetForwardBackward"))
+    local textBlock_offsetForwardBackward = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_offsetForwardBackward")
+    )
     textBlock_offsetForwardBackward.Font.Size = optUI.revert.font_size
     textBlock_offsetForwardBackward.Font.FontObject = fontObj
     textBlock_offsetForwardBackward:SetText(FText(optUI.revert.txt.offsetForwardBackward))
 
     ---@type USpacer
-    local spacer_offsetForwardBackward = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_offsetForwardBackward"))
+    local spacer_offsetForwardBackward = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_offsetForwardBackward")
+    )
     spacer_offsetForwardBackward:SetSize(optUI.revert.spacer_size)
 
     ---@type UEditableTextBox
-    UI.offsetForwardBackward = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_offsetForwardBackward"))
+    UI.offsetForwardBackward = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_offsetForwardBackward")
+    )
     UI.offsetForwardBackward.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.offsetForwardBackward.WidgetStyle.Font.FontObject = fontObj
     UI.offsetForwardBackward.SelectAllTextWhenFocused = true
@@ -633,25 +780,37 @@ local function createUI()
 
     --#region altitude
     ---@type UHorizontalBox
-    local horizontalBox_altitude = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_altitude"))
+    local horizontalBox_altitude = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_altitude")
+    )
     horizontalBox_altitude:SetToolTipText(FText(optUI.revert.txt.altitude_tip))
 
     ---@type UTextBlock
-    local textBlock_altitude = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_altitude"))
+    local textBlock_altitude = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_altitude")
+    )
     textBlock_altitude.Font.Size = optUI.revert.font_size
     textBlock_altitude.Font.FontObject = fontObj
     textBlock_altitude:SetText(FText(optUI.revert.txt.altitude))
 
     ---@type USpacer
-    local spacer_altitude = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_altitude"))
+    local spacer_altitude = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_altitude")
+    )
     spacer_altitude:SetSize(optUI.revert.spacer_size)
 
     ---@type UEditableTextBox
-    UI.altitude = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_altitude"))
+    UI.altitude = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_altitude")
+    )
     UI.altitude.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.altitude.WidgetStyle.Font.FontObject = fontObj
     UI.altitude.SelectAllTextWhenFocused = true
@@ -663,25 +822,37 @@ local function createUI()
 
     --#region freeze altitude
     ---@type UHorizontalBox
-    local horizontalBox_freezeAltitude = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_freezeAltitude"))
+    local horizontalBox_freezeAltitude = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_freezeAltitude")
+    )
     horizontalBox_freezeAltitude:SetToolTipText(FText(optUI.revert.txt.freezeAltitude_tip))
 
     ---@type UTextBlock
-    local textBlock_freezeAltitude = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_freezeAltitude"))
+    local textBlock_freezeAltitude = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_freezeAltitude")
+    )
     textBlock_freezeAltitude.Font.Size = optUI.revert.font_size
     textBlock_freezeAltitude.Font.FontObject = fontObj
     textBlock_freezeAltitude:SetText(FText(optUI.revert.txt.freezeAltitude))
 
     ---@type USpacer
-    local spacer_freezeAltitude = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_freezeAltitude"))
+    local spacer_freezeAltitude = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_freezeAltitude")
+    )
     spacer_freezeAltitude:SetSize(optUI.revert.spacer_size)
 
     ---@type UCheckBox
-    UI.freezeAltitudeCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_freezeAltitude"))
+    UI.freezeAltitudeCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_freezeAltitude")
+    )
 
     horizontalBox_freezeAltitude:AddChildToHorizontalBox(textBlock_freezeAltitude)
     horizontalBox_freezeAltitude:AddChildToHorizontalBox(spacer_freezeAltitude)
@@ -690,25 +861,37 @@ local function createUI()
 
     --#region debug
     ---@type UHorizontalBox
-    local horizontalBox_debug = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_debug"))
+    local horizontalBox_debug = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_debug")
+    )
     horizontalBox_debug:SetToolTipText(FText(optUI.revert.txt.debug_tip))
 
     ---@type UTextBlock
-    local textBlock_debug = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_debug"))
+    local textBlock_debug = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_debug")
+    )
     textBlock_debug.Font.Size = optUI.revert.font_size
     textBlock_debug.Font.FontObject = fontObj
     textBlock_debug:SetText(FText(optUI.revert.txt.debug))
 
     ---@type USpacer
-    local spacer_debug = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_debug"))
+    local spacer_debug = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_debug")
+    )
     spacer_debug:SetSize(optUI.revert.spacer_size)
 
     ---@type UCheckBox
-    UI.debugCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_debug"))
+    UI.debugCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_debug")
+    )
 
     horizontalBox_debug:AddChildToHorizontalBox(textBlock_debug)
     horizontalBox_debug:AddChildToHorizontalBox(spacer_debug)
@@ -717,25 +900,37 @@ local function createUI()
 
     --#region wireframe
     ---@type UHorizontalBox
-    local horizontalBox_wireframe = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_wireframe"))
+    local horizontalBox_wireframe = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_wireframe")
+    )
     horizontalBox_wireframe:SetToolTipText(FText(optUI.revert.txt.wireframe_tip))
 
     ---@type UTextBlock
-    local textBlock_wireframe = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_wireframe"))
+    local textBlock_wireframe = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_wireframe")
+    )
     textBlock_wireframe.Font.Size = optUI.revert.font_size
     textBlock_wireframe.Font.FontObject = fontObj
     textBlock_wireframe:SetText(FText(optUI.revert.txt.wireframe))
 
     ---@type USpacer
-    local spacer_wireframe = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_wireframe"))
+    local spacer_wireframe = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_wireframe")
+    )
     spacer_wireframe:SetSize(optUI.revert.spacer_size)
 
     ---@type UCheckBox
-    UI.wireframeCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_wireframe"))
+    UI.wireframeCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_wireframe")
+    )
 
     horizontalBox_wireframe:AddChildToHorizontalBox(textBlock_wireframe)
     horizontalBox_wireframe:AddChildToHorizontalBox(spacer_wireframe)
@@ -744,26 +939,38 @@ local function createUI()
 
     --#region rgba
     ---@type UHorizontalBox
-    local horizontalBox_rgba = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_rgba"))
+    local horizontalBox_rgba = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_rgba")
+    )
     horizontalBox_rgba:SetToolTipText(FText(optUI.revert.txt.rgba_tip))
 
     ---@type UTextBlock
-    local textBlock_r = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_r"))
+    local textBlock_r = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_r")
+    )
     textBlock_r.Font.Size = optUI.revert.font_size
     textBlock_r.Font.FontObject = fontObj
     textBlock_r:SetText(FText(optUI.revert.txt.rgba))
 
     ---@type USpacer
-    local spacer_1 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_1"))
+    local spacer_1 = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_1")
+    )
     spacer_1:SetSize(optUI.revert.spacer_size)
 
     -- RED
     ---@type UEditableTextBox
-    UI.r = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_r"))
+    UI.r = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_r")
+    )
     UI.r.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.r.WidgetStyle.Font.FontObject = fontObj
     UI.r.SelectAllTextWhenFocused = true
@@ -773,12 +980,18 @@ local function createUI()
 
     -- GREEN
     ---@type USpacer
-    local spacer_2 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_2"))
+    local spacer_2 = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_2")
+    )
     spacer_2:SetSize(optUI.revert.spacer_size2)
     ---@type UEditableTextBox
-    UI.g = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_g"))
+    UI.g = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_g")
+    )
     UI.g.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.g.WidgetStyle.Font.FontObject = fontObj
     UI.g.SelectAllTextWhenFocused = true
@@ -787,12 +1000,18 @@ local function createUI()
 
     -- BLUE
     ---@type USpacer
-    local spacer_3 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_3"))
+    local spacer_3 = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_3")
+    )
     spacer_3:SetSize(optUI.revert.spacer_size2)
     ---@type UEditableTextBox
-    UI.b = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_b"))
+    UI.b = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_b")
+    )
     UI.b.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.b.WidgetStyle.Font.FontObject = fontObj
     UI.b.SelectAllTextWhenFocused = true
@@ -801,12 +1020,18 @@ local function createUI()
 
     -- ALPHA
     ---@type USpacer
-    local spacer_4 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_4"))
+    local spacer_4 = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_4")
+    )
     spacer_4:SetSize(optUI.revert.spacer_size2)
     ---@type UEditableTextBox
-    UI.a = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_a"))
+    UI.a = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_a")
+    )
     UI.a.WidgetStyle.Font.Size = optUI.revert.font_size
     UI.a.WidgetStyle.Font.FontObject = fontObj
     UI.a.SelectAllTextWhenFocused = true
@@ -874,8 +1099,17 @@ end
 ---@param _isUsingTool RemoteUnrealParam
 ---@param _justActivated RemoteUnrealParam
 ---@param _canUse RemoteUnrealParam
-local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult, _startedInteraction, _endedInteraction,
-                                      _isUsingTool, _justActivated, _canUse)
+local function hook_HandleTerrainTool(
+    _self,
+    _controller,
+    _toolHit,
+    _clickResult,
+    _startedInteraction,
+    _endedInteraction,
+    _isUsingTool,
+    _justActivated,
+    _canUse
+)
     local deformTool = _self:get() ---@type ASmallDeform_TERRAIN_EXPERIMENTAL_C
     local controller = _controller:get() ---@type APlayController
     local toolHit = _toolHit:get() ---@type FHitResult
@@ -886,16 +1120,14 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     local relativeLocation = {
         X = toolHit.Location.X - planetCenter.X,
         Y = toolHit.Location.Y - planetCenter.Y,
-        Z = toolHit.Location.Z - planetCenter.Z
+        Z = toolHit.Location.Z - planetCenter.Z,
     }
-    local currentAltitude = sqrt(
-        relativeLocation.X ^ 2 +
-        relativeLocation.Y ^ 2 +
-        relativeLocation.Z ^ 2)
+    local currentAltitude =
+        sqrt(relativeLocation.X ^ 2 + relativeLocation.Y ^ 2 + relativeLocation.Z ^ 2)
     local up = {
         X = relativeLocation.X / currentAltitude,
         Y = relativeLocation.Y / currentAltitude,
-        Z = relativeLocation.Z / currentAltitude
+        Z = relativeLocation.Z / currentAltitude,
     }
 
     local location = toolHit.Location
@@ -909,7 +1141,8 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         end
 
         -- altitude
-        FreezeAltitude = UI.freezeAltitudeCheckBox.CheckedState == ECheckBoxState.Checked and true or false
+        FreezeAltitude = UI.freezeAltitudeCheckBox.CheckedState == ECheckBoxState.Checked and true
+            or false
         if FreezeAltitude then
             Altitude = tonumber(UI.altitude.Text:ToString())
             if Altitude == nil then
@@ -933,39 +1166,79 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     end
 
     -- https://michaeljcole.github.io/wiki.unrealengine.com/List_of_Key/Gamepad_Input_Names/
-    if controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_down_KeyName) }) then
-        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
-            RevertOffsetUpDown = RevertOffsetUpDown - options.revert_offset_location_value_with_modifier
+    if
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.revert_offset_location_down_KeyName),
+        })
+    then
+        if
+            controller:IsInputKeyDown({
+                KeyName = FName(options.revert_offset_location_modifier_KeyName),
+            })
+        then
+            RevertOffsetUpDown = RevertOffsetUpDown
+                - options.revert_offset_location_value_with_modifier
         else
             RevertOffsetUpDown = RevertOffsetUpDown - options.revert_offset_location_value
         end
 
         UI.offsetUpDown:SetText(FText(tostring(RevertOffsetUpDown)))
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_up_KeyName) }) then
-        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
-            RevertOffsetUpDown = RevertOffsetUpDown + options.revert_offset_location_value_with_modifier
+    elseif
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.revert_offset_location_up_KeyName),
+        })
+    then
+        if
+            controller:IsInputKeyDown({
+                KeyName = FName(options.revert_offset_location_modifier_KeyName),
+            })
+        then
+            RevertOffsetUpDown = RevertOffsetUpDown
+                + options.revert_offset_location_value_with_modifier
         else
             RevertOffsetUpDown = RevertOffsetUpDown + options.revert_offset_location_value
         end
 
         UI.offsetUpDown:SetText(FText(tostring(RevertOffsetUpDown)))
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_fixed_value_1_KeyName) }) then
-        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
-            RevertOffsetForwardBackward = options.revert_offset_forward_backward_location_fixed_value_1
+    elseif
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.revert_offset_location_fixed_value_1_KeyName),
+        })
+    then
+        if
+            controller:IsInputKeyDown({
+                KeyName = FName(options.revert_offset_location_modifier_KeyName),
+            })
+        then
+            RevertOffsetForwardBackward =
+                options.revert_offset_forward_backward_location_fixed_value_1
             UI.offsetForwardBackward:SetText(FText(tostring(RevertOffsetForwardBackward)))
         else
             RevertOffsetUpDown = options.revert_offset_location_fixed_value_1
             UI.offsetUpDown:SetText(FText(tostring(RevertOffsetUpDown)))
         end
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_offset_location_fixed_value_2_KeyName) }) then
-        if controller:IsInputKeyDown({ KeyName = FName(options.revert_offset_location_modifier_KeyName) }) then
-            RevertOffsetForwardBackward = options.revert_offset_forward_backward_location_fixed_value_2
+    elseif
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.revert_offset_location_fixed_value_2_KeyName),
+        })
+    then
+        if
+            controller:IsInputKeyDown({
+                KeyName = FName(options.revert_offset_location_modifier_KeyName),
+            })
+        then
+            RevertOffsetForwardBackward =
+                options.revert_offset_forward_backward_location_fixed_value_2
             UI.offsetForwardBackward:SetText(FText(tostring(RevertOffsetForwardBackward)))
         else
             RevertOffsetUpDown = options.revert_offset_location_fixed_value_2
             UI.offsetUpDown:SetText(FText(tostring(RevertOffsetUpDown)))
         end
-    elseif controller:WasInputKeyJustPressed({ KeyName = FName(options.revert_toggle_revert_once_KeyName) }) then
+    elseif
+        controller:WasInputKeyJustPressed({
+            KeyName = FName(options.revert_toggle_revert_once_KeyName),
+        })
+    then
         if UI.revertOnceCheckBox.CheckedState == ECheckBoxState.Checked then
             UI.revertOnceCheckBox:SetCheckedState(ECheckBoxState.Unchecked)
         else
@@ -984,9 +1257,12 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     if FreezeAltitude then
         -- altitude will be modified
         location = {
-            X = (relativeLocation.X / currentAltitude) * Altitude + (location.X - relativeLocation.X),
-            Y = (relativeLocation.Y / currentAltitude) * Altitude + (location.Y - relativeLocation.Y),
-            Z = (relativeLocation.Z / currentAltitude) * Altitude + (location.Z - relativeLocation.Z)
+            X = (relativeLocation.X / currentAltitude) * Altitude
+                + (location.X - relativeLocation.X),
+            Y = (relativeLocation.Y / currentAltitude) * Altitude
+                + (location.Y - relativeLocation.Y),
+            Z = (relativeLocation.Z / currentAltitude) * Altitude
+                + (location.Z - relativeLocation.Z),
         }
     end
 
@@ -995,14 +1271,21 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
     location = {
         X = location.X + up.X * RevertOffsetUpDown + fw.X * RevertOffsetForwardBackward,
         Y = location.Y + up.Y * RevertOffsetUpDown + fw.Y * RevertOffsetForwardBackward,
-        Z = location.Z + up.Z * RevertOffsetUpDown + fw.Z * RevertOffsetForwardBackward
+        Z = location.Z + up.Z * RevertOffsetUpDown + fw.Z * RevertOffsetForwardBackward,
     }
 
-    if IsDebugSphereCreated == true and DebugSphere.actor:IsValid() and DebugSphere.actor.bActorIsBeingDestroyed == false then
+    if
+        IsDebugSphereCreated == true
+        and DebugSphere.actor:IsValid()
+        and DebugSphere.actor.bActorIsBeingDestroyed == false
+    then
         DebugSphere.actor:K2_SetActorLocationAndRotation(
             location,
             controller:GetCameraRotation(),
-            false, {}, true) ---@diagnostic disable-line: missing-fields
+            false,
+            {},
+            true
+        ) ---@diagnostic disable-line: missing-fields
     end
 
     if _isUsingTool:get() == false then
@@ -1038,7 +1321,7 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         Shape = 0,
         bEasyUnbury = false,
         bForceUnburyWithNoDeformationEvent = false,
-        bUseAlternatePolygonization = true
+        bUseAlternatePolygonization = true,
     })
 end
 

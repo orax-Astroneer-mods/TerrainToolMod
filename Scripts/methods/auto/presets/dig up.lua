@@ -60,7 +60,8 @@ return {
         local relativeFloor = vec3.new(
             p.floor.X - p.planetCenter.X,
             p.floor.Y - p.planetCenter.Y,
-            p.floor.Z - p.planetCenter.Z)
+            p.floor.Z - p.planetCenter.Z
+        )
 
         local right_vec3 = vec3.new(p.right.X, p.right.Y, p.right.Z)
         local newNormal_vec3 = vec3.normalize(vec3.rotate(relativeFloor, rad(p.angle), right_vec3))
@@ -68,14 +69,28 @@ return {
         local endLoc = {
             X = p.characterLocation.X - p.up.X * scale,
             Y = p.characterLocation.Y - p.up.Y * scale,
-            Z = p.characterLocation.Z - p.up.Z * scale
+            Z = p.characterLocation.Z - p.up.Z * scale,
         }
 
         ---@diagnostic disable-next-line: missing-fields
         local hit = {} ---@type FHitResult
-        local result = sys:LineTraceSingleForObjects(p.world,
-            p.characterLocation, endLoc, { 6 }, false, {}, 0, hit, true, {}, {}, 0) ---@diagnostic disable-line: missing-fields
-        if not result then return end
+        local result = sys:LineTraceSingleForObjects(
+            p.world,
+            p.characterLocation,
+            endLoc,
+            { 6 },
+            false,
+            {},
+            0,
+            hit,
+            true,
+            {},
+            {},
+            0
+        ) ---@diagnostic disable-line: missing-fields
+        if not result then
+            return
+        end
 
         local directionMult = scale / 2
 
@@ -85,25 +100,24 @@ return {
             Z = hit.ImpactPoint.Z + (p.up.Z * directionMult),
         }
 
-        p.controller:ClientDoDeformation(
-            {
-                AutoCreateResourceEfficiency = 0,
-                CreativeModeNoResourceCollection = false,
-                DeltaTime = 1 / 30,
-                ForceRemoveDecorators = false,
-                HardnessPenetration = 10, -- 0 (default) to 10
-                Instigator = nil,
-                Intensity = 5,
-                Location = loc, ---@diagnostic disable-line: assign-type-mismatch
-                MaterialIndex = -1,
-                Normal = { X = newNormal_vec3.x, Y = newNormal_vec3.y, Z = newNormal_vec3.z },
-                Operation = EDeformType.Subtract,
-                Scale = scale,
-                SequenceNumber = 0,
-                Shape = 0,
-                bEasyUnbury = false,
-                bForceUnburyWithNoDeformationEvent = false,
-                bUseAlternatePolygonization = false,
-            })
-    end
+        p.controller:ClientDoDeformation({
+            AutoCreateResourceEfficiency = 0,
+            CreativeModeNoResourceCollection = false,
+            DeltaTime = 1 / 30,
+            ForceRemoveDecorators = false,
+            HardnessPenetration = 10, -- 0 (default) to 10
+            Instigator = nil,
+            Intensity = 5,
+            Location = loc, ---@diagnostic disable-line: assign-type-mismatch
+            MaterialIndex = -1,
+            Normal = { X = newNormal_vec3.x, Y = newNormal_vec3.y, Z = newNormal_vec3.z },
+            Operation = EDeformType.Subtract,
+            Scale = scale,
+            SequenceNumber = 0,
+            Shape = 0,
+            bEasyUnbury = false,
+            bForceUnburyWithNoDeformationEvent = false,
+            bUseAlternatePolygonization = false,
+        })
+    end,
 }

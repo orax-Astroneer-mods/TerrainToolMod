@@ -43,7 +43,7 @@ local options = {
         title_left = "[Terrain Tool Mod]\n",
         title_right = "\n",
         positionInViewport = { X = 0, Y = 0 },
-        zOrder = 1
+        zOrder = 1,
     },
 
     -- Delay in milliseconds at which the main_params.lua file will be updated. You should not change this.
@@ -73,36 +73,36 @@ local options = {
 
     -- Keybinds to turn on the "tangent" method. It is used with the Flatten mode.
     -- When using Flatten mode, the Terrain tool will flatten the terrain following the planet's curvature.
-    set_tangent_method_text = "Set \"tangent\" method",
+    set_tangent_method_text = 'Set "tangent" method',
     set_tangent_method_Key = Key.ONE,
     set_tangent_method_ModifierKeys = {},
 
     -- Keybinds to turn on the "slope" method. It is used with the Flatten mode.
-    set_slope_method_text = "Set \"slope\" method",
+    set_slope_method_text = 'Set "slope" method',
     set_slope_method_Key = Key.TWO,
     set_slope_method_ModifierKeys = {},
 
     -- Keybinds to turn on the "slope" method. It is used with the Smoothen mode.
-    set_smoothen_method_text = "Set \"smoothen\" method",
+    set_smoothen_method_text = 'Set "smoothen" method',
     set_smoothen_method_Key = Key.THREE,
     set_smoothen_method_ModifierKeys = {},
 
     -- Keybinds to turn on the "auto" (automatic) method.
-    set_auto_method_text = "Set \"auto\" method",
+    set_auto_method_text = 'Set "auto" method',
     set_auto_method_Key = Key.FOUR,
     set_auto_method_ModifierKeys = {},
 
     -- Keybinds to turn on the "paint" method.
-    set_paint_method_text = "Set \"paint\" method",
+    set_paint_method_text = 'Set "paint" method',
     set_paint_method_Key = Key.FIVE,
     set_paint_method_ModifierKeys = {},
 
     -- Keybinds to turn on the "revert" method.
-    set_revert_method_text = "Set \"revert\" method",
+    set_revert_method_text = 'Set "revert" method',
     set_revert_method_Key = Key.SIX,
     set_revert_method_ModifierKeys = {},
 
-    toggle_colorDeform_ui_text = "Toggle the visibility of the \"color\" UI",
+    toggle_colorDeform_ui_text = 'Toggle the visibility of the "color" UI',
     toggle_colorDeform_ui_Key = Key.ONE,
     toggle_colorDeform_ui_ModifierKeys = { ModifierKey.SHIFT },
 
@@ -114,7 +114,7 @@ local options = {
         ALC_LENGTH = 350,
         ITERATIONS = 10,
         SCALE = 350,
-        MATERIAL_INDEX = 128 -- Color. Default: 128. Valid values: 0 to ...
+        MATERIAL_INDEX = 128, -- Color. Default: 128. Valid values: 0 to ...
     },
 
     -- Brush scale/size
@@ -136,23 +136,27 @@ local options = {
     -- DeformType to use when you press the "set_deformType_Key" key below.
     deformType = EDeformType.RevertModifications,
     -- Keybinds to set a deform type.
-    set_deformType_text = "Set \"Revert modifications\" mode",
+    set_deformType_text = 'Set "Revert modifications" mode',
     set_deformType_Key = Key.R,
     set_deformType_ModifierKeys = {},
 
     -- Shortcuts to the flatten modes.
     -- Classic Flatten mode.
-    set_Flatten_mode_text = "Set \"Flatten\" mode",
+    set_Flatten_mode_text = 'Set "Flatten" mode',
     set_Flatten_mode_Key = Key.F,
     set_Flatten_mode_ModifierKeys = { ModifierKey.SHIFT },
     -- Subtract only Flatten mode.
-    set_FlattenSubtractOnly_mode_text = "Set \"Flatten subtract only\" mode",
+    set_FlattenSubtractOnly_mode_text = 'Set "Flatten subtract only" mode',
     set_FlattenSubtractOnly_mode_Key = Key.F,
     set_FlattenSubtractOnly_mode_ModifierKeys = { ModifierKey.CONTROL, ModifierKey.SHIFT },
     -- Add only Flatten mode.
-    set_FlattenAddOnly_mode_text = "Set \"Flatten add only\" mode",
+    set_FlattenAddOnly_mode_text = 'Set "Flatten add only" mode',
     set_FlattenAddOnly_mode_Key = Key.F,
-    set_FlattenAddOnly_mode_ModifierKeys = { ModifierKey.CONTROL, ModifierKey.ALT, ModifierKey.SHIFT },
+    set_FlattenAddOnly_mode_ModifierKeys = {
+        ModifierKey.CONTROL,
+        ModifierKey.ALT,
+        ModifierKey.SHIFT,
+    },
 
     --#region Method "tangent". These options ONLY work in the "tangent" method.
     --#endregion
@@ -227,7 +231,7 @@ local options = {
     revert_offset_forward_backward_location_fixed_value_2 = 1000,
     revert_offset_location_fixed_value_1_KeyName = "Home",
     revert_offset_location_fixed_value_2_KeyName = "End",
-    revert_toggle_revert_once_text = "Toggle \"Revert once\"",
+    revert_toggle_revert_once_text = 'Toggle "Revert once"',
     revert_toggle_revert_once_KeyName = "Delete",
 
     --#endregion

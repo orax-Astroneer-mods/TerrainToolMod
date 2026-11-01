@@ -44,26 +44,44 @@ return {
         local relativeFloor = vec3.new(
             p.floor.X - p.planetCenter.X,
             p.floor.Y - p.planetCenter.Y,
-            p.floor.Z - p.planetCenter.Z)
+            p.floor.Z - p.planetCenter.Z
+        )
 
         local right_vec3 = vec3.new(p.right.X, p.right.Y, p.right.Z)
         local newNormal_vec3 = vec3.normalize(vec3.rotate(relativeFloor, rad(p.angle), right_vec3))
         local endLoc = {
             X = p.characterLocation.X - p.up.X * 500,
             Y = p.characterLocation.Y - p.up.Y * 500,
-            Z = p.characterLocation.Z - p.up.Z * 500
+            Z = p.characterLocation.Z - p.up.Z * 500,
         }
 
         ---@diagnostic disable-next-line: missing-fields
         local hit = {} ---@type FHitResult
-        local result = sys:LineTraceSingleForObjects(p.world,
-            p.characterLocation, endLoc, { 6 }, false, {}, 0, hit, true, {}, {}, 0) ---@diagnostic disable-line: missing-fields
-        if not result then return end
+        local result = sys:LineTraceSingleForObjects(
+            p.world,
+            p.characterLocation,
+            endLoc,
+            { 6 },
+            false,
+            {},
+            0,
+            hit,
+            true,
+            {},
+            {},
+            0
+        ) ---@diagnostic disable-line: missing-fields
+        if not result then
+            return
+        end
 
-        local direction = vec3.normalize(vec3.rotate(
-            vec3.new(p.forward.X, p.forward.Y, p.forward.Z),
-            rad(p.angle),
-            vec3.new(p.right.X, p.right.Y, p.right.Z)))
+        local direction = vec3.normalize(
+            vec3.rotate(
+                vec3.new(p.forward.X, p.forward.Y, p.forward.Z),
+                rad(p.angle),
+                vec3.new(p.right.X, p.right.Y, p.right.Z)
+            )
+        )
 
         local directionMult = scale + 100
 
@@ -77,26 +95,25 @@ return {
 
         ---@param location FVector_NetQuantize100
         local function doDeformation(location, operation, deformScale)
-            controller:ClientDoDeformation(
-                {
-                    AutoCreateResourceEfficiency = 0,
-                    CreativeModeNoResourceCollection = false,
-                    DeltaTime = 1 / 30,
-                    ForceRemoveDecorators = false,
-                    HardnessPenetration = 10, -- 0 (default) to 10
-                    Instigator = nil,
-                    Intensity = 5,
-                    Location = location,
-                    MaterialIndex = materialIndex,
-                    Normal = { X = newNormal_vec3.x, Y = newNormal_vec3.y, Z = newNormal_vec3.z },
-                    Operation = operation,
-                    Scale = deformScale,
-                    SequenceNumber = 0,
-                    Shape = 0,
-                    bEasyUnbury = false,
-                    bForceUnburyWithNoDeformationEvent = false,
-                    bUseAlternatePolygonization = true
-                })
+            controller:ClientDoDeformation({
+                AutoCreateResourceEfficiency = 0,
+                CreativeModeNoResourceCollection = false,
+                DeltaTime = 1 / 30,
+                ForceRemoveDecorators = false,
+                HardnessPenetration = 10, -- 0 (default) to 10
+                Instigator = nil,
+                Intensity = 5,
+                Location = location,
+                MaterialIndex = materialIndex,
+                Normal = { X = newNormal_vec3.x, Y = newNormal_vec3.y, Z = newNormal_vec3.z },
+                Operation = operation,
+                Scale = deformScale,
+                SequenceNumber = 0,
+                Shape = 0,
+                bEasyUnbury = false,
+                bForceUnburyWithNoDeformationEvent = false,
+                bUseAlternatePolygonization = true,
+            })
         end
 
         doDeformation(loc, EDeformType.Flatten, scale)
@@ -110,14 +127,14 @@ return {
             doDeformation({
                 X = loc.X + rX,
                 Y = loc.Y + rY,
-                Z = loc.Z + rZ
+                Z = loc.Z + rZ,
             }, EDeformType.Flatten, scale)
 
             doDeformation({
                 X = loc.X - rX,
                 Y = loc.Y - rY,
-                Z = loc.Z - rZ
+                Z = loc.Z - rZ,
             }, EDeformType.Flatten, scale)
         end
-    end
+    end,
 }

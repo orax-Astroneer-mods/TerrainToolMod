@@ -29,7 +29,7 @@ local ESlateVisibility = {
     Hidden = 2,
     HitTestInvisible = 3,
     SelfHitTestInvisible = 4,
-    ESlateVisibility_MAX = 5
+    ESlateVisibility_MAX = 5,
 }
 
 ---@type EDeformType
@@ -63,7 +63,9 @@ local function writeParamsFile()
 
     assert(file, format("\nUnable to open the params file %q.", paramsFile))
 
-    if params.SCALE == nil then params.SCALE = 2.0 end
+    if params.SCALE == nil then
+        params.SCALE = 2.0
+    end
 
     file:write(format(
         [[---@type Method__Paint__PARAMS
@@ -117,7 +119,8 @@ local function createUI()
         return false
     end
 
-    local fontObj = StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
+    local fontObj =
+        StaticFindObject("/Game/UI/fonts/NDAstroneer-Regular_Font.NDAstroneer-Regular_Font")
     if not fontObj:IsValid() then
         log.warn("Font object is not valid.")
         return false
@@ -126,29 +129,44 @@ local function createUI()
     ---@diagnostic disable: param-type-mismatch, assign-type-mismatch
 
     ---@type UUserWidget
-    UI.userWidget = StaticConstructObject(StaticFindObject("/Script/UMG.UserWidget"), gameInstance,
-        FName(prefix .. "UserWidget"))
+    UI.userWidget = StaticConstructObject(
+        StaticFindObject("/Script/UMG.UserWidget"),
+        gameInstance,
+        FName(prefix .. "UserWidget")
+    )
     assert(UI.userWidget:IsValid())
 
-    UI.userWidget.WidgetTree = StaticConstructObject(StaticFindObject("/Script/UMG.WidgetTree"), UI.userWidget,
-        FName(prefix .. "WidgetTree"))
+    UI.userWidget.WidgetTree = StaticConstructObject(
+        StaticFindObject("/Script/UMG.WidgetTree"),
+        UI.userWidget,
+        FName(prefix .. "WidgetTree")
+    )
     assert(UI.userWidget.WidgetTree:IsValid())
 
     ---@type UCanvasPanel
-    UI.canvas = StaticConstructObject(StaticFindObject("/Script/UMG.CanvasPanel"),
-        UI.userWidget.WidgetTree, FName(prefix .. "CanvasPanel"))
+    UI.canvas = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CanvasPanel"),
+        UI.userWidget.WidgetTree,
+        FName(prefix .. "CanvasPanel")
+    )
     assert(UI.canvas:IsValid())
     UI.userWidget.WidgetTree.RootWidget = UI.canvas
 
     local rootWidget = UI.userWidget.WidgetTree.RootWidget
 
     ---@type UVerticalBox
-    local verticalBox = StaticConstructObject(StaticFindObject("/Script/UMG.VerticalBox"),
-        rootWidget, FName(prefix .. "VerticalBox"))
+    local verticalBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.VerticalBox"),
+        rootWidget,
+        FName(prefix .. "VerticalBox")
+    )
 
     ---@type UTextBlock
-    local textBlock_title = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_title"))
+    local textBlock_title = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_title")
+    )
     textBlock_title.Font.Size = optUI.paint.font_size
     textBlock_title.Font.FontObject = fontObj
     textBlock_title:SetText(FText(optUI.paint.txt.title))
@@ -156,25 +174,37 @@ local function createUI()
 
     --#region scale
     ---@type UHorizontalBox
-    local horizontalBox_scale = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_scale"))
+    local horizontalBox_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_scale")
+    )
     horizontalBox_scale:SetToolTipText(FText(optUI.paint.txt.scale_tip))
 
     ---@type UTextBlock
-    local textBlock_scale = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_scale"))
+    local textBlock_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_scale")
+    )
     textBlock_scale.Font.Size = optUI.paint.font_size
     textBlock_scale.Font.FontObject = fontObj
     textBlock_scale:SetText(FText(optUI.paint.txt.scale))
 
     ---@type USpacer
-    local spacer_scale = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_scale"))
+    local spacer_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_scale")
+    )
     spacer_scale:SetSize(optUI.paint.spacer_size)
 
     ---@type UEditableTextBox
-    UI.scale = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_scale"))
+    UI.scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_scale")
+    )
     UI.scale.WidgetStyle.Font.Size = optUI.paint.font_size
     UI.scale.WidgetStyle.Font.FontObject = fontObj
     UI.scale.SelectAllTextWhenFocused = true
@@ -186,26 +216,47 @@ local function createUI()
 
     --#region material index
     ---@type UHorizontalBox
-    local horizontalBox_material_index = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_material_index"))
-    horizontalBox_material_index:SetToolTipText(FText(format(optUI.paint.txt.material_index_tip,
-        func.getKeybindName(options.enable_handleTerrainTool_Key, options.enable_handleTerrainTool_ModifierKeys))))
+    local horizontalBox_material_index = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_material_index")
+    )
+    horizontalBox_material_index:SetToolTipText(
+        FText(
+            format(
+                optUI.paint.txt.material_index_tip,
+                func.getKeybindName(
+                    options.enable_handleTerrainTool_Key,
+                    options.enable_handleTerrainTool_ModifierKeys
+                )
+            )
+        )
+    )
 
     ---@type UTextBlock
-    local textBlock_materialIndex = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_material_index"))
+    local textBlock_materialIndex = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_material_index")
+    )
     textBlock_materialIndex.Font.Size = optUI.paint.font_size
     textBlock_materialIndex.Font.FontObject = fontObj
     textBlock_materialIndex:SetText(FText(optUI.paint.txt.material_index))
 
     ---@type USpacer
-    local spacer_material_index = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_material_index"))
+    local spacer_material_index = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_material_index")
+    )
     spacer_material_index:SetSize(optUI.paint.spacer_size)
 
     ---@type UEditableTextBox
-    UI.materialIndex = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_material_index"))
+    UI.materialIndex = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_material_index")
+    )
     UI.materialIndex.WidgetStyle.Font.Size = optUI.paint.font_size
     UI.materialIndex.WidgetStyle.Font.FontObject = fontObj
     UI.materialIndex.SelectAllTextWhenFocused = true
@@ -218,8 +269,10 @@ local function createUI()
 
     ---@type UTerrainToolCreativeMenu_C
     UI.menu = StaticConstructObject(
-        StaticFindObject("/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C"), UI.userWidget,
-        FName(prefix .. "TerrainToolCreativeMenu_C"))
+        StaticFindObject("/Game/UI/CreativeMode/TerrainToolCreativeMenu.TerrainToolCreativeMenu_C"),
+        UI.userWidget,
+        FName(prefix .. "TerrainToolCreativeMenu_C")
+    )
     assert(UI.menu:IsValid(), "Unable to create TerrainToolCreativeMenu widget.")
 
     verticalBox:AddChildToVerticalBox(textBlock_title)
@@ -238,11 +291,14 @@ local function createUI()
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
     UI.canvas:AddChildToCanvas(UI.menu)
-    UI.menu.ActiveColorImage.RenderTransformPivot = optUI.paint.ActiveColorImage_RenderTransformPivot
-    UI.menu.ActiveColorImage.RenderTransform.Scale = optUI.paint.ActiveColorImage_RenderTransform_Scale
+    UI.menu.ActiveColorImage.RenderTransformPivot =
+        optUI.paint.ActiveColorImage_RenderTransformPivot
+    UI.menu.ActiveColorImage.RenderTransform.Scale =
+        optUI.paint.ActiveColorImage_RenderTransform_Scale
     verticalBox:AddChildToVerticalBox(UI.menu.ActiveColorImage)
 
-    UI.menu.CreativeTerrainPlanetColorPicker.Padding = optUI.paint.CreativeTerrainPlanetColorPicker_Padding
+    UI.menu.CreativeTerrainPlanetColorPicker.Padding =
+        optUI.paint.CreativeTerrainPlanetColorPicker_Padding
     verticalBox:AddChildToVerticalBox(UI.menu.CreativeTerrainPlanetColorPicker)
 
     UI.menu:RemoveFromParent()
@@ -278,8 +334,17 @@ end
 ---@param _isUsingTool RemoteUnrealParam
 ---@param _justActivated RemoteUnrealParam
 ---@param _canUse RemoteUnrealParam
-local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult, _startedInteraction, _endedInteraction,
-                                      _isUsingTool, _justActivated, _canUse)
+local function hook_HandleTerrainTool(
+    _self,
+    _controller,
+    _toolHit,
+    _clickResult,
+    _startedInteraction,
+    _endedInteraction,
+    _isUsingTool,
+    _justActivated,
+    _canUse
+)
     local deformTool = _self:get() ---@type ASmallDeform_TERRAIN_EXPERIMENTAL_C
 
     if _justActivated:get() == true then
@@ -316,12 +381,14 @@ local function hook_HandleTerrainTool(_self, _controller, _toolHit, _clickResult
         MaterialIndex = materialIndexImage,
         Normal = { X = toolHit.Normal.X, Y = toolHit.Normal.Y, Z = toolHit.Normal.Z },
         Operation = EDeformType.ColorPaint,
-        Scale = deformTool.BaseBrushIndicatorScale * deformTool.BaseBrushDeformationScale * params.SCALE,
+        Scale = deformTool.BaseBrushIndicatorScale
+            * deformTool.BaseBrushDeformationScale
+            * params.SCALE,
         SequenceNumber = 0,
         Shape = 0,
         bEasyUnbury = false,
         bForceUnburyWithNoDeformationEvent = false,
-        bUseAlternatePolygonization = true
+        bUseAlternatePolygonization = true,
     })
 end
 
@@ -329,7 +396,12 @@ end
 ---@param SelectedColor FLinearColor
 ---@param SelectedColorIndex int32
 ---@param PaintType EPaintIndexType
-local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked(self, SelectedColor, SelectedColorIndex, PaintType)
+local function hook_TerrainToolCreativeMenu_OnColorAndTypePicked(
+    self,
+    SelectedColor,
+    SelectedColorIndex,
+    PaintType
+)
     materialIndexImage = SelectedColorIndex
 
     if UI.materialIndex:IsValid() then

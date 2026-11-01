@@ -44,25 +44,24 @@ return {
             materialIndex = 0
         end
 
-        p.controller:ClientDoDeformation(
-            {
-                AutoCreateResourceEfficiency = 0,
-                CreativeModeNoResourceCollection = false,
-                DeltaTime = 1 / 30,
-                ForceRemoveDecorators = false,
-                HardnessPenetration = 0,
-                Instigator = nil,
-                Intensity = 0,
-                Location = { X = p.floor.X, Y = p.floor.Y, Z = p.floor.Z },
-                MaterialIndex = materialIndex,
-                Normal = { X = normal.X, Y = normal.Y, Z = normal.Z },
-                Operation = EDeformType.ColorPaint,
-                Scale = 500,
-                SequenceNumber = 0,
-                Shape = 0,
-                bEasyUnbury = false,
-                bForceUnburyWithNoDeformationEvent = false,
-                bUseAlternatePolygonization = true
-            })
-    end
+        p.controller:ClientDoDeformation({
+            AutoCreateResourceEfficiency = 0,
+            CreativeModeNoResourceCollection = false,
+            DeltaTime = 1 / 30,
+            ForceRemoveDecorators = false,
+            HardnessPenetration = 0,
+            Instigator = nil,
+            Intensity = 0,
+            Location = { X = p.floor.X, Y = p.floor.Y, Z = p.floor.Z },
+            MaterialIndex = materialIndex,
+            Normal = { X = normal.X, Y = normal.Y, Z = normal.Z },
+            Operation = EDeformType.ColorPaint,
+            Scale = 500,
+            SequenceNumber = 0,
+            Shape = 0,
+            bEasyUnbury = false,
+            bForceUnburyWithNoDeformationEvent = false,
+            bUseAlternatePolygonization = true,
+        })
+    end,
 }

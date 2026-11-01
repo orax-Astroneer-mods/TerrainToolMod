@@ -23,7 +23,7 @@ end
 function m.tableToString(t, fmt)
     local str = "{"
     for key, value in pairs(t) do
-        str = str .. format("[\"%s\"]=" .. fmt .. ",", key, value)
+        str = str .. format('["%s"]=' .. fmt .. ",", key, value)
     end
     str = str .. "}"
 
@@ -49,7 +49,13 @@ function m.getParamsFileByName(name, directory, checkFile)
         for key, value in pairs(params) do
             if ex[key] == nil then
                 -- this key does not exist in the example file
-                print(format("WARN: The key %q in the %s.lua file is unknown. You should delete it.", key, name))
+                print(
+                    format(
+                        "WARN: The key %q in the %s.lua file is unknown. You should delete it.",
+                        key,
+                        name
+                    )
+                )
                 break
             end
         end
@@ -89,7 +95,12 @@ function m.getParamsFile(sourceFile, checkFile, method)
         for key, value in pairs(params) do
             if ex[key] == nil then
                 -- this key does not exist in the example file
-                print(format("WARN: The key %q in the params.lua file is unknown. You should delete it.", key))
+                print(
+                    format(
+                        "WARN: The key %q in the params.lua file is unknown. You should delete it.",
+                        key
+                    )
+                )
                 break
             end
         end
@@ -129,7 +140,10 @@ function m.loadParamsFile(paramsFile, checkFile)
         -- load example file and set defaults if needed
         local exampleParamsFile = paramsFile:gsub("params.lua", "params.example.lua")
         local exParams = dofile(exampleParamsFile)
-        assert(type(exParams) == "table", format("\nInvalid parameters file: %q.", exampleParamsFile))
+        assert(
+            type(exParams) == "table",
+            format("\nInvalid parameters file: %q.", exampleParamsFile)
+        )
         for key, defaultValue in pairs(exParams) do
             if params[key] == nil then
                 params[key] = defaultValue
@@ -222,8 +236,22 @@ end
 ---@param scale FVector?
 ---@param color FLinearColor?
 ---@return UObject|AStaticMeshActor
-function m.spawnDebugObject(world, staticMeshActorClass, mesh, material, location, rotation, scale, color)
-    if not world:IsValid() or not staticMeshActorClass:IsValid() or not mesh:IsValid() or not material:IsValid() then
+function m.spawnDebugObject(
+    world,
+    staticMeshActorClass,
+    mesh,
+    material,
+    location,
+    rotation,
+    scale,
+    color
+)
+    if
+        not world:IsValid()
+        or not staticMeshActorClass:IsValid()
+        or not mesh:IsValid()
+        or not material:IsValid()
+    then
         return CreateInvalidObject()
     end
 
@@ -232,15 +260,18 @@ function m.spawnDebugObject(world, staticMeshActorClass, mesh, material, locatio
     color = color or { R = 1.0, G = 1.0, B = 1.0, A = 1.0 }
 
     ---@diagnostic disable-next-line: undefined-field
-    local staticMeshActor = world:SpawnActor(StaticFindObject("/Script/Engine.StaticMeshActor"),
+    local staticMeshActor = world:SpawnActor(
+        StaticFindObject("/Script/Engine.StaticMeshActor"),
         m.fvectorToUserData(location),
-        rotation) ---@cast staticMeshActor AStaticMeshActor
+        rotation
+    ) ---@cast staticMeshActor AStaticMeshActor
     assert(staticMeshActor:IsValid())
 
     staticMeshActor:SetActorScale3D(scale)
     staticMeshActor.StaticMeshComponent.StaticMesh = mesh
 
-    local matInstance = staticMeshActor.StaticMeshComponent:CreateDynamicMaterialInstance(0, material, FName(0))
+    local matInstance =
+        staticMeshActor.StaticMeshComponent:CreateDynamicMaterialInstance(0, material, FName(0))
     matInstance:SetVectorParameterValue(FName("Color"), color)
 
     return staticMeshActor
@@ -263,44 +294,77 @@ function m.createPaintUI(rootWidget, prefix, options, optUI, fontObj)
 
     --#region paint
     ---@type UHorizontalBox
-    local horizontalBox_paint = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_paint"))
-    horizontalBox_paint:SetToolTipText(FText(format(optUI["*"].txt.paint_tip,
-        m.getKeybindName(options.set_paint_method_Key, options.set_paint_method_ModifierKeys))))
+    local horizontalBox_paint = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_paint")
+    )
+    horizontalBox_paint:SetToolTipText(
+        FText(
+            format(
+                optUI["*"].txt.paint_tip,
+                m.getKeybindName(
+                    options.set_paint_method_Key,
+                    options.set_paint_method_ModifierKeys
+                )
+            )
+        )
+    )
 
     ---@type UTextBlock
-    local textBlock_paint = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_paint"))
+    local textBlock_paint = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_paint")
+    )
     textBlock_paint.Font.Size = optUI.tangent.font_size
     textBlock_paint.Font.FontObject = fontObj
     textBlock_paint:SetText(FText(optUI.tangent.txt.paint))
 
     ---@type USpacer
-    local spacer_paint = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_paint"))
+    local spacer_paint = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_paint")
+    )
     spacer_paint:SetSize(optUI.tangent.spacer_size)
 
     ---@type UCheckBox
-    UI.paintCheckBox = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_paint"))
+    UI.paintCheckBox = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_paint")
+    )
 
     ---@type USpacer
-    local spacer_paint2 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_paint2"))
+    local spacer_paint2 = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_paint2")
+    )
     spacer_paint2:SetSize(optUI.tangent.spacer_size2)
 
     ---@type UCheckBox
-    UI.paintCheckBox2 = StaticConstructObject(StaticFindObject("/Script/UMG.CheckBox"),
-        rootWidget, FName(prefix .. "CheckBox_paint2"))
+    UI.paintCheckBox2 = StaticConstructObject(
+        StaticFindObject("/Script/UMG.CheckBox"),
+        rootWidget,
+        FName(prefix .. "CheckBox_paint2")
+    )
 
     ---@type USpacer
-    local spacer_paint3 = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_paint3"))
+    local spacer_paint3 = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_paint3")
+    )
     spacer_paint3:SetSize(optUI.tangent.spacer_size)
 
     ---@type UTextBlock
-    local textBlock_paint2 = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_paint2"))
+    local textBlock_paint2 = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_paint2")
+    )
     textBlock_paint2.Font.Size = optUI.tangent.font_size
     textBlock_paint2.Font.FontObject = fontObj
     textBlock_paint2:SetText(FText(optUI.tangent.txt.paintOriginal))
@@ -316,25 +380,37 @@ function m.createPaintUI(rootWidget, prefix, options, optUI, fontObj)
 
     --#region paint scale
     ---@type UHorizontalBox
-    local horizontalBox_paint_scale = StaticConstructObject(StaticFindObject("/Script/UMG.HorizontalBox"),
-        rootWidget, FName(prefix .. "HorizontalBox_paint_scale"))
+    local horizontalBox_paint_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.HorizontalBox"),
+        rootWidget,
+        FName(prefix .. "HorizontalBox_paint_scale")
+    )
     horizontalBox_paint_scale:SetToolTipText(FText(optUI["*"].txt.paint_scale_tip))
 
     ---@type UTextBlock
-    local textBlock_paint_scale = StaticConstructObject(StaticFindObject("/Script/UMG.TextBlock"),
-        rootWidget, FName(prefix .. "TextBlock_paint_scale"))
+    local textBlock_paint_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.TextBlock"),
+        rootWidget,
+        FName(prefix .. "TextBlock_paint_scale")
+    )
     textBlock_paint_scale.Font.Size = optUI.tangent.font_size
     textBlock_paint_scale.Font.FontObject = fontObj
     textBlock_paint_scale:SetText(FText(optUI.tangent.txt.paint_scale))
 
     ---@type USpacer
-    local spacer_paint_scale = StaticConstructObject(StaticFindObject("/Script/UMG.Spacer"),
-        rootWidget, FName(prefix .. "Spacer_paint_scale"))
+    local spacer_paint_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.Spacer"),
+        rootWidget,
+        FName(prefix .. "Spacer_paint_scale")
+    )
     spacer_paint_scale:SetSize(optUI.tangent.spacer_size)
 
     ---@type UEditableTextBox
-    UI.paint_scale = StaticConstructObject(StaticFindObject("/Script/UMG.EditableTextBox"),
-        rootWidget, FName(prefix .. "EditableTextBox_paint_scale"))
+    UI.paint_scale = StaticConstructObject(
+        StaticFindObject("/Script/UMG.EditableTextBox"),
+        rootWidget,
+        FName(prefix .. "EditableTextBox_paint_scale")
+    )
     UI.paint_scale.WidgetStyle.Font.Size = optUI.tangent.font_size
     UI.paint_scale.WidgetStyle.Font.FontObject = fontObj
 
@@ -345,7 +421,11 @@ function m.createPaintUI(rootWidget, prefix, options, optUI, fontObj)
 
     ---@diagnostic enable: param-type-mismatch, assign-type-mismatch
 
-    return horizontalBox_paint, horizontalBox_paint_scale, UI.paintCheckBox, UI.paintCheckBox2, UI.paint_scale
+    return horizontalBox_paint,
+        horizontalBox_paint_scale,
+        UI.paintCheckBox,
+        UI.paintCheckBox2,
+        UI.paint_scale
 end
 
 ---Sort a table.
@@ -354,9 +434,11 @@ end
 ---@param f function?
 function m.pairsByKeys(t, f)
     local a = {}
-    for n in pairs(t) do table.insert(a, n) end
+    for n in pairs(t) do
+        table.insert(a, n)
+    end
     table.sort(a, f)
-    local i = 0             -- iterator variable
+    local i = 0 -- iterator variable
     local iter = function() -- iterator function
         i = i + 1
         if a[i] == nil then

@@ -1,3 +1,3 @@
 return { ---@type TerrainToolMod_Main_PARAMS
-    LATEST_METHOD = "tangent"
+    LATEST_METHOD = "tangent",
 }
