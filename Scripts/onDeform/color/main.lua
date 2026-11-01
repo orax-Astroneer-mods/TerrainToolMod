@@ -594,8 +594,8 @@ end
 local function hook_AstroPlanet_OnDeformationComplete(self, _deformParams)
     local deformParams = _deformParams:get() ---@type FDeformationParamsT2
 
-    ---@diagnostic disable-next-line: undefined-field
     if
+        ---@diagnostic disable-next-line: undefined-field
         deformParams.Instigator:Get():IsA(
             "/Game/Components_Small/SmallDeform_TERRAIN_EXPERIMENTAL.SmallDeform_TERRAIN_EXPERIMENTAL_C"
         )
@@ -755,7 +755,7 @@ function m.hook_TerrainToolCreativeMenu_OnColorAndTypePicked(
     end
 end
 
----@param self RemoteUnrealParam
+---@param self APlayerController
 ---@param newPawn ADesignAstro_C
 ---@param firstInitialization boolean
 function m.hook_PlayerController_ClientRestart(self, newPawn, firstInitialization)

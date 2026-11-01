@@ -745,6 +745,7 @@ local function getTerrainTool()
     return CreateInvalidObject()
 end
 
+---@param self RemoteUnrealParam
 RegisterHook("/Script/Astro.DeformTool:Activated", function(self)
     local deformTool = self:get()
     if

@@ -347,7 +347,7 @@ local function hook_HandleTerrainTool(
 
             insert(
                 DebugObjects,
-                ---@diagnostic disable-next-line: param-type-mismatch
+                ---@diagnostic disable: param-type-mismatch
                 func.spawnDebugObject(
                     World,
                     dbg.staticMeshActorClass,
@@ -358,6 +358,7 @@ local function hook_HandleTerrainTool(
                     dbg.scale,
                     { R = 50, G = 0, B = 0, A = 1 }
                 )
+                ---@diagnostic enable: param-type-mismatch
             )
         end)
     end
@@ -418,7 +419,7 @@ local function hook_HandleTerrainTool(
                     end
                     insert(
                         DebugObjects,
-                        ---@diagnostic disable-next-line: param-type-mismatch
+                        ---@diagnostic disable: param-type-mismatch
                         func.spawnDebugObject(
                             World,
                             dbg.staticMeshActorClass,
@@ -429,6 +430,7 @@ local function hook_HandleTerrainTool(
                             dbg.scale,
                             c
                         )
+                        ---@diagnostic enable: param-type-mismatch
                     )
                 end)
             end
@@ -455,7 +457,7 @@ local function hook_HandleTerrainTool(
                 ExecuteInGameThread(function()
                     insert(
                         DebugObjects,
-                        ---@diagnostic disable-next-line: param-type-mismatch
+                        ---@diagnostic disable: param-type-mismatch
                         func.spawnDebugObject(
                             World,
                             dbg.staticMeshActorClass,
@@ -466,6 +468,7 @@ local function hook_HandleTerrainTool(
                             dbg.scale,
                             { R = 0, G = 0, B = 50, A = 1.0 }
                         )
+                        ---@diagnostic enable: param-type-mismatch
                     )
                 end)
             end
@@ -564,7 +567,7 @@ local function hook_HandleTerrainTool(
                 for i = 50, 500, 50 do
                     insert(
                         DebugObjects,
-                        ---@diagnostic disable-next-line: param-type-mismatch
+                        ---@diagnostic disable: param-type-mismatch
                         func.spawnDebugObject(
                             World,
                             dbg.staticMeshActorClass,
@@ -579,6 +582,7 @@ local function hook_HandleTerrainTool(
                             dbg.scale,
                             { R = 1, G = 1, B = 1, A = 0.1 }
                         )
+                        ---@diagnostic enable: param-type-mismatch
                     )
                 end
             end
