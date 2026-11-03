@@ -287,16 +287,17 @@ local function startMainLoop()
     table.insert(MainLoops, false)
     local loopIndex = #MainLoops
 
-    LoopAsync(params.LOOP_DELAY or 250, function()
-        -- The angle will not change if the character is not holding the Terrain tool or moving,
-        -- or if the loop must stop.
-        if
-            MainLoops[loopIndex] == false
-            and DesignAstro.HoldingTool == true
-            and DesignAstro.CurrentSpeed > 0
-        then
+    local loopHandle
+    loopHandle = LoopInGameThreadWithDelay(params.LOOP_DELAY or 250, function()
+        if MainLoops[loopIndex] ~= false then
+            CancelDelayedAction(loopHandle)
+            return
+        end
+
+        -- The angle will not change if the character is not holding the Terrain tool or moving.
+        if DesignAstro.HoldingTool == true and DesignAstro.CurrentSpeed > 0 then
             if ExpectedAngle == mathHuge then
-                return MainLoops[loopIndex]
+                return
             end
             if Angle < ExpectedAngle then
                 setAngle(Angle + 1)
@@ -306,8 +307,6 @@ local function startMainLoop()
                 setExpectedAngle(mathHuge)
             end
         end
-
-        return MainLoops[loopIndex]
     end)
 end
 

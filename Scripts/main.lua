@@ -609,37 +609,33 @@ local ReadyPawnAddress = nil ---@type integer?
 local CandidatePawnAddress = nil ---@type integer?
 local CandidatePawnChecks = 0
 
-LoopAsync(PAWN_POLL_INTERVAL_MS, function()
-    ExecuteInGameThread(function()
-        local pawn = UEHelpers:GetPlayer() ---@cast pawn ADesignAstro_C
-        if
-            not pawn:IsValid()
-            or not pawn:IsA("/Game/Character/DesignAstro.DesignAstro_C")
-            or not pawn.LocalSolarBody:IsValid()
-        then
-            CandidatePawnAddress = nil
-            CandidatePawnChecks = 0
-            return
-        end
+LoopInGameThreadWithDelay(PAWN_POLL_INTERVAL_MS, function()
+    local pawn = UEHelpers:GetPlayer() ---@cast pawn ADesignAstro_C
+    if
+        not pawn:IsValid()
+        or not pawn:IsA("/Game/Character/DesignAstro.DesignAstro_C")
+        or not pawn.LocalSolarBody:IsValid()
+    then
+        CandidatePawnAddress = nil
+        CandidatePawnChecks = 0
+        return
+    end
 
-        local address = pawn:GetAddress()
-        if address == ReadyPawnAddress then
-            return
-        end
-        if address ~= CandidatePawnAddress then
-            CandidatePawnAddress = address
-            CandidatePawnChecks = 0
-        end
-        CandidatePawnChecks = CandidatePawnChecks + 1
-        if CandidatePawnChecks < PAWN_SETTLE_CHECKS then
-            return
-        end
+    local address = pawn:GetAddress()
+    if address == ReadyPawnAddress then
+        return
+    end
+    if address ~= CandidatePawnAddress then
+        CandidatePawnAddress = address
+        CandidatePawnChecks = 0
+    end
+    CandidatePawnChecks = CandidatePawnChecks + 1
+    if CandidatePawnChecks < PAWN_SETTLE_CHECKS then
+        return
+    end
 
-        ReadyPawnAddress = address
-        onPlayerPawnReady(UEHelpers:GetPlayerController(), pawn)
-    end)
-
-    return false
+    ReadyPawnAddress = address
+    onPlayerPawnReady(UEHelpers:GetPlayerController(), pawn)
 end)
 
 -- Disabled: the same crash as ClientRestart above.
@@ -700,13 +696,11 @@ if UEHelpers:GetPlayer():IsValid() then
     end
 end
 
-LoopAsync(options.writeMainParamsFileEvery or 10000, function()
+LoopInGameThreadWithDelay(options.writeMainParamsFileEvery or 10000, function()
     if WriteMainParamsFileRequired == true then
         WriteMainParamsFileRequired = false
         writeMainParamsFile()
     end
-
-    return false
 end)
 
 --#endregion
@@ -1236,30 +1230,22 @@ local function createTangentTerrain()
 
         -- Batch the RPCs instead of sending hundreds in one frame.
         local nextIndex = 1
-        local batchPending = false
-        LoopAsync(TANGENT_TERRAIN_SERVER_BATCH_DELAY_MS, function()
-            if nextIndex > #deformations then
-                return true
-            end
-            if batchPending then
-                return false
+        local batchLoop
+        batchLoop = LoopInGameThreadWithDelay(TANGENT_TERRAIN_SERVER_BATCH_DELAY_MS, function()
+            if not controller:IsValid() then
+                CancelDelayedAction(batchLoop)
+                return
             end
 
-            batchPending = true
-            ExecuteInGameThread(function()
-                if not controller:IsValid() then
-                    nextIndex = #deformations + 1
-                else
-                    local last =
-                        math.min(nextIndex + TANGENT_TERRAIN_SERVER_BATCH_SIZE - 1, #deformations)
-                    for k = nextIndex, last do
-                        controller:ServerDoDeformation(deformations[k])
-                    end
-                    nextIndex = last + 1
-                end
-                batchPending = false
-            end)
-            return false
+            local last = math.min(nextIndex + TANGENT_TERRAIN_SERVER_BATCH_SIZE - 1, #deformations)
+            for k = nextIndex, last do
+                controller:ServerDoDeformation(deformations[k])
+            end
+            nextIndex = last + 1
+
+            if nextIndex > #deformations then
+                CancelDelayedAction(batchLoop)
+            end
         end)
     end)
 end
