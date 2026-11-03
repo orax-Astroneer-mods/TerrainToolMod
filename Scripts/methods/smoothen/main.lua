@@ -342,25 +342,23 @@ local function hook_HandleTerrainTool(
             end
         end
 
-        ExecuteInGameThread(function()
-            loadDebugAssets()
+        loadDebugAssets()
 
-            insert(
-                DebugObjects,
-                ---@diagnostic disable: param-type-mismatch
-                func.spawnDebugObject(
-                    World,
-                    dbg.staticMeshActorClass,
-                    dbg.mesh,
-                    dbg.material,
-                    toolHit.Location,
-                    nil,
-                    dbg.scale,
-                    { R = 50, G = 0, B = 0, A = 1 }
-                )
-                ---@diagnostic enable: param-type-mismatch
+        insert(
+            DebugObjects,
+            ---@diagnostic disable: param-type-mismatch
+            func.spawnDebugObject(
+                World,
+                dbg.staticMeshActorClass,
+                dbg.mesh,
+                dbg.material,
+                toolHit.Location,
+                nil,
+                dbg.scale,
+                { R = 50, G = 0, B = 0, A = 1 }
             )
-        end)
+            ---@diagnostic enable: param-type-mismatch
+        )
     end
 
     local color = { R = 0, G = 0, B = 0, A = 0 }
@@ -412,27 +410,25 @@ local function hook_HandleTerrainTool(
             endPoint = vec3.add(vec3.scale(vec3.normalize(direction), lineTraceLength), r)
 
             if dbgObject then
-                ExecuteInGameThread(function()
-                    local c = { R = 50, G = 0, B = 50, A = 1.0 } ---@type FLinearColor
-                    if hit.Distance ~= 0 then
-                        c = { R = 0, G = 50, B = 0, A = 1.0 }
-                    end
-                    insert(
-                        DebugObjects,
-                        ---@diagnostic disable: param-type-mismatch
-                        func.spawnDebugObject(
-                            World,
-                            dbg.staticMeshActorClass,
-                            dbg.mesh,
-                            dbg.material,
-                            { X = r.x, Y = r.y, Z = r.z },
-                            nil,
-                            dbg.scale,
-                            c
-                        )
-                        ---@diagnostic enable: param-type-mismatch
+                local c = { R = 50, G = 0, B = 50, A = 1.0 } ---@type FLinearColor
+                if hit.Distance ~= 0 then
+                    c = { R = 0, G = 50, B = 0, A = 1.0 }
+                end
+                insert(
+                    DebugObjects,
+                    ---@diagnostic disable: param-type-mismatch
+                    func.spawnDebugObject(
+                        World,
+                        dbg.staticMeshActorClass,
+                        dbg.mesh,
+                        dbg.material,
+                        { X = r.x, Y = r.y, Z = r.z },
+                        nil,
+                        dbg.scale,
+                        c
                     )
-                end)
+                    ---@diagnostic enable: param-type-mismatch
+                )
             end
 
             ---@diagnostic disable-next-line: missing-fields
@@ -454,23 +450,21 @@ local function hook_HandleTerrainTool(
             )
 
             if dbgObject then
-                ExecuteInGameThread(function()
-                    insert(
-                        DebugObjects,
-                        ---@diagnostic disable: param-type-mismatch
-                        func.spawnDebugObject(
-                            World,
-                            dbg.staticMeshActorClass,
-                            dbg.mesh,
-                            dbg.material,
-                            outHit.Location,
-                            nil,
-                            dbg.scale,
-                            { R = 0, G = 0, B = 50, A = 1.0 }
-                        )
-                        ---@diagnostic enable: param-type-mismatch
+                insert(
+                    DebugObjects,
+                    ---@diagnostic disable: param-type-mismatch
+                    func.spawnDebugObject(
+                        World,
+                        dbg.staticMeshActorClass,
+                        dbg.mesh,
+                        dbg.material,
+                        outHit.Location,
+                        nil,
+                        dbg.scale,
+                        { R = 0, G = 0, B = 50, A = 1.0 }
                     )
-                end)
+                    ---@diagnostic enable: param-type-mismatch
+                )
             end
 
             if outHit.Normal.X ~= 0 or outHit.Normal.Y ~= 0 or outHit.Normal.Z ~= 0 then
@@ -541,52 +535,41 @@ local function hook_HandleTerrainTool(
     ---@diagnostic enable: inject-field
 
     if dbgObject then
-        ExecuteInGameThread(function()
-            if #normals > 0 and #locations > 0 then
-                local x_loc, y_loc, z_loc = 0, 0, 0
-                for _, loc in ipairs(locations) do
-                    x_loc = x_loc + loc.X
-                    y_loc = y_loc + loc.Y
-                    z_loc = z_loc + loc.Z
-                end
-                x_loc = x_loc / #locations
-                y_loc = y_loc / #locations
-                z_loc = z_loc / #locations
-
-                local x_norm, y_norm, z_norm = 0, 0, 0
-                for _, n in ipairs(normals) do
-                    x_norm = x_norm + n.X
-                    y_norm = y_norm + n.Y
-                    z_norm = z_norm + n.Z
-                end
-                x_norm = x_norm / #normals
-                y_norm = y_norm / #normals
-                z_norm = z_norm / #normals
-
-                -- new normal
-                for i = 50, 500, 50 do
-                    insert(
-                        DebugObjects,
-                        ---@diagnostic disable: param-type-mismatch
-                        func.spawnDebugObject(
-                            World,
-                            dbg.staticMeshActorClass,
-                            dbg.mesh,
-                            dbg.material,
-                            {
-                                X = x_loc + x_norm * i,
-                                Y = y_loc + y_norm * i,
-                                Z = z_loc + z_norm * i,
-                            },
-                            nil,
-                            dbg.scale,
-                            { R = 1, G = 1, B = 1, A = 0.1 }
-                        )
-                        ---@diagnostic enable: param-type-mismatch
-                    )
-                end
+        if #normals > 0 and #locations > 0 then
+            local x_loc, y_loc, z_loc = 0, 0, 0
+            for _, loc in ipairs(locations) do
+                x_loc = x_loc + loc.X
+                y_loc = y_loc + loc.Y
+                z_loc = z_loc + loc.Z
             end
-        end)
+            x_loc = x_loc / #locations
+            y_loc = y_loc / #locations
+            z_loc = z_loc / #locations
+
+            local x_norm, y_norm, z_norm = 0, 0, 0
+            for _, n in ipairs(normals) do
+                x_norm = x_norm + n.X
+                y_norm = y_norm + n.Y
+                z_norm = z_norm + n.Z
+            end
+            x_norm = x_norm / #normals
+            y_norm = y_norm / #normals
+            z_norm = z_norm / #normals
+
+            -- new normal
+            for i = 50, 500, 50 do
+                insert(
+                    DebugObjects,
+                    ---@diagnostic disable: param-type-mismatch
+                    func.spawnDebugObject(World, dbg.staticMeshActorClass, dbg.mesh, dbg.material, {
+                        X = x_loc + x_norm * i,
+                        Y = y_loc + y_norm * i,
+                        Z = z_loc + z_norm * i,
+                    }, nil, dbg.scale, { R = 1, G = 1, B = 1, A = 0.1 })
+                    ---@diagnostic enable: param-type-mismatch
+                )
+            end
+        end
     end
 end
 

@@ -131,35 +131,33 @@ local DebugSphere = {
 
 function DebugSphere.create()
     if DebugSphere.actor:IsValid() == false or DebugSphere.actor.bActorIsBeingDestroyed == true then
-        ExecuteInGameThread(function()
-            loadDebugAssets()
+        loadDebugAssets()
 
-            -- get normal or wireframe material
-            local material = params.WIREFRAME == true and dbg.materialWireframe or dbg.material
+        -- get normal or wireframe material
+        local material = params.WIREFRAME == true and dbg.materialWireframe or dbg.material
 
-            -- create the sphere
-            ---@diagnostic disable: param-type-mismatch
-            DebugSphere.actor = func.spawnDebugObject(
-                UEHelpers:GetWorld(),
-                dbg.staticMeshActorClass,
-                dbg.mesh,
-                material,
-                { X = 0, Y = 0, Z = 0 },
-                nil,
-                { X = 0, Y = 0, Z = 0 },
-                { R = params.R, G = params.G, B = params.B, A = params.A }
-            )
-            ---@diagnostic enable: param-type-mismatch
+        -- create the sphere
+        ---@diagnostic disable: param-type-mismatch
+        DebugSphere.actor = func.spawnDebugObject(
+            UEHelpers:GetWorld(),
+            dbg.staticMeshActorClass,
+            dbg.mesh,
+            material,
+            { X = 0, Y = 0, Z = 0 },
+            nil,
+            { X = 0, Y = 0, Z = 0 },
+            { R = params.R, G = params.G, B = params.B, A = params.A }
+        )
+        ---@diagnostic enable: param-type-mismatch
 
-            if DebugSphere.actor:IsValid() then
-                DebugSphere.actor:SetMobility(2)
-                DebugSphere.actor:SetActorEnableCollision(false)
-                DebugSphere.setScale(params.SCALE)
-                IsDebugSphereCreated = true
-            else
-                log.warn("Debug sphere is invalid.")
-            end
-        end)
+        if DebugSphere.actor:IsValid() then
+            DebugSphere.actor:SetMobility(2)
+            DebugSphere.actor:SetActorEnableCollision(false)
+            DebugSphere.setScale(params.SCALE)
+            IsDebugSphereCreated = true
+        else
+            log.warn("Debug sphere is invalid.")
+        end
     end
 end
 
