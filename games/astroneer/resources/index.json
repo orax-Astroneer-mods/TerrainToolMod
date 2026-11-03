@@ -1,7 +1,7 @@
 {
   "mods": {
     "TerrainToolMod": {
-      "latest_version": "0.10.2",
+      "latest_version": "0.10.3",
       "versions": {
         "0.10.0": {
           "download_url": "https://github.com/orax-Astroneer-mods/TerrainToolMod/releases/download/v0.10.0/000-TerrainToolMod-0.10.0_P.pak",
@@ -14,6 +14,10 @@
         "0.10.2": {
           "download_url": "https://github.com/orax-Astroneer-mods/TerrainToolMod/releases/download/v0.10.2/000-TerrainToolMod-0.10.2_P.pak",
           "filename": "000-TerrainToolMod-0.10.2_P.pak"
+        },
+        "0.10.3": {
+          "download_url": "https://github.com/orax-Astroneer-mods/TerrainToolMod/releases/download/v0.10.3/000-TerrainToolMod-0.10.3_P.pak",
+          "filename": "000-TerrainToolMod-0.10.3_P.pak"
         }
       }
     }
