@@ -329,13 +329,13 @@ local function setMethod(method)
     -- execute onUnload event for the unloaded (old) method
     if oldMethod ~= "" and type(Methods[oldMethod].onUnload) == "function" then
         log.debug("Execute onUnload event for the old method %q.", oldMethod)
-        Methods[oldMethod].onUnload()
+        ExecuteInGameThread(Methods[oldMethod].onUnload)
     end
 
     -- execute onLoad event for the loaded (new) method
     if type(Methods[newMethod].onLoad) == "function" then
         log.debug("Execute onLoad event for the new method %q.", newMethod)
-        Methods[newMethod].onLoad()
+        ExecuteInGameThread(Methods[newMethod].onLoad)
     end
 
     return newMethod
@@ -366,7 +366,7 @@ local function enableMod()
         and type(Methods[mainParams.LATEST_METHOD].onUpdate) == "function"
     then
         log.debug("Execute onUpdate event for the current method %q.", mainParams.LATEST_METHOD)
-        Methods[mainParams.LATEST_METHOD].onUpdate()
+        ExecuteInGameThread(Methods[mainParams.LATEST_METHOD].onUpdate)
     end
 
     log.debug(
@@ -380,7 +380,7 @@ local function disableMod()
     -- execute onUnload event for the unloaded method
     if CurrenMethod ~= "" and type(Methods[CurrenMethod].onUnload) == "function" then
         log.debug("Execute onUnload event for the method %q.", CurrenMethod)
-        Methods[CurrenMethod].onUnload()
+        ExecuteInGameThread(Methods[CurrenMethod].onUnload)
         CurrenMethod = ""
     end
 
@@ -569,102 +569,94 @@ local function hook_Planet_Marker_HandlePlanetMarkerSelected()
     )
 end
 
----@param self APlayerController
----@param newPawn ADesignAstro_C
-local function onPlayerPawnReady(self, newPawn)
-    if
-        newPawn:IsA("/Game/Character/DesignAstro.DesignAstro_C")
-        and newPawn.LocalSolarBody:IsValid()
-    then
-        local firstInitialization = FirstInit
+---@param self RemoteUnrealParam<APlayerController>
+---@param NewPawn RemoteUnrealParam<APawn>
+RegisterHook("/Script/Engine.PlayerController:ClientRestart", function(self, NewPawn)
+    local newPawn = NewPawn:get()
 
-        if firstInitialization == true then
-            -- Hooks to register BEFORE the ClientRestart hook is registered.
-            hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
-
-            -- Hooks to register BEFORE or AFTER the ClientRestart hook is registered.
-            hook_Planet_Marker_HandlePlanetMarkerSelected()
-        end
-
-        -- execute onClientRestart event for the current method
-        if CurrenMethod ~= "" and type(Methods[CurrenMethod].onClientRestart) == "function" then
-            log.debug("Execute onClientRestart event for method %q.", CurrenMethod)
-            Methods[CurrenMethod].onClientRestart(self, newPawn, firstInitialization)
-        end
-
-        -- execute onClientRestart event for onDeform_color
-        if type(onDeform_color.hook_PlayerController_ClientRestart) == "function" then
-            log.debug("Execute PlayerController ClientRestart event for onDeform_color.")
-            onDeform_color.hook_PlayerController_ClientRestart(self, newPawn, firstInitialization)
-        end
-
-        FirstInit = false
-    end
-end
-
--- Hooking the ClientRestart RPC crashes clients joining a dedicated server, so poll for the pawn instead.
-local PAWN_POLL_INTERVAL_MS = 1000
-local PAWN_SETTLE_CHECKS = 3
-local ReadyPawnAddress = nil ---@type integer?
-local CandidatePawnAddress = nil ---@type integer?
-local CandidatePawnChecks = 0
-
-LoopInGameThreadWithDelay(PAWN_POLL_INTERVAL_MS, function()
-    local pawn = UEHelpers:GetPlayer() ---@cast pawn ADesignAstro_C
-    if
-        not pawn:IsValid()
-        or not pawn:IsA("/Game/Character/DesignAstro.DesignAstro_C")
-        or not pawn.LocalSolarBody:IsValid()
-    then
-        CandidatePawnAddress = nil
-        CandidatePawnChecks = 0
+    if not newPawn:IsValid() or not newPawn:IsA("/Game/Character/DesignAstro.DesignAstro_C") then
         return
     end
+    ---@cast newPawn ADesignAstro_C
 
-    local address = pawn:GetAddress()
-    if address == ReadyPawnAddress then
-        return
-    end
-    if address ~= CandidatePawnAddress then
-        CandidatePawnAddress = address
-        CandidatePawnChecks = 0
-    end
-    CandidatePawnChecks = CandidatePawnChecks + 1
-    if CandidatePawnChecks < PAWN_SETTLE_CHECKS then
-        return
+    local firstInitialization = FirstInit
+
+    if firstInitialization == true then
+        -- Hooks to register BEFORE the ClientRestart hook is registered.
+        hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
+
+        -- Hooks to register BEFORE or AFTER the ClientRestart hook is registered.
+        hook_Planet_Marker_HandlePlanetMarkerSelected()
     end
 
-    ReadyPawnAddress = address
-    onPlayerPawnReady(UEHelpers:GetPlayerController(), pawn)
+    local controller = self:get()
+
+    -- Execute onClientRestart event for the current method.
+    if CurrenMethod ~= "" and type(Methods[CurrenMethod].onClientRestart) == "function" then
+        log.debug("Execute onClientRestart event for method %q.", CurrenMethod)
+        Methods[CurrenMethod].onClientRestart(controller, newPawn, firstInitialization)
+    end
+
+    -- Execute onClientRestart event for onDeform_color.
+    if type(onDeform_color.hook_PlayerController_ClientRestart) == "function" then
+        log.debug("Execute PlayerController ClientRestart event for onDeform_color.")
+        onDeform_color.hook_PlayerController_ClientRestart(controller, newPawn, firstInitialization)
+    end
+
+    FirstInit = false
 end)
 
--- Disabled: the same crash as ClientRestart above.
-local HOOK_CLIENT_RECEIVE_LOCALIZED_MESSAGE = false
+RegisterHook("/Script/Engine.PlayerController:ClientReceiveLocalizedMessage", function(...)
+    -- Execute event for the current method.
+    if
+        CurrenMethod ~= ""
+        and type(Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage)
+            == "function"
+    then
+        log.debug(
+            "Execute PlayerController_ClientReceiveLocalizedMessage event for method %q.",
+            CurrenMethod
+        )
+        Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage(...)
+    end
+end)
 
-if HOOK_CLIENT_RECEIVE_LOCALIZED_MESSAGE then
-    RegisterHook("/Script/Engine.PlayerController:ClientReceiveLocalizedMessage", function(...)
-        -- execute event for the current method
+RegisterHook(
+    "/Script/Astro.PlayController:OnCharacterLocalSolarBodyChanged",
+    ---@param playControllerParam RemoteUnrealParam<APlayController>
+    ---@param newLocalSolarBodyParam RemoteUnrealParam<ASolarBody>
+    function(playControllerParam, newLocalSolarBodyParam)
+        local playController = playControllerParam:get()
+        local newLocalSolarBody = newLocalSolarBodyParam:get()
+
+        -- Execute event for the current method.
         if
             CurrenMethod ~= ""
-            and type(Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage)
+            and type(Methods[CurrenMethod].PlayerController_OnCharacterLocalSolarBodyChanged)
                 == "function"
         then
             log.debug(
-                "Execute PlayerController_ClientReceiveLocalizedMessage event for method %q.",
+                "Execute PlayerController_OnCharacterLocalSolarBodyChanged event for method %q.",
                 CurrenMethod
             )
-            Methods[CurrenMethod].PlayerController_ClientReceiveLocalizedMessage(...)
+            Methods[CurrenMethod].PlayerController_OnCharacterLocalSolarBodyChanged(
+                playController,
+                newLocalSolarBody
+            )
         end
 
-        -- execute event for onDeform_color
-        if type(onDeform_color.PlayerController_ClientReceiveLocalizedMessage) == "function" then
+        -- Execute event for onDeform_color.
+        if type(onDeform_color.PlayerController_OnCharacterLocalSolarBodyChanged) == "function" then
             log.debug(
-                "Execute PlayerController_ClientReceiveLocalizedMessage event for onDeform_color."
+                "Execute PlayerController_OnCharacterLocalSolarBodyChanged event for onDeform_color."
             )
-            onDeform_color.PlayerController_ClientReceiveLocalizedMessage(...)
+            onDeform_color.PlayerController_OnCharacterLocalSolarBodyChanged(
+                playController,
+                newLocalSolarBody
+            )
         end
-    end)
-end
+    end
+)
 
 -- Manage "UE4SS Restart mods" or when the script is injected manually.
 if UEHelpers:GetPlayer():IsValid() then
@@ -682,12 +674,16 @@ if UEHelpers:GetPlayer():IsValid() then
             and type(Methods[CurrenMethod].onModRestartedOrStartedManually) == "function"
         then
             log.debug("Execute onModRestartedOrStartedManually event for method %q.", CurrenMethod)
-            Methods[CurrenMethod].onModRestartedOrStartedManually(FirstInit)
+            ExecuteInGameThread(function()
+                Methods[CurrenMethod].onModRestartedOrStartedManually(FirstInit)
+            end)
         end
 
         if type(onDeform_color.onModRestartedOrStartedManually) == "function" then
             log.debug("Execute onModRestartedOrStartedManually event for onDeform_color.")
-            onDeform_color.onModRestartedOrStartedManually(FirstInit)
+            ExecuteInGameThread(function()
+                onDeform_color.onModRestartedOrStartedManually(FirstInit)
+            end)
         end
 
         -- Stops the pawn poll from registering these hooks a second time.

@@ -676,35 +676,47 @@ local function manageHook()
 end
 
 ---Center of the player's planet, or nil while still loading into a server.
+---@param solarBody? ASolarBody
 ---@return FVector?
-local function getPlanetCenter()
+local function getPlanetCenter(solarBody)
+    if solarBody and solarBody:IsValid() then
+        return solarBody:GetCenter()
+    end
+
     Controller = UEHelpers:GetPlayerController() ---@cast Controller APlayControllerInstance_C
     if not Controller:IsValid() then
-        return nil
+        return
     end
+
     local designAstro = UEHelpers:GetPlayer()
     if
         not designAstro:IsValid()
         or not designAstro:IsA("/Game/Character/DesignAstro.DesignAstro_C")
     then
-        return nil
+        return
     end ---@cast designAstro ADesignAstro_C
+
     if not designAstro.LocalSolarBody:IsValid() then
-        return nil
+        return
     end
-    local solarBody = Controller:GetLocalSolarBody()
+
+    solarBody = Controller:GetLocalSolarBody()
     if not solarBody:IsValid() then
-        return nil
+        return
     end
+
     return solarBody:GetCenter()
 end
 
-local function init()
-    local planetCenter = getPlanetCenter()
-    if planetCenter == nil then
+---@param solarBody? ASolarBody
+local function init(solarBody)
+    local planetCenter = getPlanetCenter(solarBody)
+    if not planetCenter then
         return
     end
+
     PlanetCenter = planetCenter
+
     if
         UI.userWidget:IsValid() == false
         or UI.userWidget:IsInViewport() == false
@@ -771,8 +783,10 @@ function m.hook_Planet_Marker_HandlePlanetMarkerSelected(self)
     UI.menu:Construct()
 end
 
-function m.PlayerController_ClientReceiveLocalizedMessage(...)
-    init()
+---@param playController APlayController
+---@param newLocalSolarBody ASolarBody
+function m.PlayerController_OnCharacterLocalSolarBodyChanged(playController, newLocalSolarBody)
+    init(newLocalSolarBody)
 end
 
 --Manage "UE4SS Restart mods" or when the script is injected manually.

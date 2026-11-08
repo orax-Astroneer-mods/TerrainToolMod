@@ -1,8 +1,10 @@
+local UEHelpers = require("UEHelpers")
 local utils = require("lib.lua-mods-libs.utils")
 
 local format, floor, sqrt = string.format, math.floor, math.sqrt
 
 local m = {}
+local CachedController = CreateInvalidObject()
 
 ---@param filename string
 ---@return boolean
@@ -448,6 +450,40 @@ function m.pairsByKeys(t, f)
         end
     end
     return iter
+end
+
+---@return UObject|APlayerController
+function m.getPlayerController()
+    if not CachedController:IsValid() then
+        CachedController = UEHelpers.GetPlayerController()
+    end
+
+    return CachedController
+end
+
+---@return UObject|ADesignAstro_C
+function m.getDesignAstro()
+    local controller = m.getPlayerController()
+
+    if controller:IsValid() then
+        local pawn = controller.Pawn
+        if pawn and pawn:IsValid() and pawn:IsA("/Game/Character/DesignAstro.DesignAstro_C") then
+            return pawn
+        end
+    end
+
+    return CreateInvalidObject()
+end
+
+---@return UWorld
+function m.getWorld()
+    local controller = m.getPlayerController()
+
+    if controller:IsValid() then
+        return controller:GetWorld()
+    end
+
+    return UEHelpers.GetWorld()
 end
 
 return m

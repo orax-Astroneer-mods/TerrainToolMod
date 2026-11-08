@@ -22,7 +22,7 @@ local utils = require("lib.lua-mods-libs.utils")
 
 local currentModDirectory = debug.getinfo(1, "S").source:gsub("\\", "/"):match("@?(.+)/[Ss]cripts/")
 
-local World = UEHelpers:GetWorld()
+local World = func.getWorld()
 local PlanetCenter = { X = 0, Y = 0, Z = 0 } ---@type FVector
 local PlanetName = ""
 local DesignAstro ---@type UObject|ADesignAstro_C
@@ -110,16 +110,6 @@ local function loadAllPresets()
     return presets, presetNamesList
 end
 
----@return UObject|ADesignAstro_C
-local function getDesignAstro()
-    local designAstro = UEHelpers:GetPlayer() ---@cast designAstro ADesignAstro_C
-    if not designAstro:IsValid() then
-        return CreateInvalidObject()
-    end
-
-    return designAstro
-end
-
 local function writeParamsFile()
     local file = io.open(paramsFile, "w+")
 
@@ -204,19 +194,32 @@ local function updateParams()
     end
 end
 
-local function updateGameVariables()
-    World = UEHelpers:GetWorld()
-    local designAstro = getDesignAstro()
+---@param playController? APlayController
+---@param solarBody? ASolarBody
+local function updateGameVariables(playController, solarBody)
+    World = func.getWorld()
+    local designAstro = func.getDesignAstro()
 
-    if designAstro:IsValid() then ---@cast designAstro ADesignAstro_C
-        DesignAstro = designAstro
-        PlanetCenter = designAstro:GetLocalSolarBody():GetCenter()
-        PlanetName = designAstro:GetLocalSolarBody().Name:ToString()
-
-        local capsule = designAstro:K2_GetRootComponent() ---@cast capsule UCapsuleComponent
-        Capsule.halfHeight = capsule:GetScaledCapsuleHalfHeight()
-        Capsule.radius = capsule:GetScaledCapsuleRadius()
+    if not designAstro:IsValid() then ---@cast designAstro ADesignAstro_C
+        return
     end
+
+    DesignAstro = designAstro
+
+    if not solarBody or not solarBody:IsValid() then
+        solarBody = designAstro:GetLocalSolarBody()
+
+        if not solarBody:IsValid() then
+            return
+        end
+    end
+
+    PlanetCenter = solarBody:GetCenter()
+    PlanetName = solarBody.Name:ToString()
+
+    local capsule = designAstro:K2_GetRootComponent() ---@cast capsule UCapsuleComponent
+    Capsule.halfHeight = capsule:GetScaledCapsuleHalfHeight()
+    Capsule.radius = capsule:GetScaledCapsuleRadius()
 end
 
 local function updateUI()
@@ -252,10 +255,10 @@ local function updateUI()
             UI.comboBox_presets:AddOption(preset)
         end
         -- select latest selected preset
-        ---@diagnostic disable-next-line: param-type-mismatch
         if
             params.LATEST_PRESET
             and params.LATEST_PRESET ~= ""
+            ---@diagnostic disable-next-line: param-type-mismatch
             and UI.comboBox_presets:FindOptionIndex(params.LATEST_PRESET) ~= -1
         then
             ---@diagnostic disable-next-line: param-type-mismatch
@@ -657,7 +660,7 @@ local function hideUI()
     end
 
     -- restore game values
-    local designAstro = getDesignAstro()
+    local designAstro = func.getDesignAstro()
     if designAstro:IsValid() then
         local moveComp = designAstro.AstroMovementComponent
         if moveComp:IsValid() then
@@ -713,7 +716,7 @@ local function hook_HandleTerrainTool(
         PlanetCenter = controller:GetLocalSolarBody():GetCenter()
         PlanetName = controller:GetLocalSolarBody().Name:ToString()
 
-        World = UEHelpers:GetWorld()
+        World = func.getWorld()
 
         -- get angle from UI
         Angle = tonumber(UI.angle:GetText():ToString()) or 0
@@ -917,8 +920,8 @@ return {
         updateGameVariables()
         updateUI()
     end,
-    onClientRestart = function()
-        updateGameVariables()
+    PlayerController_OnCharacterLocalSolarBodyChanged = function(playController, newLocalSolarBody)
+        updateGameVariables(playController, newLocalSolarBody)
     end,
     isUIFocused = isUIFocused,
 }
