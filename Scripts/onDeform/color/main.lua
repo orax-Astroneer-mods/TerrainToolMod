@@ -178,10 +178,19 @@ local function updateParams()
         updateRequired = true
     end
 
-    local designAstro = UEHelpers:GetPlayer()
-    if designAstro:IsValid() then ---@cast designAstro ADesignAstro_C
-        local planetName = designAstro:GetLocalSolarBody().Name:ToString()
+    local designAstro = func.getDesignAstro()
+    if not designAstro:IsValid() then
+        return
+    end
 
+    local solarBody = designAstro:GetLocalSolarBody()
+    if not solarBody:IsValid() or not solarBody.Name then
+        return
+    end
+
+    local planetName = solarBody.Name:ToString()
+
+    if planetName then
         local materialIndex = MaterialIndexImage
         if materialIndex == nil then
             materialIndex = params.PLANET_MATERIAL_INDEX[planetName]
@@ -222,8 +231,8 @@ local function updateUI()
 
     local materialIndex = 0
     if UI.menu:IsValid() then
-        local designAstro = UEHelpers:GetPlayer()
-        if designAstro:IsValid() then ---@cast designAstro ADesignAstro_C
+        local designAstro = func.getDesignAstro()
+        if designAstro:IsValid() then
             local planetName = designAstro:GetLocalSolarBody().Name:ToString()
             materialIndex = params.PLANET_MATERIAL_INDEX[planetName]
             if materialIndex == nil then
@@ -693,12 +702,12 @@ local function getPlanetCenter(solarBody)
         return solarBody:GetCenter()
     end
 
-    Controller = UEHelpers:GetPlayerController() ---@cast Controller APlayControllerInstance_C
+    Controller = func.getPlayControllerInstance()
     if not Controller:IsValid() then
         return
     end
 
-    local designAstro = UEHelpers:GetPlayer()
+    local designAstro = func.getDesignAstro()
     if
         not designAstro:IsValid()
         or not designAstro:IsA("/Game/Character/DesignAstro.DesignAstro_C")

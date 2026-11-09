@@ -452,10 +452,16 @@ function m.pairsByKeys(t, f)
     return iter
 end
 
----@return UObject|APlayerController
-function m.getPlayerController()
+---@return UObject|APlayControllerInstance_C
+function m.getPlayControllerInstance()
     if not CachedController:IsValid() then
-        CachedController = UEHelpers.GetPlayerController()
+        local controller = UEHelpers.GetPlayerController()
+        if
+            controller:IsValid()
+            and controller:IsA("/Game/Globals/PlayControllerInstance.PlayControllerInstance_C")
+        then
+            CachedController = controller
+        end
     end
 
     return CachedController
@@ -463,7 +469,7 @@ end
 
 ---@return UObject|ADesignAstro_C
 function m.getDesignAstro()
-    local controller = m.getPlayerController()
+    local controller = m.getPlayControllerInstance()
 
     if controller:IsValid() then
         local pawn = controller.Pawn
@@ -477,7 +483,7 @@ end
 
 ---@return UWorld
 function m.getWorld()
-    local controller = m.getPlayerController()
+    local controller = m.getPlayControllerInstance()
 
     if controller:IsValid() then
         return controller:GetWorld()

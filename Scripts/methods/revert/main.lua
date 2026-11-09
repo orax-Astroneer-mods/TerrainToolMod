@@ -139,7 +139,7 @@ function DebugSphere.create()
         -- create the sphere
         ---@diagnostic disable: param-type-mismatch
         DebugSphere.actor = func.spawnDebugObject(
-            UEHelpers:GetWorld(),
+            func.getWorld(),
             dbg.staticMeshActorClass,
             dbg.mesh,
             material,

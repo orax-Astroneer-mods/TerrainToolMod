@@ -659,16 +659,18 @@ RegisterHook(
 )
 
 -- Manage "UE4SS Restart mods" or when the script is injected manually.
-if UEHelpers:GetPlayer():IsValid() then
-    local player = UEHelpers:GetPlayer() ---@cast player ADesignAstro_C
+do
+    local player = func.getDesignAstro()
 
     if
-        player:IsA("/Game/Character/DesignAstro.DesignAstro_C") and player.LocalSolarBody:IsValid()
+        player:IsValid()
+        and player:IsA("/Game/Character/DesignAstro.DesignAstro_C")
+        and player.LocalSolarBody:IsValid()
     then
         hook_TerrainToolCreativeMenu_OnColorAndTypePicked()
         hook_Planet_Marker_HandlePlanetMarkerSelected()
 
-        -- execute onModRestartedOrStartedManually event for the current method
+        -- Execute onModRestartedOrStartedManually event for the current method.
         if
             CurrenMethod ~= ""
             and type(Methods[CurrenMethod].onModRestartedOrStartedManually) == "function"
@@ -1131,8 +1133,8 @@ local function createTangentTerrain()
     local materialIndex = options.TangentTerrain.MATERIAL_INDEX -- Color. Default: 128. Valid values: 0 to ...
 
     ExecuteInGameThread(function()
-        local designAstro = UEHelpers:GetPlayer() ---@cast designAstro ADesignAstro_C
-        local controller = UEHelpers:GetPlayerController() ---@cast controller APlayControllerInstance_C
+        local designAstro = func.getDesignAstro()
+        local controller = func.getPlayControllerInstance()
 
         -- ClientDoDeformation is local only and a dedicated server overwrites it, so clients ask the server.
         local isClient = not controller:HasAuthority()
@@ -1362,7 +1364,7 @@ RegisterConsoleCommandHandler("get_altitude", function(fullCommand, parameters, 
     ---@diagnostic disable-next-line: missing-fields
     local hitResult = {} ---@type FHitResult
 
-    local playerController = UEHelpers:GetPlayerController() ---@cast playerController APlayControllerInstance_C
+    local playerController = func.getPlayControllerInstance()
     if not playerController:IsValid() then
         log.warn("PlayerController invalid.")
     end
@@ -1473,7 +1475,7 @@ RegisterConsoleCommandHandler("look", function(fullCommand, parameters, outputDe
         return true
     end
 
-    local player = UEHelpers:GetPlayer()
+    local player = func.getDesignAstro()
     local uePlayerLoc = player:K2_GetActorLocation()
     local playerLoc = vec3.new(uePlayerLoc.X, uePlayerLoc.Y, uePlayerLoc.Z)
 

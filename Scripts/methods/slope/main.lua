@@ -73,7 +73,7 @@ end
 
 local function setSlopeDirectionFromCamera(reversed)
     log.debug("Set slope direction from camera. Reversed: " .. tostring(reversed) .. ".")
-    local pc = UEHelpers.GetPlayerController()
+    local pc = func.getPlayControllerInstance()
     local cam = pc:GetViewTarget()
     local right = cam:GetActorRightVector()
     local right_unit = vec3.normalize(vec3.new(right.X, right.Y, right.Z))
