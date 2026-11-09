@@ -241,13 +241,105 @@ local function updateUI()
     _G.MaterialIndexImage = materialIndex
 end
 
-local function update()
-    if UI.userWidget:IsValid() == false or UICreated == false then
+---@param self RemoteUnrealParam
+---@param _deformParams RemoteUnrealParam
+local function hook_AstroPlanet_OnDeformationComplete(self, _deformParams)
+    local deformParams = _deformParams:get() ---@type FDeformationParamsT2
+
+    if
+        ---@diagnostic disable-next-line: undefined-field
+        deformParams.Instigator:Get():IsA(
+            "/Game/Components_Small/SmallDeform_TERRAIN_EXPERIMENTAL.SmallDeform_TERRAIN_EXPERIMENTAL_C"
+        )
+        and (
+            deformParams.Operation == EDeformType.Add
+            or deformParams.Operation == EDeformType.Flatten
+            or deformParams.Operation == EDeformType.FlattenAddOnly
+            or deformParams.Operation == EDeformType.FlattenSubtractOnly
+            or deformParams.Operation == EDeformType.PlatformSurface
+        )
+    then
+        Controller:ClientDoDeformation({
+            AutoCreateResourceEfficiency = 0,
+            CreativeModeNoResourceCollection = false,
+            DeltaTime = deformParams.DeltaTime,
+            ForceRemoveDecorators = false,
+            HardnessPenetration = 0,
+            Instigator = nil,
+            Intensity = deform.Intensity,
+            Location = {
+                X = deformParams.Location.X + PlanetCenter.X,
+                Y = deformParams.Location.Y + PlanetCenter.Y,
+                Z = deformParams.Location.Z + PlanetCenter.Z,
+            },
+            MaterialIndex = deform.MaterialIndex,
+            Normal = {
+                X = deformParams.Normal.X,
+                Y = deformParams.Normal.Y,
+                Z = deformParams.Normal.Z,
+            },
+            Operation = deform.Operation,
+            Scale = deformParams.Scale * params.SCALE,
+            SequenceNumber = 0,
+            Shape = 0,
+            bEasyUnbury = false,
+            bForceUnburyWithNoDeformationEvent = false,
+            bUseAlternatePolygonization = true,
+        })
+    end
+end
+
+---@param callback function
+local function registerHook_AstroPlanet_OnDeformationComplete(callback)
+    if
+        type(PreId_AstroPlanet_OnDeformationComplete) == "number"
+        or type(PostId_AstroPlanet_OnDeformationComplete) == "number"
+    then
+        log.warn("AstroPlanet_OnDeformationComplete is already hooked.")
         return
     end
+    PreId_AstroPlanet_OnDeformationComplete, PostId_AstroPlanet_OnDeformationComplete =
+        RegisterHook("/Script/Astro.AstroPlanet:OnDeformationComplete", callback)
+end
 
-    -- if not enabled
-    if UI.enableCheckBox.CheckedState ~= ECheckBoxState.Checked then
+local function unregisterHook_AstroPlanet_OnDeformationComplete()
+    if
+        type(PreId_AstroPlanet_OnDeformationComplete) == "number"
+        and type(PostId_AstroPlanet_OnDeformationComplete) == "number"
+    then
+        UnregisterHook(
+            "/Script/Astro.AstroPlanet:OnDeformationComplete",
+            PreId_AstroPlanet_OnDeformationComplete,
+            PostId_AstroPlanet_OnDeformationComplete
+        )
+        PreId_AstroPlanet_OnDeformationComplete = nil
+        PostId_AstroPlanet_OnDeformationComplete = nil
+    end
+end
+
+local function isPaintActive()
+    return UICreated == true
+        and UI.userWidget:IsValid()
+        and UI.enableCheckBox:IsValid()
+        and UI.enableCheckBox.CheckedState == ECheckBoxState.Checked
+        and (
+            UI.userWidget:GetVisibility() == ESlateVisibility.Visible
+            or options.hide_color_UI_keeps_painting_enabled
+        )
+end
+
+local function manageHook()
+    if isPaintActive() then
+        if PreId_AstroPlanet_OnDeformationComplete == nil then
+            registerHook_AstroPlanet_OnDeformationComplete(hook_AstroPlanet_OnDeformationComplete)
+        end
+    else
+        unregisterHook_AstroPlanet_OnDeformationComplete()
+    end
+end
+
+local function update()
+    if not isPaintActive() then
         return
     end
 
@@ -567,6 +659,8 @@ local function showUI()
 
     UI.userWidget:SetVisibility(ESlateVisibility.Visible)
 
+    update()
+    manageHook()
     updateParams()
 end
 
@@ -574,6 +668,8 @@ local function hideUI()
     if UI.userWidget and UI.userWidget:IsValid() then
         UI.userWidget:SetVisibility(ESlateVisibility.Hidden)
     end
+
+    manageHook()
     updateParams()
 end
 
@@ -586,92 +682,6 @@ function m.toggleUI()
         hideUI()
     else
         showUI()
-    end
-end
-
----@param self RemoteUnrealParam
----@param _deformParams RemoteUnrealParam
-local function hook_AstroPlanet_OnDeformationComplete(self, _deformParams)
-    local deformParams = _deformParams:get() ---@type FDeformationParamsT2
-
-    if
-        ---@diagnostic disable-next-line: undefined-field
-        deformParams.Instigator:Get():IsA(
-            "/Game/Components_Small/SmallDeform_TERRAIN_EXPERIMENTAL.SmallDeform_TERRAIN_EXPERIMENTAL_C"
-        )
-        and (
-            deformParams.Operation == EDeformType.Add
-            or deformParams.Operation == EDeformType.Flatten
-            or deformParams.Operation == EDeformType.FlattenAddOnly
-            or deformParams.Operation == EDeformType.FlattenSubtractOnly
-            or deformParams.Operation == EDeformType.PlatformSurface
-        )
-    then
-        Controller:ClientDoDeformation({
-            AutoCreateResourceEfficiency = 0,
-            CreativeModeNoResourceCollection = false,
-            DeltaTime = deformParams.DeltaTime,
-            ForceRemoveDecorators = false,
-            HardnessPenetration = 0,
-            Instigator = nil,
-            Intensity = deform.Intensity,
-            Location = {
-                X = deformParams.Location.X + PlanetCenter.X,
-                Y = deformParams.Location.Y + PlanetCenter.Y,
-                Z = deformParams.Location.Z + PlanetCenter.Z,
-            },
-            MaterialIndex = deform.MaterialIndex,
-            Normal = {
-                X = deformParams.Normal.X,
-                Y = deformParams.Normal.Y,
-                Z = deformParams.Normal.Z,
-            },
-            Operation = deform.Operation,
-            Scale = deformParams.Scale * params.SCALE,
-            SequenceNumber = 0,
-            Shape = 0,
-            bEasyUnbury = false,
-            bForceUnburyWithNoDeformationEvent = false,
-            bUseAlternatePolygonization = true,
-        })
-    end
-end
-
----@param callback function
-local function registerHook_AstroPlanet_OnDeformationComplete(callback)
-    if
-        type(PreId_AstroPlanet_OnDeformationComplete) == "number"
-        or type(PostId_AstroPlanet_OnDeformationComplete) == "number"
-    then
-        log.warn("AstroPlanet_OnDeformationComplete is already hooked.")
-        return
-    end
-    PreId_AstroPlanet_OnDeformationComplete, PostId_AstroPlanet_OnDeformationComplete =
-        RegisterHook("/Script/Astro.AstroPlanet:OnDeformationComplete", callback)
-end
-
-local function unregisterHook_AstroPlanet_OnDeformationComplete()
-    if
-        type(PreId_AstroPlanet_OnDeformationComplete) == "number"
-        and type(PostId_AstroPlanet_OnDeformationComplete) == "number"
-    then
-        UnregisterHook(
-            "/Script/Astro.AstroPlanet:OnDeformationComplete",
-            PreId_AstroPlanet_OnDeformationComplete,
-            PostId_AstroPlanet_OnDeformationComplete
-        )
-        PreId_AstroPlanet_OnDeformationComplete = nil
-        PostId_AstroPlanet_OnDeformationComplete = nil
-    end
-end
-
-local function manageHook()
-    if UI.enableCheckBox.CheckedState == ECheckBoxState.Checked then
-        if PreId_AstroPlanet_OnDeformationComplete == nil then
-            registerHook_AstroPlanet_OnDeformationComplete(hook_AstroPlanet_OnDeformationComplete)
-        end
-    else
-        unregisterHook_AstroPlanet_OnDeformationComplete()
     end
 end
 

@@ -102,9 +102,11 @@ local options = {
     set_revert_method_Key = Key.SIX,
     set_revert_method_ModifierKeys = {},
 
+    -- Color UI.
     toggle_colorDeform_ui_text = 'Toggle the visibility of the "color" UI',
     toggle_colorDeform_ui_Key = Key.ONE,
     toggle_colorDeform_ui_ModifierKeys = { ModifierKey.SHIFT },
+    hide_color_UI_keeps_painting_enabled = false, -- Keep painting enabled when hiding color UI.
 
     -- Create tangent terrain to the planet at player position.
     create_tangent_terrain_text = "Create tangent terrain at player position",
